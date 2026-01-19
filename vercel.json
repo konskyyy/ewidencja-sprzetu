@@ -1,0 +1,5 @@
+{
+  "installCommand": "echo ROOT_VERCEL_JSON_OK && npm install",
+  "buildCommand": "echo BUILD_OK && npm run build",
+  "outputDirectory": "dist"
+}

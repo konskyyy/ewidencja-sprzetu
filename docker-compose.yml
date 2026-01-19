@@ -1,0 +1,40 @@
+services:
+  db:
+    image: postgres:16
+    container_name: infra_db
+    environment:
+      POSTGRES_USER: infra
+      POSTGRES_PASSWORD: infra
+      POSTGRES_DB: infra
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infra"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: infra_backend
+    environment:
+      DATABASE_URL: postgres://infra:infra@db:5432/infra
+      CORS_ORIGIN: http://localhost:5174
+      DB_SSL: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+
+  frontend:
+    build: ./frontend
+    container_name: infra_frontend
+    environment:
+      VITE_API_URL: http://localhost:3001
+    depends_on:
+      - backend
+    ports:
+      - "5174:5173"
