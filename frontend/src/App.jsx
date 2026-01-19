@@ -2094,114 +2094,126 @@ useEffect(() => {
   };
 }, []);
 
-  /** ===== Load data ===== */
-  async function loadPoints() {
-    setLoadingPoints(true);
-    setApiError("");
-    try {
-      const res = await authFetch(`${API}/points`);
-      const data = await readJsonOrThrow(res);
-      setPoints(
-        Array.isArray(data) ? data.map((p) => ({ ...p, priority: p.priority === true })) : []
-      );
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę pobrać urządzeń: ${String(e)}`);
-    } finally {
-      setLoadingPoints(false);
-    }
+ /** ===== Load data ===== */
+async function loadPoints() {
+  setLoadingPoints(true);
+  setApiError("");
+  try {
+    const res = await authFetch(`${API}/points`);
+    const data = await readJsonOrThrow(res);
+
+    setPoints(
+      Array.isArray(data)
+        ? data.map((p) => ({ ...p, priority: p.priority === true }))
+        : []
+    );
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(`Nie mogę pobrać urządzeń: ${String(e)}`);
+  } finally {
+    setLoadingPoints(false);
   }
+}
 
-  useEffect(() => {
-    if (mode !== "app") return;
-    loadPoints();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode]);
+useEffect(() => {
+  if (mode !== "app") return;
+  loadPoints();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [mode]);
 
-  async function deleteSelectedDevice() {
-    const pt = selectedPoint;
-    if (!pt) return;
+async function deleteSelectedDevice() {
+  const pt = selectedPoint;
+  if (!pt) return;
 
-    const label = `urządzenie #${pt.id} (${pt.title || "bez nazwy"})`;
-    const ok = window.confirm(`Na pewno usunąć ${label}?`);
-    if (!ok) return;
+  const label = `urządzenie #${pt.id} (${pt.title || "bez nazwy"})`;
+  const ok = window.confirm(`Na pewno usunąć ${label}?`);
+  if (!ok) return;
 
-    setApiError("");
+  setApiError("");
+
+  try {
+    const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
+    await readJsonOrThrow(res);
+
+    setPoints((prev) => prev.filter((p) => p.id !== pt.id));
+    setSelectedPointId(null);
 
     try {
-      const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
-      await readJsonOrThrow(res);
+      mapRef.current?.closePopup?.();
+    } catch {}
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(`Nie mogę usunąć urządzenia: ${String(e?.message || e)}`);
 
-      setPoints((prev) => prev.filter((p) => p.id !== pt.id));
-      setSelectedPointId(null);
-
-      try {
-        mapRef.current?.closePopup?.();
-      } catch {}
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę usunąć urządzenia: ${String(e?.message || e)}`);
-
-      try {
-        await loadPoints();
-      } catch {}
-    }
+    try {
+      await loadPoints();
+    } catch {}
   }
+}
 
-  async function saveEditedDevice(payload) {
-    const pt = selectedPoint;
-    if (!pt) return;
+async function saveEditedDevice(payload) {
+  const pt = selectedPoint;
+  if (!pt) return;
 
-    setApiError("");
+  setApiError("");
 
-    try {
-      const res = await authFetch(`${API}/points/${pt.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+  try {
+    const res = await authFetch(`${API}/points/${pt.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         lat: pt.lat,
         lng: pt.lng,
         title: payload.title,
         note: payload.note,
         status: payload.status,
       }),
-      });
+    });
 
-      const updated = await readJsonOrThrow(res);
+    const updated = await readJsonOrThrow(res);
 
-      setPoints((prev) =>
-        prev.map((p) =>
-          p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
-        )
-      );
+    setPoints((prev) =>
+      prev.map((p) =>
+        p.id === updated.id
+          ? { ...updated, priority: updated.priority === true }
+          : p
+      )
+    );
 
-      setSelectedPointId(updated.id);
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      throw e;
-    }
+    setSelectedPointId(updated.id);
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    throw e;
   }
+}
 
-  async function togglePointPriority(pt) {
-    if (!pt) return;
-    setApiError("");
-    try {
-      const res = await authFetch(`${API}/points/${pt.id}/priority`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priority: !(pt.priority === true) }),
-      });
-      const updated = await readJsonOrThrow(res);
-      setPoints((prev) =>
-        prev.map((p) =>
-          p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
-        )
-      );
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę ustawić priorytetu urządzenia: ${String(e?.message || e)}`);
-    }
+async function togglePointPriority(pt) {
+  if (!pt) return;
+  setApiError("");
+
+  try {
+    const res = await authFetch(`${API}/points/${pt.id}/priority`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priority: !(pt.priority === true) }),
+    });
+
+    const updated = await readJsonOrThrow(res);
+
+    setPoints((prev) =>
+      prev.map((p) =>
+        p.id === updated.id
+          ? { ...updated, priority: updated.priority === true }
+          : p
+      )
+    );
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(
+      `Nie mogę ustawić priorytetu urządzenia: ${String(e?.message || e)}`
+    );
   }
+}
 
   /** ===== Devices CRUD (dodawanie) ===== */
   async function addPoint(latlng) {
