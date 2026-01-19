@@ -76,9 +76,10 @@ function ClickHandler({ enabled, onAdd }) {
   return null;
 }
 
-function statusLabel(s) {
-  return DEVICE_TYPES.find((t) => t.value === s)?.label || "Urządzenie";
+function statusLabel(v) {
+  return typeLabel(v);
 }
+
 
 function statusColor(status) {
   if (status === "tachimetr") return "#3b82f6";
@@ -2012,15 +2013,16 @@ const [createForm, setCreateForm] = useState({
   function toggleStatus(key) {
     setVisibleStatus((s) => ({ ...s, [key]: !s[key] }));
   }
- function showAllStatuses() {
-  const s = {};
-  for (const t of DEVICE_TYPES) s[t.value] = true;
-  setVisibleStatus(s);
+function showAllTypes() {
+  const obj = {};
+  for (const t of DEVICE_TYPES) obj[t.value] = true;
+  setVisibleTypes(obj);
 }
-function hideAllStatuses() {
-  const s = {};
-  for (const t of DEVICE_TYPES) s[t.value] = false;
-  setVisibleStatus(s);
+
+function hideAllTypes() {
+  const obj = {};
+  for (const t of DEVICE_TYPES) obj[t.value] = false;
+  setVisibleTypes(obj);
 }
 
   function focusPoint(pt) {
@@ -3048,50 +3050,54 @@ function hideAllStatuses() {
             {filtersOpen ? (
               <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {STATUSES.map((s) => (
-                    <label
-                      key={s.key}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        cursor: "pointer",
-                        opacity: visibleStatus[s.key] ? 1 : 0.55,
-                        userSelect: "none",
-                        padding: "8px 10px",
-                        borderRadius: 12,
-                        border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.04)",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={visibleStatus[s.key]}
-                        onChange={() => toggleStatus(s.key)}
-                        style={{ transform: "scale(0.95)" }}
-                      />
-                      <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: 999,
-                          background: s.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>
-                        {s.label}
-                      </span>
-                      <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>
-                        {counts[s.key] ?? 0}
-                      </span>
-                    </label>
-                  ))}
+                  {DEVICE_TYPES.map((t) => (
+  <label
+    key={t.value}
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 8,
+      cursor: "pointer",
+      opacity: visibleTypes[t.value] ? 1 : 0.55,
+      userSelect: "none",
+      padding: "8px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: "rgba(255,255,255,0.04)",
+    }}
+  >
+    <input
+      type="checkbox"
+      checked={visibleTypes[t.value]}
+      onChange={() =>
+        setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))
+      }
+      style={{ transform: "scale(0.95)" }}
+    />
+    <span
+      style={{
+        width: 10,
+        height: 10,
+        borderRadius: 999,
+        background: typeColor(t.value),
+        flexShrink: 0,
+      }}
+    />
+    <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>
+      {t.label}
+    </span>
+    <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>
+      {counts[t.value] ?? 0}
+    </span>
+  </label>
+))}
+
+      
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
                   <button
-                    onClick={showAllStatuses}
+                    onClick={showAllTypes}
                     style={{
                       padding: "8px 10px",
                       borderRadius: 10,
@@ -3108,7 +3114,7 @@ function hideAllStatuses() {
                   </button>
 
                   <button
-                    onClick={hideAllStatuses}
+                    onClick={hideAllTypes}
                     style={{
                       padding: "8px 10px",
                       borderRadius: 10,
