@@ -1,6 +1,6 @@
 // frontend/src/api.js
 
-const DEFAULT_API = "https://tenders-map-api.onrender.com";
+const DEFAULT_API = "https://ewidencja-sprzetu.onrender.com";
 
 export const API_BASE =
   import.meta?.env?.VITE_API_URL ||
