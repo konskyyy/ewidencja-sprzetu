@@ -1980,6 +1980,20 @@ export default function App() {
     .slice()
     .sort(byPriorityThenIdDesc);
 }, [points, visibleTypes]);
+const filteredDevicesSearch = useMemo(() => {
+  const q = String(projectQuery || "").trim().toLowerCase();
+
+  const base = Array.isArray(filteredPoints) ? filteredPoints : [];
+
+  if (!q) return base;
+
+  return base.filter((p) => {
+    const title = String(p?.title || p?.name || "").toLowerCase();
+    const note = String(p?.note || p?.notes || "").toLowerCase();
+    return title.includes(q) || note.includes(q);
+  });
+}, [filteredPoints, projectQuery]);
+
 
 const counts = useMemo(() => {
   const c = {};
@@ -2555,7 +2569,7 @@ async function togglePointPriority(pt) {
       setCreateOpen(true);
       setCreateForm({
         title: "",
-        status: "planowany",
+        status: "tachimetr",
         note: "",
         lat: "",
         lng: "",
