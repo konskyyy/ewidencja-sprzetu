@@ -43,7 +43,11 @@ const DEVICE_TYPES = [
   { value: "czujnik_drgan", label: "Czujnik drgań" },
   { value: "inklinometr", label: "Inklinometr" },
 ];
-
+const STATUSES = DEVICE_TYPES.map((t) => ({
+  key: t.value,
+  label: t.label,
+  color: "#3b82f6",
+}));
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
@@ -61,17 +65,15 @@ function ClickHandler({ enabled, onAdd }) {
 }
 
 function statusLabel(s) {
-  if (s === "przetarg") return "przetarg";
-  if (s === "realizacja") return "realizacja";
-  if (s === "nieaktualny") return "nieaktualny";
-  return "planowany";
+  return DEVICE_TYPES.find((t) => t.value === s)?.label || "Urządzenie";
 }
 
 function statusColor(status) {
-  if (status === "przetarg") return "#f59e0b";
-  if (status === "realizacja") return "#22c55e";
-  if (status === "nieaktualny") return "#9ca3af";
-  return "#3b82f6";
+  if (status === "tachimetr") return "#3b82f6";
+  if (status === "pochylomierz") return "#22c55e";
+  if (status === "czujnik_drgan") return "#f59e0b";
+  if (status === "inklinometr") return "#a855f7";
+  return "#9ca3af";
 }
 
 function pinSvg(color) {
@@ -1926,13 +1928,13 @@ export default function App() {
   const [apiError, setApiError] = useState("");
 
   const pinIcons = useMemo(() => {
-    return {
-      planowany: makePinIcon(statusColor("planowany")),
-      przetarg: makePinIcon(statusColor("przetarg")),
-      realizacja: makePinIcon(statusColor("realizacja")),
-      nieaktualny: makePinIcon(statusColor("nieaktualny")),
-    };
-  }, []);
+  const out = {};
+  for (const t of DEVICE_TYPES) {
+    out[t.value] = makePinIcon(statusColor(t.value));
+  }
+  out.__default = makePinIcon(statusColor("")); // fallback
+  return out;
+}, []);
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
@@ -1943,12 +1945,12 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
-  const [visibleStatus, setVisibleStatus] = useState({
-    planowany: true,
-    przetarg: true,
-    realizacja: true,
-    nieaktualny: false,
-  });
+  const [visibleStatus, setVisibleStatus] = useState(() => {
+  const s = {};
+  for (const t of DEVICE_TYPES) s[t.value] = true;
+  return s;
+});
+
 
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
@@ -1962,7 +1964,7 @@ export default function App() {
 
   const filteredPoints = useMemo(() => {
     return points
-      .filter((p) => visibleStatus[p.status || "planowany"] !== false)
+      .filter((p) => visibleStatus[p.status] !== false)
       .slice()
       .sort(byPriorityThenIdDesc);
   }, [points, visibleStatus]);
@@ -1998,22 +2000,16 @@ const [createForm, setCreateForm] = useState({
   function toggleStatus(key) {
     setVisibleStatus((s) => ({ ...s, [key]: !s[key] }));
   }
-  function showAllStatuses() {
-    setVisibleStatus({
-      planowany: true,
-      przetarg: true,
-      realizacja: true,
-      nieaktualny: true,
-    });
-  }
-  function hideAllStatuses() {
-    setVisibleStatus({
-      planowany: false,
-      przetarg: false,
-      realizacja: false,
-      nieaktualny: false,
-    });
-  }
+ function showAllStatuses() {
+  const s = {};
+  for (const t of DEVICE_TYPES) s[t.value] = true;
+  setVisibleStatus(s);
+}
+function hideAllStatuses() {
+  const s = {};
+  for (const t of DEVICE_TYPES) s[t.value] = false;
+  setVisibleStatus(s);
+}
 
   function focusPoint(pt) {
     const map = mapRef.current;
@@ -2161,14 +2157,12 @@ const [createForm, setCreateForm] = useState({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          lat: pt.lat,
-          lng: pt.lng,
-          title: payload.title,
-          director: payload.director,
-          winner: payload.winner,
-          note: payload.note,
-          status: payload.status,
-        }),
+        lat: pt.lat,
+        lng: pt.lng,
+        title: payload.title,
+        note: payload.note,
+        status: payload.status,
+      }),
       });
 
       const updated = await readJsonOrThrow(res);
@@ -2180,7 +2174,6 @@ const [createForm, setCreateForm] = useState({
       );
 
       setSelectedPointId(updated.id);
-      setAcquired("points", updated.id, !!payload.acquired);
     } catch (e) {
       if (e?.status === 401) return logout("expired");
       throw e;
@@ -2216,7 +2209,7 @@ const [createForm, setCreateForm] = useState({
       director: "",
       winner: "",
       note: "",
-      status: "planowany",
+      status: "tachimetr",
       lat: latlng.lat,
       lng: latlng.lng,
     };
@@ -2254,7 +2247,7 @@ const [createForm, setCreateForm] = useState({
   const body = {
     title: String(createForm.title || "Nowe urządzenie"),
     note: String(createForm.note || ""),
-    status: String(createForm.status || "planowany"),
+    status: String(createForm.status || "tachimetr"),
     lat,
     lng,
   };
@@ -3186,7 +3179,7 @@ const [createForm, setCreateForm] = useState({
             <Marker
               key={`pt-${pt.id}`}
               position={[Number(pt.lat), Number(pt.lng)]}
-              icon={pinIcons[pt.status || "planowany"]}
+              icon={pinIcons[pt.status] || pinIcons.__default}
               bubblingMouseEvents={false}
               ref={(ref) => {
                 if (ref) markerRefs.current[pt.id] = ref;
