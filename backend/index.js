@@ -49,7 +49,6 @@ const pool = new Pool({
 /**
  * Minimalne zabezpieczenie kompatybilności:
  * - dodaje kolumnę priority do assets (jeśli jej nie ma)
- * Dzięki temu nie wysypią się endpointy /api/points z COALESCE(priority,false)
  */
 async function ensureSchema() {
   try {
@@ -58,7 +57,6 @@ async function ensureSchema() {
       ADD COLUMN IF NOT EXISTS priority boolean DEFAULT false
     `);
   } catch (e) {
-    // Jeśli assets jeszcze nie istnieje, to pokaże się w logach (ale Ty ją masz)
     console.error("ensureSchema error:", e);
   }
 }
@@ -66,10 +64,10 @@ async function ensureSchema() {
 // ===== HEALTH / DEBUG =====
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 app.get("/api/version", (req, res) =>
-  res.json({ version: "assets-points-adapter-v1", ts: Date.now() })
+  res.json({ version: "assets-no-director-winner-v1", ts: Date.now() })
 );
 
-// (opcjonalnie) surowe assets poza /api – zostawiam, ale docelowo i tak używaj /api/assets
+// (opcjonalnie) surowe assets poza /api
 app.get("/assets", async (req, res) => {
   try {
     const result = await pool.query(`
@@ -156,7 +154,6 @@ app.get("/api/assets", authRequired, async (req, res) => {
 });
 
 // ===== POINTS API (adapter: points -> assets) =====
-// Front nadal woła /api/points – więc zwracamy dane z assets w formacie "point"
 app.get("/api/points", authRequired, async (req, res) => {
   try {
     const q = await pool.query(`
@@ -174,9 +171,10 @@ app.get("/api/points", authRequired, async (req, res) => {
 
     const points = q.rows.map((a) => ({
       id: a.id,
-      title: a.name, // kompatybilność ze starym UI
+      title: a.name,
       name: a.name,
-      director: "",  // legacy pola – jeśli UI ich nie używa, to harmless
+      // ⬇️ legacy pola zostawiamy, ale NIE zapisujemy ich do DB
+      director: "",
       winner: "",
       note: a.notes ?? "",
       notes: a.notes ?? "",
@@ -193,7 +191,7 @@ app.get("/api/points", authRequired, async (req, res) => {
   }
 });
 
-// SET point priority (true/false) -> assets.priority
+// SET point priority -> assets.priority
 app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -215,12 +213,14 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
     );
 
     const a = q.rows[0];
-    if (!a) return res.status(404).json({ error: "Nie znaleziono punktu" });
+    if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     res.json({
       id: a.id,
       title: a.name,
       name: a.name,
+      director: "",
+      winner: "",
       note: a.notes ?? "",
       notes: a.notes ?? "",
       status: a.status,
@@ -234,12 +234,12 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
   }
 });
 
-// CREATE point -> INSERT asset
+// CREATE point -> INSERT asset (BEZ director/winner)
 app.post("/api/points", authRequired, async (req, res) => {
   try {
     const name = String(req.body.title || req.body.name || "Nowe urządzenie");
     const notes = String(req.body.note || req.body.notes || "");
-    const status = String(req.body.status || "active");
+    const status = String(req.body.status || "planowany");
     const lat = Number(req.body.lat);
     const lng = Number(req.body.lng);
 
@@ -247,7 +247,6 @@ app.post("/api/points", authRequired, async (req, res) => {
       return res.status(400).json({ error: "Brak poprawnych współrzędnych" });
     }
 
-    // domyślnie traktujemy dodanie z mapy jako sprzęt (equipment)
     const q = await pool.query(
       `INSERT INTO assets (name, type, status, lat, lng, notes, priority)
        VALUES ($1, 'equipment', $2, $3, $4, $5, false)
@@ -260,6 +259,8 @@ app.post("/api/points", authRequired, async (req, res) => {
       id: a.id,
       title: a.name,
       name: a.name,
+      director: "",
+      winner: "",
       note: a.notes ?? "",
       notes: a.notes ?? "",
       status: a.status,
@@ -273,7 +274,7 @@ app.post("/api/points", authRequired, async (req, res) => {
   }
 });
 
-// UPDATE point -> UPDATE asset
+// UPDATE point -> UPDATE asset (BEZ director/winner)
 app.put("/api/points/:id", authRequired, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -281,7 +282,7 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
 
     const name = String(req.body.title || req.body.name || "");
     const notes = String(req.body.note || req.body.notes || "");
-    const status = String(req.body.status || "active");
+    const status = String(req.body.status || "planowany");
 
     const q = await pool.query(
       `UPDATE assets
@@ -292,12 +293,14 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
     );
 
     const a = q.rows[0];
-    if (!a) return res.status(404).json({ error: "Nie znaleziono punktu" });
+    if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     res.json({
       id: a.id,
       title: a.name,
       name: a.name,
+      director: "",
+      winner: "",
       note: a.notes ?? "",
       notes: a.notes ?? "",
       status: a.status,
@@ -322,7 +325,7 @@ app.delete("/api/points/:id", authRequired, async (req, res) => {
     ]);
 
     const row = q.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono punktu" });
+    if (!row) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     res.json({ ok: true, id: row.id });
   } catch (e) {
@@ -332,152 +335,11 @@ app.delete("/api/points/:id", authRequired, async (req, res) => {
 });
 
 /**
- * ===== TUNNELS API =====
- * Zostawiam bez zmian (nadal używa tabeli tunnels).
- */
-
-app.get("/api/tunnels", authRequired, async (req, res) => {
-  try {
-    const q = await pool.query(
-      `SELECT id, name, status, note, path, COALESCE(priority,false) AS priority
-       FROM tunnels
-       ORDER BY COALESCE(priority,false) DESC, id DESC`
-    );
-    res.json(q.rows);
-  } catch (e) {
-    console.error("GET TUNNELS ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-app.patch("/api/tunnels/:id/priority", authRequired, async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
-
-    const priority = req.body?.priority;
-    if (typeof priority !== "boolean") {
-      return res
-        .status(400)
-        .json({ error: "priority musi być boolean (true/false)" });
-    }
-
-    const q = await pool.query(
-      `UPDATE tunnels
-       SET priority=$1
-       WHERE id=$2
-       RETURNING id, name, status, note, path, COALESCE(priority,false) AS priority`,
-      [priority, id]
-    );
-
-    const row = q.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono tunelu" });
-
-    res.json(row);
-  } catch (e) {
-    console.error("PATCH TUNNEL PRIORITY ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-app.post("/api/tunnels", authRequired, async (req, res) => {
-  try {
-    const name = String(req.body.name || "Nowy tunel");
-    const status = String(req.body.status || "planowany");
-    const note = String(req.body.note || "");
-    const path = req.body.path;
-
-    if (!Array.isArray(path) || path.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "Tunel musi mieć co najmniej 2 punkty" });
-    }
-
-    for (const p of path) {
-      const lat = Number(p?.lat);
-      const lng = Number(p?.lng);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        return res
-          .status(400)
-          .json({ error: "Niepoprawne współrzędne w path" });
-      }
-    }
-
-    const q = await pool.query(
-      `INSERT INTO tunnels (name, status, note, path)
-       VALUES ($1,$2,$3,$4::jsonb)
-       RETURNING id, name, status, note, path, COALESCE(priority,false) AS priority`,
-      [name, status, note, JSON.stringify(path)]
-    );
-
-    res.json(q.rows[0]);
-  } catch (e) {
-    console.error("CREATE TUNNEL ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-app.put("/api/tunnels/:id", authRequired, async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
-
-    const name = String(req.body.name || "Nowy tunel");
-    const status = String(req.body.status || "planowany");
-    const note = String(req.body.note || "");
-    const path = req.body.path;
-
-    if (!Array.isArray(path) || path.length < 2) {
-      return res
-        .status(400)
-        .json({ error: "Tunel musi mieć co najmniej 2 punkty" });
-    }
-
-    const q = await pool.query(
-      `UPDATE tunnels
-       SET name=$1, status=$2, note=$3, path=$4::jsonb
-       WHERE id=$5
-       RETURNING id, name, status, note, path, COALESCE(priority,false) AS priority`,
-      [name, status, note, JSON.stringify(path), id]
-    );
-
-    const row = q.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono tunelu" });
-
-    res.json(row);
-  } catch (e) {
-    console.error("UPDATE TUNNEL ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-app.delete("/api/tunnels/:id", authRequired, async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
-
-    const q = await pool.query(
-      `DELETE FROM tunnels WHERE id=$1 RETURNING id`,
-      [id]
-    );
-
-    const row = q.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono tunelu" });
-
-    res.json({ ok: true, id: row.id });
-  } catch (e) {
-    console.error("DELETE TUNNEL ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-/**
  * ===== COMMENTS API =====
- * Uwaga: używamy istniejących tabel point_comments itd.,
- * ale "point_id" traktujemy jako "asset_id" i sprawdzamy istnienie w assets.
+ * point_comments: point_id traktujemy jako asset_id i sprawdzamy istnienie w assets.
  */
 
-// GET point comments (asset comments)
+// GET point comments
 app.get("/api/points/:id/comments", authRequired, async (req, res) => {
   try {
     const pointId = Number(req.params.id);
@@ -488,7 +350,7 @@ app.get("/api/points/:id/comments", authRequired, async (req, res) => {
       pointId,
     ]);
     if (!exists.rows[0])
-      return res.status(404).json({ error: "Nie znaleziono punktu" });
+      return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     const q = await pool.query(
       `SELECT id, point_id, user_id, user_email, body, created_at, edited, updated_at
@@ -526,7 +388,7 @@ app.post("/api/points/:id/comments", authRequired, async (req, res) => {
       pointId,
     ]);
     if (!exists.rows[0])
-      return res.status(404).json({ error: "Nie znaleziono punktu" });
+      return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     const q = await pool.query(
       `INSERT INTO point_comments (point_id, user_id, user_email, body)
@@ -542,107 +404,88 @@ app.post("/api/points/:id/comments", authRequired, async (req, res) => {
   }
 });
 
-// EDIT point comment (only author)
-app.put(
-  "/api/points/:id/comments/:commentId",
-  authRequired,
-  async (req, res) => {
-    try {
-      const pointId = Number(req.params.id);
-      const commentId = Number(req.params.commentId);
-      if (!Number.isFinite(pointId) || !Number.isFinite(commentId)) {
-        return res.status(400).json({ error: "Złe ID" });
-      }
-
-      const body = String(req.body.body || "").trim();
-      if (!body)
-        return res
-          .status(400)
-          .json({ error: "Treść komentarza jest wymagana" });
-      if (body.length > 5000)
-        return res
-          .status(400)
-          .json({ error: "Komentarz za długi (max 5000 znaków)" });
-
-      const cur = await pool.query(
-        `SELECT id, point_id, user_id
-         FROM point_comments
-         WHERE id=$1 AND point_id=$2`,
-        [commentId, pointId]
-      );
-
-      const row = cur.rows[0];
-      if (!row)
-        return res.status(404).json({ error: "Nie znaleziono komentarza" });
-
-      if (Number(row.user_id) !== Number(req.user.id)) {
-        return res.status(403).json({
-          error: "Brak uprawnień (to nie jest Twój komentarz)",
-        });
-      }
-
-      const q = await pool.query(
-        `UPDATE point_comments
-         SET body=$1, edited=true, updated_at=NOW()
-         WHERE id=$2
-         RETURNING id, point_id, user_id, user_email, body, created_at, edited, updated_at`,
-        [body, commentId]
-      );
-
-      res.json(q.rows[0]);
-    } catch (e) {
-      console.error("EDIT POINT COMMENT ERROR:", e);
-      res.status(500).json({ error: "DB error", details: String(e) });
+// EDIT point comment
+app.put("/api/points/:id/comments/:commentId", authRequired, async (req, res) => {
+  try {
+    const pointId = Number(req.params.id);
+    const commentId = Number(req.params.commentId);
+    if (!Number.isFinite(pointId) || !Number.isFinite(commentId)) {
+      return res.status(400).json({ error: "Złe ID" });
     }
-  }
-);
 
-// DELETE point comment (only author)
-app.delete(
-  "/api/points/:id/comments/:commentId",
-  authRequired,
-  async (req, res) => {
-    try {
-      const pointId = Number(req.params.id);
-      const commentId = Number(req.params.commentId);
-      if (!Number.isFinite(pointId) || !Number.isFinite(commentId)) {
-        return res.status(400).json({ error: "Złe ID" });
-      }
+    const body = String(req.body.body || "").trim();
+    if (!body) return res.status(400).json({ error: "Treść komentarza jest wymagana" });
+    if (body.length > 5000)
+      return res.status(400).json({ error: "Komentarz za długi (max 5000 znaków)" });
 
-      const cur = await pool.query(
-        `SELECT id, point_id, user_id
-         FROM point_comments
-         WHERE id=$1 AND point_id=$2`,
-        [commentId, pointId]
-      );
+    const cur = await pool.query(
+      `SELECT id, point_id, user_id
+       FROM point_comments
+       WHERE id=$1 AND point_id=$2`,
+      [commentId, pointId]
+    );
 
-      const row = cur.rows[0];
-      if (!row)
-        return res.status(404).json({ error: "Nie znaleziono komentarza" });
+    const row = cur.rows[0];
+    if (!row) return res.status(404).json({ error: "Nie znaleziono komentarza" });
 
-      if (Number(row.user_id) !== Number(req.user.id)) {
-        return res.status(403).json({
-          error: "Brak uprawnień (to nie jest Twój komentarz)",
-        });
-      }
-
-      await pool.query(
-        `DELETE FROM point_comments WHERE id=$1 AND point_id=$2`,
-        [commentId, pointId]
-      );
-
-      res.json({ ok: true, id: commentId });
-    } catch (e) {
-      console.error("DELETE POINT COMMENT ERROR:", e);
-      res.status(500).json({ error: "DB error", details: String(e) });
+    if (Number(row.user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Brak uprawnień (to nie jest Twój komentarz)" });
     }
+
+    const q = await pool.query(
+      `UPDATE point_comments
+       SET body=$1, edited=true, updated_at=NOW()
+       WHERE id=$2
+       RETURNING id, point_id, user_id, user_email, body, created_at, edited, updated_at`,
+      [body, commentId]
+    );
+
+    res.json(q.rows[0]);
+  } catch (e) {
+    console.error("EDIT POINT COMMENT ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
   }
-);
+});
+
+// DELETE point comment
+app.delete("/api/points/:id/comments/:commentId", authRequired, async (req, res) => {
+  try {
+    const pointId = Number(req.params.id);
+    const commentId = Number(req.params.commentId);
+    if (!Number.isFinite(pointId) || !Number.isFinite(commentId)) {
+      return res.status(400).json({ error: "Złe ID" });
+    }
+
+    const cur = await pool.query(
+      `SELECT id, point_id, user_id
+       FROM point_comments
+       WHERE id=$1 AND point_id=$2`,
+      [commentId, pointId]
+    );
+
+    const row = cur.rows[0];
+    if (!row) return res.status(404).json({ error: "Nie znaleziono komentarza" });
+
+    if (Number(row.user_id) !== Number(req.user.id)) {
+      return res.status(403).json({ error: "Brak uprawnień (to nie jest Twój komentarz)" });
+    }
+
+    await pool.query(`DELETE FROM point_comments WHERE id=$1 AND point_id=$2`, [
+      commentId,
+      pointId,
+    ]);
+
+    res.json({ ok: true, id: commentId });
+  } catch (e) {
+    console.error("DELETE POINT COMMENT ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
 
 /**
  * ===== UPDATES FEED =====
- * Zmienione: join point_comments -> assets (zamiast points)
- * Tabele: updates_read (jak w Twojej pierwszej wersji)
+ * NIE ruszam logiki (jak prosiłeś), zostawiam kind: points|tunnels
+ * ale "points" joinuje do assets
  */
 app.get("/api/updates/recent", authRequired, async (req, res) => {
   try {
@@ -758,10 +601,6 @@ app.post("/api/updates/read-all", authRequired, async (req, res) => {
   }
 });
 
-/**
- * Zostawiamy TYLKO JEDEN /api/updates/read (usunąłem duplikat)
- * body: { kind: 'points'|'tunnels', entity_id: number, comment_id: number }
- */
 app.post("/api/updates/read", authRequired, async (req, res) => {
   try {
     const kind = String(req.body?.kind || "");
