@@ -37,12 +37,13 @@ const POLAND_BOUNDS = [
   [54.9, 24.2],
 ];
 
-const STATUSES = [
-  { key: "planowany", label: "Planowany", color: "#3b82f6" },
-  { key: "przetarg", label: "Przetarg", color: "#f59e0b" },
-  { key: "realizacja", label: "Realizacja", color: "#22c55e" },
-  { key: "nieaktualny", label: "Nieaktualny", color: "#9ca3af" },
+const DEVICE_TYPES = [
+  { value: "tachimetr", label: "Tachimetr" },
+  { value: "pochylomierz", label: "Pochyłomierz" },
+  { value: "czujnik_drgan", label: "Czujnik drgań" },
+  { value: "inklinometr", label: "Inklinometr" },
 ];
+
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
@@ -1316,7 +1317,7 @@ function EditDeviceModal({
 }) {
   const [form, setForm] = useState({
     title: "",
-    status: "planowany",
+    status: "tachimetr",
     director: "",
     winner: "",
     note: "",
@@ -1865,15 +1866,15 @@ export default function App() {
 
           <label style={labelStyleLocal}>Status</label>
           <select
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            style={inputStyleLocal}
-          >
-            <option value="planowany">planowany</option>
-            <option value="przetarg">przetarg</option>
-            <option value="realizacja">realizacja</option>
-            <option value="nieaktualny">nieaktualny</option>
-          </select>
+  value={form.status}
+  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+>
+  {DEVICE_TYPES.map((t) => (
+    <option key={t.value} value={t.value}>
+      {t.label}
+    </option>
+  ))}
+</select>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
@@ -2067,7 +2068,7 @@ export default function App() {
   const [createOpen, setCreateOpen] = useState(false);
 const [createForm, setCreateForm] = useState({
   title: "",
-  status: "planowany",
+  status: "tachimetr",
   note: "",
   lat: "",
   lng: "",
