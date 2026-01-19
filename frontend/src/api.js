@@ -2,10 +2,16 @@
 
 const DEFAULT_API = "https://ewidencja-sprzetu.onrender.com";
 
-export const API_BASE =
+function normalizeBase(url) {
+  const s = String(url || "").trim();
+  return s.endsWith("/") ? s.slice(0, -1) : s;
+}
+
+export const API_BASE = normalizeBase(
   import.meta?.env?.VITE_API_URL ||
-  import.meta?.env?.NEXT_PUBLIC_API_URL ||
-  DEFAULT_API;
+    import.meta?.env?.NEXT_PUBLIC_API_URL ||
+    DEFAULT_API
+);
 
 export function setToken(token) {
   if (token) localStorage.setItem("token", token);
