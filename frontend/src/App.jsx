@@ -1986,9 +1986,11 @@ const counts = useMemo(() => {
   for (const t of DEVICE_TYPES) c[t.value] = 0;
 
   for (const p of points) {
-    const k = p.status;
-    c[k] = (c[k] || 0) + 1;
+    if (c[p.status] !== undefined) {
+      c[p.status]++;
+    }
   }
+
   return c;
 }, [points]);
 
@@ -2001,7 +2003,7 @@ const [createForm, setCreateForm] = useState({
   lng: "",
 });
 
- function showAllTypes() {
+function showAllTypes() {
   const obj = {};
   for (const t of DEVICE_TYPES) obj[t.value] = true;
   setVisibleTypes(obj);
