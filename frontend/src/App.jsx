@@ -1742,6 +1742,186 @@ export default function App() {
       [`${kind}:${id}`]: !!value,
     }));
   }
+  function CreateDeviceModal({
+  open,
+  onClose,
+  onCreate,
+  form,
+  setForm,
+  BORDER,
+  TEXT_LIGHT,
+  MUTED,
+  GLASS_BG,
+}) {
+  if (!open) return null;
+
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    background: "rgba(0,0,0,0.55)",
+    display: "grid",
+    placeItems: "center",
+    padding: 16,
+  };
+
+  const modalStyle = {
+    width: "min(640px, 100%)",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    background: GLASS_BG,
+    backgroundImage:
+      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+    color: TEXT_LIGHT,
+    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
+    overflow: "hidden",
+    backdropFilter: "blur(10px)",
+  };
+
+  const headerStyle = {
+    padding: "10px 12px",
+    borderBottom: `1px solid ${BORDER}`,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    fontWeight: 900,
+    background: "rgba(0,0,0,0.10)",
+  };
+
+  const bodyStyle = { padding: 12, display: "grid", gap: 10 };
+
+  const labelStyleLocal = {
+    fontSize: 12,
+    color: MUTED,
+    fontWeight: 800,
+    marginTop: 2,
+  };
+
+  const inputStyleLocal = {
+    boxSizing: "border-box",
+    width: "100%",
+    height: 38,
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.08)",
+    color: TEXT_LIGHT,
+    padding: "0 12px",
+    outline: "none",
+    fontSize: 12,
+    fontWeight: 700,
+  };
+
+  const textareaStyleLocal = {
+    ...inputStyleLocal,
+    height: 92,
+    padding: 10,
+    resize: "vertical",
+    lineHeight: 1.35,
+  };
+
+  const btnStyle = {
+    padding: "9px 10px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.08)",
+    color: TEXT_LIGHT,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+
+  return (
+    <div
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div style={modalStyle}>
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
+              Dodaj urządzenie (ręcznie)
+            </div>
+            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+              Wpisz współrzędne i zapisz.
+            </div>
+          </div>
+
+          <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}>
+            Zamknij
+          </button>
+        </div>
+
+        <div style={bodyStyle}>
+          <label style={labelStyleLocal}>Nazwa</label>
+          <input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            style={inputStyleLocal}
+            placeholder="np. Laptop Dell 5420"
+          />
+
+          <label style={labelStyleLocal}>Status</label>
+          <select
+            value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+            style={inputStyleLocal}
+          >
+            <option value="planowany">planowany</option>
+            <option value="przetarg">przetarg</option>
+            <option value="realizacja">realizacja</option>
+            <option value="nieaktualny">nieaktualny</option>
+          </select>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={labelStyleLocal}>Lat</label>
+              <input
+                value={form.lat}
+                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 52.2297"
+              />
+            </div>
+            <div>
+              <label style={labelStyleLocal}>Lng</label>
+              <input
+                value={form.lng}
+                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 21.0122"
+              />
+            </div>
+          </div>
+
+          <label style={labelStyleLocal}>Opis</label>
+          <textarea
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            style={textareaStyleLocal}
+            placeholder="Notatka do urządzenia…"
+          />
+
+          <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
+              Anuluj
+            </button>
+            <button
+              onClick={onCreate}
+              style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}
+            >
+              Zapisz i dodaj
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -1840,7 +2020,7 @@ export default function App() {
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [addMode, setAddMode] = useState("none"); // none | point
+  const [addMode, setAddMode] = useState("none"); // none | point | manual
   const [visibleStatus, setVisibleStatus] = useState({
     planowany: true,
     przetarg: true,
@@ -1884,6 +2064,14 @@ export default function App() {
     }
     return c;
   }, [points]);
+  const [createOpen, setCreateOpen] = useState(false);
+const [createForm, setCreateForm] = useState({
+  title: "",
+  status: "planowany",
+  note: "",
+  lat: "",
+  lng: "",
+});
 
   function toggleStatus(key) {
     setVisibleStatus((s) => ({ ...s, [key]: !s[key] }));
@@ -2130,6 +2318,46 @@ export default function App() {
       setApiError(`Nie mogę dodać urządzenia: ${String(e)}`);
     }
   }
+  async function createDeviceFromForm() {
+  setApiError("");
+
+  const lat = Number(createForm.lat);
+  const lng = Number(createForm.lng);
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    setApiError("Podaj poprawne współrzędne lat/lng.");
+    return;
+  }
+
+  const body = {
+    title: String(createForm.title || "Nowe urządzenie"),
+    note: String(createForm.note || ""),
+    status: String(createForm.status || "planowany"),
+    lat,
+    lng,
+  };
+
+  try {
+    const res = await authFetch(`${API}/points`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await readJsonOrThrow(res);
+    const normalized = { ...data, priority: data?.priority === true };
+
+    setPoints((p) => [normalized, ...p]);
+    setSelectedPointId(normalized.id);
+
+    focusPoint(normalized);
+
+    setCreateOpen(false);
+    setAddMode("none");
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
+  }
+}
 
   /** ===== LOGIN UI ===== */
   if (mode === "checking") {
@@ -2388,33 +2616,65 @@ export default function App() {
                   Dodawanie urządzenia
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
-                  <button
-                    onClick={() => {
-                      setAddMode((m) => (m === "point" ? "none" : "point"));
-                    }}
-                    style={{
-                      padding: "9px 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background:
-                        addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                    title="Kliknij mapę, aby dodać urządzenie"
-                  >
-                    ➕ Urządzenie
-                  </button>
-                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+  <button
+    onClick={() => {
+      // tryb ręczny
+      setAddMode("manual");
+      setCreateOpen(true);
+      setCreateForm({
+        title: "",
+        status: "planowany",
+        note: "",
+        lat: "",
+        lng: "",
+      });
+    }}
+    style={{
+      padding: "9px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: addMode === "manual" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+      color: TEXT_LIGHT,
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 12,
+    }}
+    title="Dodaj urządzenie przez wpisanie współrzędnych"
+  >
+    ➕ Dodaj urządzenie
+  </button>
 
-                <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
-                  {addMode === "point"
-                    ? "Kliknij na mapie, żeby dodać urządzenie."
-                    : "Wybierz tryb dodawania."}
-                </div>
+  <button
+    onClick={() => {
+      // tryb mapy
+      setCreateOpen(false);
+      setAddMode((m) => (m === "point" ? "none" : "point"));
+    }}
+    style={{
+      padding: "9px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+      color: TEXT_LIGHT,
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 12,
+    }}
+    title="Kliknij mapę, aby dodać urządzenie"
+  >
+    📍 Wskaż na mapie
+  </button>
+</div>
+
+<div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
+  {addMode === "manual"
+    ? "Dodawanie: ręcznie — wpisz współrzędne i zapisz."
+    : addMode === "point"
+    ? "Dodawanie: opis na mapie — kliknij na mapie, żeby dodać urządzenie."
+    : "Wybierz tryb dodawania."}
+</div>
+
               </div>
 
               {/* NARZĘDZIA */}
@@ -3148,6 +3408,21 @@ export default function App() {
           MUTED={MUTED}
           GLASS_BG={GLASS_BG_DARK}
         />
+        <CreateDeviceModal
+  open={createOpen}
+  onClose={() => {
+    setCreateOpen(false);
+    if (addMode === "manual") setAddMode("none");
+  }}
+  onCreate={createDeviceFromForm}
+  form={createForm}
+  setForm={setCreateForm}
+  BORDER={BORDER}
+  TEXT_LIGHT={TEXT_LIGHT}
+  MUTED={MUTED}
+  GLASS_BG={GLASS_BG_DARK}
+/>
+
       </main>
     </div>
   );
