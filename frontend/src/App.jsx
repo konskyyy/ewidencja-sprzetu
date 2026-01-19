@@ -1939,14 +1939,19 @@ export default function App() {
   const [loadingPoints, setLoadingPoints] = useState(false);
   const [apiError, setApiError] = useState("");
 
-  const pinIcons = useMemo(() => {
+ const pinIcons = useMemo(() => {
   const icons = {};
   for (const t of DEVICE_TYPES) {
     icons[t.value] = makePinIcon(typeColor(t.value));
   }
   icons.__default = makePinIcon(typeColor(null));
   return icons;
-}, []);
+}, [
+  DEVICE_COLORS.tachimetr,
+  DEVICE_COLORS.pochylomierz,
+  DEVICE_COLORS.czujnik_drgan,
+  DEVICE_COLORS.inklinometr,
+]);
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
