@@ -1539,10 +1539,10 @@ function EditDeviceModal({
 
           <label style={labelStyleLocal}>Rodzaj urządzenia</label>
           <select
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            style={inputStyleLocal}
-          >
+  value={form.status}
+  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+  style={inputStyleLocal}
+>
             {DEVICE_TYPES.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
