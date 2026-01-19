@@ -2001,10 +2001,7 @@ const [createForm, setCreateForm] = useState({
   lng: "",
 });
 
-  function toggleStatus(key) {
-    setVisibleStatus((s) => ({ ...s, [key]: !s[key] }));
-  }
-function showAllTypes() {
+ function showAllTypes() {
   const obj = {};
   for (const t of DEVICE_TYPES) obj[t.value] = true;
   setVisibleTypes(obj);
@@ -2016,86 +2013,86 @@ function hideAllTypes() {
   setVisibleTypes(obj);
 }
 
-  function focusPoint(pt) {
-    const map = mapRef.current;
-    if (!map || !pt) return;
+function focusPoint(pt) {
+  const map = mapRef.current;
+  if (!map || !pt) return;
 
-    const lat = Number(pt.lat);
-    const lng = Number(pt.lng);
+  const lat = Number(pt.lat);
+  const lng = Number(pt.lng);
 
-    map.flyTo([lat, lng], Math.max(map.getZoom(), 12), {
-      animate: true,
-      duration: 0.6,
-    });
+  map.flyTo([lat, lng], Math.max(map.getZoom(), 12), {
+    animate: true,
+    duration: 0.6,
+  });
 
-    setTimeout(() => {
-      const m = markerRefs.current[pt.id];
-      try {
-        m?.openPopup?.();
-      } catch {}
-    }, 250);
+  setTimeout(() => {
+    const m = markerRefs.current[pt.id];
+    try {
+      m?.openPopup?.();
+    } catch {}
+  }, 250);
+}
+
+function jumpToProject(kind, entityId) {
+  if (kind !== "points") {
+    // feed może zawierać stare wpisy innych typów – nie ruszamy feedu
+    return;
   }
 
-  function jumpToProject(kind, entityId) {
-    if (kind !== "points") {
-      // feed może zawierać stare wpisy innych typów – nie ruszamy feedu
-      return;
-    }
+  const pt = points.find((x) => String(x.id) === String(entityId));
+  if (!pt) return;
+  setSelectedPointId(pt.id);
+  focusPoint(pt);
+}
 
-    const pt = points.find((x) => String(x.id) === String(entityId));
-    if (!pt) return;
-    setSelectedPointId(pt.id);
-    focusPoint(pt);
-  }
+/** ===== World mask ===== */
+const [worldMask, setWorldMask] = useState(null);
+useEffect(() => {
+  let alive = true;
 
-  /** ===== World mask ===== */
-  const [worldMask, setWorldMask] = useState(null);
-  useEffect(() => {
-    let alive = true;
+  (async () => {
+    try {
+      const res = await fetch(NE_COUNTRIES_URL);
+      if (!res.ok) throw new Error(`GeoJSON HTTP ${res.status}`);
+      const fc = await res.json();
 
-    (async () => {
-      try {
-        const res = await fetch(NE_COUNTRIES_URL);
-        if (!res.ok) throw new Error(`GeoJSON HTTP ${res.status}`);
-        const fc = await res.json();
+      const keepFeatures = (fc.features || []).filter((f) => {
+        const a3 =
+          f?.properties?.ADM0_A3 || f?.properties?.ISO_A3 || f?.properties?.iso_a3;
+        return KEEP_COUNTRIES_A3.has(a3);
+      });
 
-        const keepFeatures = (fc.features || []).filter((f) => {
-          const a3 =
-            f?.properties?.ADM0_A3 || f?.properties?.ISO_A3 || f?.properties?.iso_a3;
-          return KEEP_COUNTRIES_A3.has(a3);
-        });
+      const holes = [];
+      for (const f of keepFeatures) holes.push(...extractOuterRings(f.geometry));
 
-        const holes = [];
-        for (const f of keepFeatures) holes.push(...extractOuterRings(f.geometry));
-
-        const mask = {
-          type: "Feature",
-          properties: { name: "world-mask" },
-          geometry: {
-            type: "Polygon",
-            coordinates: [
-              [
-                [-180, -90],
-                [180, -90],
-                [180, 90],
-                [-180, 90],
-                [-180, -90],
-              ],
-              ...holes,
+      const mask = {
+        type: "Feature",
+        properties: { name: "world-mask" },
+        geometry: {
+          type: "Polygon",
+          coordinates: [
+            [
+              [-180, -90],
+              [180, -90],
+              [180, 90],
+              [-180, 90],
+              [-180, -90],
             ],
-          },
-        };
+            ...holes,
+          ],
+        },
+      };
 
-        if (alive) setWorldMask(mask);
-      } catch {
-        if (alive) setWorldMask(null);
-      }
-    })();
+      if (alive) setWorldMask(mask);
+    } catch {
+      if (alive) setWorldMask(null);
+    }
+  })();
 
-    return () => {
-      alive = false;
-    };
-  }, []);
+  return () => {
+    alive = false;
+  };
+}, []);
 
   /** ===== Load data ===== */
   async function loadPoints() {
