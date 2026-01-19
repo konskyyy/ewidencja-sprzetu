@@ -43,11 +43,23 @@ const DEVICE_TYPES = [
   { value: "czujnik_drgan", label: "Czujnik drgań" },
   { value: "inklinometr", label: "Inklinometr" },
 ];
-const STATUSES = DEVICE_TYPES.map((t) => ({
-  key: t.value,
-  label: t.label,
-  color: "#3b82f6",
-}));
+
+// jeden „source of truth” kolorów
+const DEVICE_COLORS = {
+  tachimetr: "#3b82f6",      // niebieski
+  pochylomierz: "#22c55e",   // zielony
+  czujnik_drgan: "#f59e0b",  // pomarańczowy
+  inklinometr: "#a855f7",    // fiolet
+};
+
+function typeLabel(v) {
+  return DEVICE_TYPES.find((t) => t.value === v)?.label || "Inne";
+}
+
+function typeColor(v) {
+  return DEVICE_COLORS[v] || "#9ca3af"; // fallback szary
+}
+
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
@@ -1928,12 +1940,12 @@ export default function App() {
   const [apiError, setApiError] = useState("");
 
   const pinIcons = useMemo(() => {
-  const out = {};
+  const icons = {};
   for (const t of DEVICE_TYPES) {
-    out[t.value] = makePinIcon(statusColor(t.value));
+    icons[t.value] = makePinIcon(typeColor(t.value));
   }
-  out.__default = makePinIcon(statusColor("")); // fallback
-  return out;
+  icons.__default = makePinIcon(typeColor(null));
+  return icons;
 }, []);
 
   /** ===== Map + refs (zoom/popup) ===== */
@@ -1945,10 +1957,10 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
-  const [visibleStatus, setVisibleStatus] = useState(() => {
-  const s = {};
-  for (const t of DEVICE_TYPES) s[t.value] = true;
-  return s;
+  const [visibleTypes, setVisibleTypes] = useState(() => {
+  const obj = {};
+  for (const t of DEVICE_TYPES) obj[t.value] = true;
+  return obj;
 });
 
 
