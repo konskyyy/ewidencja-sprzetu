@@ -1344,6 +1344,22 @@ function EditDeviceModal({
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+  function normalizeDeviceType(v) {
+  const s = String(v || "").trim().toLowerCase();
+
+  // jeśli już jest nowy typ — zostaw
+  if (s === "tachimetr") return "tachimetr";
+  if (s === "pochylomierz") return "pochylomierz";
+  if (s === "czujnik_drgan") return "czujnik_drgan";
+  if (s === "inklinometr") return "inklinometr";
+
+  // stare statusy -> domyślny nowy typ
+  if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny")
+    return "tachimetr";
+
+  // cokolwiek innego -> domyślnie
+  return "tachimetr";
+}
 
   useEffect(() => {
     if (!open || !device) return;
@@ -1353,7 +1369,7 @@ function EditDeviceModal({
 
     setForm({
       title: device.title ?? "",
-      status: device.status ?? "tachimetr",
+      status: normalizeDeviceType(device.status),
       note: device.note ?? "",
     });
   }, [open, device]);
@@ -1367,7 +1383,7 @@ function EditDeviceModal({
 
     const payload = {
       title: String(form.title || ""),
-      status: String(form.status || "tachimetr"),
+      status: normalizeDeviceType(form.status),
       note: String(form.note || ""),
     };
 
