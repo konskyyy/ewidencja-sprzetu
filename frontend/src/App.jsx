@@ -1315,14 +1315,17 @@ function EditDeviceModal({
   MUTED,
   GLASS_BG,
 }) {
+  const DEVICE_TYPES = [
+    { value: "tachimetr", label: "Tachimetr" },
+    { value: "pochylomierz", label: "Pochyłomierz" },
+    { value: "czujnik_drgan", label: "Czujnik drgań" },
+    { value: "inklinometr", label: "Inklinometr" },
+  ];
+
   const [form, setForm] = useState({
     title: "",
     status: "tachimetr",
-    director: "",
-    winner: "",
     note: "",
-    acquired: false,
-    lost: false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -1336,12 +1339,8 @@ function EditDeviceModal({
 
     setForm({
       title: device.title ?? "",
-      status: device.status ?? "planowany",
-      director: device.director ?? "",
-      winner: device.winner ?? "",
+      status: device.status ?? "tachimetr",
       note: device.note ?? "",
-      acquired: !!device.acquired,
-      lost: !!device.lost,
     });
   }, [open, device]);
 
@@ -1354,16 +1353,19 @@ function EditDeviceModal({
 
     const payload = {
       title: String(form.title || ""),
-      status: String(form.status || "planowany"),
-      director: String(form.director || ""),
-      winner: String(form.winner || ""),
+      status: String(form.status || "tachimetr"),
       note: String(form.note || ""),
-      acquired: !!form.acquired,
-      lost: !!form.lost,
     };
 
-    if (!String(payload.title || "").trim()) {
+    if (!payload.title.trim()) {
       setErr("Nazwa urządzenia nie może być pusta.");
+      return;
+    }
+
+    // bezpieczeństwo: jeśli ktoś podmieni value ręcznie
+    const allowed = new Set(DEVICE_TYPES.map((x) => x.value));
+    if (!allowed.has(payload.status)) {
+      setErr("Wybierz poprawny rodzaj urządzenia.");
       return;
     }
 
@@ -1459,43 +1461,6 @@ function EditDeviceModal({
     transition: "transform 120ms ease, background 120ms ease, border-color 120ms ease",
   };
 
-  const toggleTileStyle = (active, tone) => {
-    const base = {
-      display: "flex",
-      alignItems: "center",
-      gap: 10,
-      cursor: "pointer",
-      userSelect: "none",
-      fontWeight: 800,
-      fontSize: 12,
-      padding: "10px 12px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background: "rgba(255,255,255,0.05)",
-      color: MUTED,
-    };
-
-    if (!active) return base;
-
-    if (tone === "green") {
-      return {
-        ...base,
-        color: "rgba(34,197,94,0.95)",
-        border: "1px solid rgba(34,197,94,0.55)",
-        background: "rgba(34,197,94,0.10)",
-        boxShadow: "0 0 14px rgba(34,197,94,0.14)",
-      };
-    }
-
-    return {
-      ...base,
-      color: "rgba(239,68,68,0.95)",
-      border: "1px solid rgba(239,68,68,0.55)",
-      background: "rgba(239,68,68,0.10)",
-      boxShadow: "0 0 14px rgba(239,68,68,0.12)",
-    };
-  };
-
   return (
     <div
       style={overlayStyle}
@@ -1558,63 +1523,18 @@ function EditDeviceModal({
             style={inputStyleLocal}
           />
 
-          <label style={labelStyleLocal}>Status</label>
+          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
           <select
             value={form.status}
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
             style={inputStyleLocal}
           >
-            <option value="planowany">planowany</option>
-            <option value="przetarg">przetarg</option>
-            <option value="realizacja">realizacja</option>
-            <option value="nieaktualny">nieaktualny</option>
+            {DEVICE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
           </select>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 2 }}>
-            <label style={toggleTileStyle(!!form.acquired, "green")}>
-              <input
-                type="checkbox"
-                checked={!!form.acquired}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    acquired: e.target.checked,
-                    lost: e.target.checked ? false : f.lost,
-                  }))
-                }
-              />
-              Oznacz jako pozyskane
-            </label>
-
-            <label style={toggleTileStyle(!!form.lost, "red")}>
-              <input
-                type="checkbox"
-                checked={!!form.lost}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    lost: e.target.checked,
-                    acquired: e.target.checked ? false : f.acquired,
-                  }))
-                }
-              />
-              Oznacz jako przegrane
-            </label>
-          </div>
-
-          <label style={labelStyleLocal}>Dyrektor</label>
-          <input
-            value={form.director}
-            onChange={(e) => setForm((f) => ({ ...f, director: e.target.value }))}
-            style={inputStyleLocal}
-          />
-
-          <label style={labelStyleLocal}>Firma</label>
-          <input
-            value={form.winner}
-            onChange={(e) => setForm((f) => ({ ...f, winner: e.target.value }))}
-            style={inputStyleLocal}
-          />
 
           <label style={labelStyleLocal}>Opis urządzenia</label>
           <textarea
@@ -1654,6 +1574,7 @@ function EditDeviceModal({
     </div>
   );
 }
+
 
 function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
   useMapEvents({
