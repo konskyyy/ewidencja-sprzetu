@@ -2,14 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+# Skopiuj manifesty z BACKENDU
+COPY backend/package*.json ./
 
-# Nie używamy npm ci, bo nie masz package-lock.json
 RUN npm install --omit=dev
 
-COPY . .
+# Skopiuj kod backendu
+COPY backend/ ./
 
-ENV NODE_ENV=production
-EXPOSE 3001
+EXPOSE 3000
 
 CMD ["node", "index.js"]
