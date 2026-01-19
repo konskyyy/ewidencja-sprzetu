@@ -636,7 +636,7 @@ function JournalPanel({
                   color: MUTED,
                 }}
               >
-                Brak aktywności w ostatnim czasie dla tego projektu.
+                Brak aktywności w ostatnim czasie dla tego urządzenia.
               </div>
             ) : (
               <div style={{ ...listWrapStyle, maxHeight: 160 }}>
@@ -759,11 +759,11 @@ function JournalPanel({
           <div style={{ display: "grid", gap: 8 }}>
             <div>
               <div style={sectionTitleStyle}>Wszystkie wpisy</div>
-              <div style={sectionHintStyle}>Pełna historia projektu.</div>
+              <div style={sectionHintStyle}>Pełna historia sprzętu.</div>
             </div>
 
             {items.length === 0 ? (
-              <div style={{ fontSize: 12, color: MUTED }}>Brak wpisów dla tego projektu.</div>
+              <div style={{ fontSize: 12, color: MUTED }}>Brak wpisów dla tego urządzenia.</div>
             ) : (
               <div style={{ ...listWrapStyle, maxHeight: maxHeightAll }}>
                 {items.map((c) => {
@@ -1547,7 +1547,7 @@ function EditProjectModal({
               {title}
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              Dostosuj dane projektu i zapisz zmiany.
+              Dostosuj dane urządzenia i zapisz zmiany.
             </div>
           </div>
 
@@ -1646,7 +1646,7 @@ function EditProjectModal({
             style={inputStyleLocal}
           />
 
-          <label style={labelStyleLocal}>Opis projektu</label>
+          <label style={labelStyleLocal}>Opis urządzenia</label>
           <textarea
             value={form.note}
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
@@ -2539,7 +2539,7 @@ export default function App() {
         <div style={cardStyle}>
           <div style={brandRow}>
             <div style={brandDot} />
-            <div style={brandText}>Mapa projektów - BD</div>
+            <div style={brandText}>Ewidencja sprzętu</div>
           </div>
 
           <h2 style={titleStyle}>Logowanie</h2>
@@ -2690,7 +2690,7 @@ export default function App() {
                 whiteSpace: "nowrap",
               }}
             >
-              Mapa projektów
+              Ewiedencja sprzętu
             </div>
           </div>
 
@@ -2777,7 +2777,7 @@ export default function App() {
             marginBottom: 10,
           }}
         >
-          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Dodawanie projektów</div>
+          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Dodawanie urządzeń</div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <button
@@ -2988,7 +2988,7 @@ export default function App() {
               marginBottom: 8,
             }}
           >
-            <div style={{ fontWeight: 900 }}>Lista projektów</div>
+            <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
             <div
               style={{
@@ -3020,7 +3020,7 @@ export default function App() {
   className="projectSearch"
   value={projectQuery}
   onChange={(e) => setProjectQuery(e.target.value)}
-  placeholder="Szukaj projektu… (wpisz nazwę lub słowo klucz)"
+  placeholder="Szukaj urządzenia… (wpisz nazwę lub słowo klucz)"
   style={{
     width: "100%",
     boxSizing: "border-box",
