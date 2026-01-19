@@ -122,14 +122,41 @@ app.post("/api/auth/login", async (req, res) => {
     return res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
-
-app.get("/api/auth/me", authRequired, (req, res) => {
-  res.json({ user: req.user });
-});
-
 /**
  * ===== POINTS API =====
  */
+app.get("/api/points", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        status,
+        lat,
+        lng,
+        notes
+      FROM assets
+      ORDER BY id DESC
+    `);
+
+    // adapter: assets → points
+    const points = result.rows.map(a => ({
+      id: a.id,
+      title: a.name,   // jeśli frontend używa title
+      name: a.name,    // na wszelki wypadek oba
+      status: a.status,
+      lat: a.lat,
+      lng: a.lng,
+      notes: a.notes,
+    }));
+
+    res.json(points);
+  } catch (err) {
+    console.error("GET /api/points error:", err);
+    res.status(500).json({ error: "DB error" });
+  }
+});
+
 
 // GET all points (priority first)
 app.get("/api/points", authRequired, async (req, res) => {
