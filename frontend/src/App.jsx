@@ -3017,122 +3017,118 @@ async function togglePointPriority(pt) {
           }}
         >
           {/* STATUSY */}
-          <div
-            style={{
-              borderRadius: 16,
-              border: `1px solid ${BORDER}`,
-              background: GLASS_BG,
-              backgroundImage:
-                "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-              backdropFilter: "blur(8px)",
-              color: TEXT_LIGHT,
-              overflow: "hidden",
-              boxShadow: GLASS_SHADOW,
-            }}
-          >
-            <div
-              onClick={() => setFiltersOpen((o) => !o)}
-              style={{
-                padding: "10px 12px",
-                cursor: "pointer",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                fontWeight: 900,
-              }}
-            >
-              <span>Statusy</span>
-              <span style={{ fontSize: 12, color: MUTED }}>
-                {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
-              </span>
-            </div>
-
-            {filtersOpen ? (
-              <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {DEVICE_TYPES.map((t) => (
-  <label
-    key={t.value}
+<div
+  style={{
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    background: GLASS_BG,
+    backgroundImage:
+      "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+    backdropFilter: "blur(8px)",
+    color: TEXT_LIGHT,
+    overflow: "hidden",
+    boxShadow: GLASS_SHADOW,
+  }}
+>
+  <div
+    onClick={() => setFiltersOpen((o) => !o)}
     style={{
-      display: "flex",
-      alignItems: "center",
-      gap: 8,
+      padding: "10px 12px",
       cursor: "pointer",
-      opacity: visibleTypes[t.value] ? 1 : 0.55,
-      userSelect: "none",
-      padding: "8px 10px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background: "rgba(255,255,255,0.04)",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      fontWeight: 900,
     }}
   >
-    <input
-      type="checkbox"
-      checked={visibleTypes[t.value]}
-      onChange={() =>
-        setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))
-      }
-      style={{ transform: "scale(0.95)" }}
-    />
-    <span
-      style={{
-        width: 10,
-        height: 10,
-        borderRadius: 999,
-        background: typeColor(t.value),
-        flexShrink: 0,
-      }}
-    />
-    <span style={{ fontWeight: 800, fontSize: 12, lineHeight: 1.1 }}>
-      {t.label}
+    <span>Rodzaje urządzeń</span>
+    <span style={{ fontSize: 12, color: MUTED }}>
+      {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
     </span>
-    <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>
-      {counts[t.value] ?? 0}
-    </span>
-  </label>
-))}
+  </div>
 
-      
-                </div>
+  {filtersOpen ? (
+    <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {DEVICE_TYPES.map((t) => (
+          <label
+            key={t.value}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              cursor: "pointer",
+              opacity: visibleTypes[t.value] ? 1 : 0.55,
+              userSelect: "none",
+              padding: "8px 10px",
+              borderRadius: 12,
+              border: `1px solid ${BORDER}`,
+              background: "rgba(255,255,255,0.04)",
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={visibleTypes[t.value]}
+              onChange={() =>
+                setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))
+              }
+              style={{ transform: "scale(0.95)" }}
+            />
+            <span
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 999,
+                background: typeColor(t.value),
+                flexShrink: 0,
+              }}
+            />
+            <span style={{ fontWeight: 800, fontSize: 12 }}>
+              {t.label}
+            </span>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>
+              {counts[t.value]}
+            </span>
+          </label>
+        ))}
+      </div>
 
-                <div style={{ display: "flex", gap: 8, marginTop: 2 }}>
-                  <button
-                    onClick={showAllTypes}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: 10,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                      lineHeight: 1,
-                    }}
-                  >
-                    Pokaż wszystko
-                  </button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={showAllTypes}
+          style={{
+            padding: "8px 10px",
+            borderRadius: 10,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.08)",
+            color: TEXT_LIGHT,
+            cursor: "pointer",
+            fontWeight: 800,
+            fontSize: 12,
+          }}
+        >
+          Pokaż wszystko
+        </button>
 
-                  <button
-                    onClick={hideAllTypes}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: 10,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.05)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                      lineHeight: 1,
-                    }}
-                  >
-                    Ukryj wszystko
-                  </button>
-                </div>
-              </div>
-            ) : null}
-          </div>
+        <button
+          onClick={hideAllTypes}
+          style={{
+            padding: "8px 10px",
+            borderRadius: 10,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.05)",
+            color: TEXT_LIGHT,
+            cursor: "pointer",
+            fontWeight: 800,
+            fontSize: 12,
+          }}
+        >
+          Ukryj wszystko
+        </button>
+      </div>
+    </div>
+  ) : null}
+</div>
 
           {/* DZIENNIK */}
           <JournalPanel
