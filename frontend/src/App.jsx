@@ -14,12 +14,7 @@ import {
   useMap,
   ZoomControl,
   GeoJSON,
-  FeatureGroup,
-  Polyline,
-  Tooltip,
 } from "react-leaflet";
-
-import L from "leaflet";
 
 /** ===== API ===== */
 const API = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
@@ -76,10 +71,6 @@ function statusColor(status) {
   if (status === "realizacja") return "#22c55e";
   if (status === "nieaktualny") return "#9ca3af";
   return "#3b82f6";
-}
-
-function tunnelColor(status) {
-  return statusColor(status);
 }
 
 function pinSvg(color) {
@@ -1712,34 +1703,6 @@ function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
 }
 
 export default function App() {
-  /** ===== Leaflet Draw init ===== */
-  const [drawReady, setDrawReady] = useState(false);
-
-  const drawPolylineRef = useRef(null);
-  const editToolRef = useRef(null);
-  const deleteToolRef = useRef(null);
-
-  // active tool UI highlight
-  const [activeDrawTool, setActiveDrawTool] = useState("draw"); // draw | edit | delete
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      try {
-        window.L = L;
-        await import("leaflet-draw");
-        if (!alive) return;
-        setDrawReady(true);
-      } catch (e) {
-        console.error("Leaflet draw init failed:", e);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   const [projectQuery, setProjectQuery] = useState("");
 
@@ -1860,9 +1823,6 @@ export default function App() {
     setSelectedPointId(null);
     setPoints([]);
 
-    setSelectedTunnelId(null);
-    setTunnels([]);
-
     if (reason === "expired") setAuthNotice("Sesja wygasła — zaloguj się ponownie.");
     else setAuthNotice("");
   }
@@ -1895,29 +1855,16 @@ export default function App() {
     };
   }, []);
 
-  /** ===== TUNNELS ===== */
-  const [tunnels, setTunnels] = useState([]);
-  const [selectedTunnelId, setSelectedTunnelId] = useState(null);
-
-  const selectedTunnel = useMemo(
-    () => tunnels.find((t) => t.id === selectedTunnelId) || null,
-    [tunnels, selectedTunnelId]
-  );
-
-  const [loadingTunnels, setLoadingTunnels] = useState(false);
-
-  const drawGroupRef = useRef(null);
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
   const markerRefs = useRef({});
-  const tunnelRefs = useRef({});
   const suppressNextMapClickRef = useRef(false);
 
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [addMode, setAddMode] = useState("none"); // none | point | tunnel
+  const [addMode, setAddMode] = useState("none"); // none | point
   const [visibleStatus, setVisibleStatus] = useState({
     planowany: true,
     przetarg: true,
@@ -2126,133 +2073,80 @@ export default function App() {
     }
   }
 
-  async function loadTunnels() {
-    setLoadingTunnels(true);
-    setApiError("");
-    try {
-      const res = await authFetch(`${API}/tunnels`);
-      const data = await readJsonOrThrow(res);
-      setTunnels(
-        Array.isArray(data) ? data.map((t) => ({ ...t, priority: t.priority === true })) : []
-      );
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę pobrać tuneli: ${String(e)}`);
-    } finally {
-      setLoadingTunnels(false);
-    }
-  }
-
   useEffect(() => {
     if (mode !== "app") return;
     loadPoints();
-    loadTunnels();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   async function deleteSelectedProject() {
-    const pt = selectedPoint;
-    const tl = selectedTunnel;
+  const pt = selectedPoint;
+  if (!pt) return;
 
-    if (!pt && !tl) return;
+  const label = `urządzenie #${pt.id} (${pt.title || "bez nazwy"})`;
+  const ok = window.confirm(`Na pewno usunąć ${label}?`);
+  if (!ok) return;
 
-    const label = pt
-      ? `punkt #${pt.id} (${pt.title || "bez tytułu"})`
-      : `tunel #${tl.id} (${tl.name || "bez nazwy"})`;
+  setApiError("");
 
-    const ok = window.confirm(`Na pewno usunąć ${label}?`);
-    if (!ok) return;
+  try {
+    const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
+    await readJsonOrThrow(res);
 
-    setApiError("");
+    setPoints((prev) => prev.filter((p) => p.id !== pt.id));
+    setSelectedPointId(null);
 
     try {
-      if (pt) {
-        const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
-        await readJsonOrThrow(res);
+      mapRef.current?.closePopup?.();
+    } catch {}
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(`Nie mogę usunąć urządzenia: ${String(e?.message || e)}`);
 
-        setPoints((prev) => prev.filter((p) => p.id !== pt.id));
-        setSelectedPointId(null);
-      } else {
-        const res = await authFetch(`${API}/tunnels/${tl.id}`, { method: "DELETE" });
-        await readJsonOrThrow(res);
-
-        setTunnels((prev) => prev.filter((t) => t.id !== tl.id));
-        setSelectedTunnelId(null);
-      }
-
-      try {
-        mapRef.current?.closePopup?.();
-      } catch {}
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę usunąć: ${String(e?.message || e)}`);
-
-      try {
-        await loadPoints();
-        await loadTunnels();
-      } catch {}
-    }
+    try {
+      await loadPoints();
+    } catch {}
   }
+}
+
 
   async function saveEditedProject(payload) {
-    const pt = selectedPoint;
-    const tl = selectedTunnel;
-    if (!pt && !tl) return;
+  const pt = selectedPoint;
+  if (!pt) return;
 
-    setApiError("");
+  setApiError("");
 
-    try {
-      if (pt) {
-        const res = await authFetch(`${API}/points/${pt.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            lat: pt.lat,
-            lng: pt.lng,
-            title: payload.title,
-            director: payload.director,
-            winner: payload.winner,
-            note: payload.note,
-            status: payload.status,
-          }),
-        });
+  try {
+    const res = await authFetch(`${API}/points/${pt.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lat: pt.lat,
+        lng: pt.lng,
+        title: payload.title,
+        director: payload.director,
+        winner: payload.winner,
+        note: payload.note,
+        status: payload.status,
+      }),
+    });
 
-        const updated = await readJsonOrThrow(res);
-        setPoints((prev) =>
-          prev.map((p) =>
-            p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
-          )
-        );
-        setSelectedPointId(updated.id);
-        setAcquired("points", updated.id, !!payload.acquired);
-      } else {
-        const res = await authFetch(`${API}/tunnels/${tl.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            path: tl.path || [],
-            name: payload.name,
-            director: payload.director,
-            winner: payload.winner,
-            note: payload.note,
-            status: payload.status,
-          }),
-        });
+    const updated = await readJsonOrThrow(res);
 
-        const updated = await readJsonOrThrow(res);
-        setTunnels((prev) =>
-          prev.map((t) =>
-            t.id === updated.id ? { ...updated, priority: updated.priority === true } : t
-          )
-        );
-        setSelectedTunnelId(updated.id);
-        setAcquired("tunnels", updated.id, !!payload.acquired);
-      }
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      throw e;
-    }
+    setPoints((prev) =>
+      prev.map((p) =>
+        p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
+      )
+    );
+
+    setSelectedPointId(updated.id);
+    setAcquired("points", updated.id, !!payload.acquired);
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    throw e;
   }
+}
+
 
   async function togglePointPriority(pt) {
     if (!pt) return;
@@ -2272,27 +2166,6 @@ export default function App() {
     } catch (e) {
       if (e?.status === 401) return logout("expired");
       setApiError(`Nie mogę ustawić priorytetu punktu: ${String(e?.message || e)}`);
-    }
-  }
-
-  async function toggleTunnelPriority(t) {
-    if (!t) return;
-    setApiError("");
-    try {
-      const res = await authFetch(`${API}/tunnels/${t.id}/priority`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priority: !(t.priority === true) }),
-      });
-      const updated = await readJsonOrThrow(res);
-      setTunnels((prev) =>
-        prev.map((x) =>
-          x.id === updated.id ? { ...updated, priority: updated.priority === true } : x
-        )
-      );
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setApiError(`Nie mogę ustawić priorytetu tunelu: ${String(e?.message || e)}`);
     }
   }
 
@@ -2779,49 +2652,33 @@ export default function App() {
         >
           <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Dodawanie urządzeń</div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button
-              onClick={() => {
-                setActiveDrawTool("draw");
-                setAddMode((m) => (m === "point" ? "none" : "point"));
-              }}
-              style={{
-                padding: "9px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background:
-                  addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-              title="Kliknij mapę, aby dodać punkt"
-            >
-              🎯 Punkt
-            </button>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}>
+  <button
+    onClick={() => {
+      setAddMode((m) => (m === "point" ? "none" : "point"));
+    }}
+    style={{
+      padding: "9px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+      color: TEXT_LIGHT,
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 12,
+    }}
+    title="Kliknij mapę, aby dodać urządzenie"
+  >
+    ➕ Urządzenie
+  </button>
+</div>
 
-            <button
-              onClick={() => {
-                setActiveDrawTool("draw");
-                setAddMode((m) => (m === "tunnel" ? "none" : "tunnel"));
-              }}
-              style={{
-                padding: "9px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background:
-                  addMode === "tunnel" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-              title="Rysuj linię na mapie"
-            >
-              🧵 Tunel
-            </button>
-          </div>
+<div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
+  {addMode === "point"
+    ? "Kliknij na mapie, żeby dodać urządzenie."
+    : "Wybierz tryb dodawania."}
+</div>
+
 
           <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
             {addMode === "point"
@@ -2861,7 +2718,6 @@ export default function App() {
             <button
               onClick={() => {
                 loadPoints();
-                loadTunnels();
               }}
               style={{
                 width: "100%",
@@ -2875,7 +2731,7 @@ export default function App() {
                 fontSize: 12,
               }}
             >
-              {loadingPoints || loadingTunnels ? "Ładuję..." : "Odśwież"}
+              {loadingPoints ? "Ładuję..." : "Odśwież"}
             </button>
 
             <button
@@ -2907,7 +2763,6 @@ export default function App() {
               <button
                 onClick={() => {
                   if (selectedPoint) togglePointPriority(selectedPoint);
-                  else toggleTunnelPriority(selectedTunnel);
                 }}
                 style={{
                   padding: "9px 10px",
@@ -3166,159 +3021,72 @@ export default function App() {
         ) : null}
 
         {/* ===== górna zakładka narzędzi (tylko w addMode) ===== */}
-        {addMode !== "none" ? (
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 1800,
-              width: "min(520px, calc(100% - 420px))",
-              maxWidth: "52vw",
-              borderRadius: 16,
-              border: `1px solid ${BORDER}`,
-              background: GLASS_BG,
-              backgroundImage:
-                "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-              color: TEXT_LIGHT,
-              boxShadow: GLASS_SHADOW,
-              overflow: "hidden",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div
-              style={{
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-                fontWeight: 900,
-                background: "rgba(0,0,0,0.10)",
-              }}
-            >
-              <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>
-                    {addMode === "point" ? "Tryb: Punkt" : "Tryb: Tunel"}
-                  </span>
-                  <span style={{ fontSize: 11, color: MUTED, fontWeight: 800, opacity: 0.9 }}>
-                    {addMode === "point"
-                      ? "Kliknij na mapie, aby dodać marker."
-                      : "Narysuj linię na mapie (klik/klik/klik i zakończ)."}
-                  </span>
-                </div>
+       {addMode === "point" ? (
+  <div
+    style={{
+      position: "absolute",
+      top: 12,
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: 1800,
+      width: "min(520px, calc(100% - 420px))",
+      maxWidth: "52vw",
+      borderRadius: 16,
+      border: `1px solid ${BORDER}`,
+      background: GLASS_BG,
+      backgroundImage:
+        "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+      color: TEXT_LIGHT,
+      boxShadow: GLASS_SHADOW,
+      overflow: "hidden",
+      backdropFilter: "blur(8px)",
+    }}
+  >
+    <div
+      style={{
+        padding: "10px 12px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        fontWeight: 900,
+        background: "rgba(0,0,0,0.10)",
+      }}
+    >
+      <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ whiteSpace: "nowrap" }}>Tryb: Urządzenie</span>
+          <span style={{ fontSize: 11, color: MUTED, fontWeight: 800, opacity: 0.9 }}>
+            Kliknij na mapie, aby dodać marker.
+          </span>
+        </div>
 
-                {addMode === "tunnel" && drawReady ? (
-                  <div
-                    style={{
-                      paddingTop: 10,
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                    }}
-                  >
-                    <button
-                      title="Rysuj tunel"
-                      onClick={() => {
-                        setActiveDrawTool("draw");
-                        editToolRef.current?.disable?.();
-                        deleteToolRef.current?.disable?.();
-                        drawPolylineRef.current?.enable?.();
-                      }}
-                      style={toolBtnStyle(activeDrawTool === "draw")}
-                    >
-                      ━
-                    </button>
+        <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, opacity: 0.85 }}>
+          Po dodaniu urządzenia tryb wyłączy się automatycznie.
+        </div>
+      </div>
 
-                    <button
-                      title="Edytuj geometrię"
-                      onClick={() => {
-                        setActiveDrawTool("edit");
-                        drawPolylineRef.current?.disable?.();
-                        deleteToolRef.current?.disable?.();
-                        editToolRef.current?.enable?.();
-                      }}
-                      style={toolBtnStyle(activeDrawTool === "edit")}
-                    >
-                      ✏️
-                    </button>
-
-                    <button
-                      title="Usuń tunel"
-                      onClick={() => {
-                        setActiveDrawTool("delete");
-                        drawPolylineRef.current?.disable?.();
-                        editToolRef.current?.disable?.();
-                        deleteToolRef.current?.enable?.();
-                      }}
-                      style={{
-                        ...toolBtnStyle(activeDrawTool === "delete"),
-                        color: "#f87171",
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                ) : null}
-
-                <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, opacity: 0.85 }}>
-                  {addMode === "point"
-                    ? "Po dodaniu punktu tryb wyłączy się automatycznie."
-                    : "Po zapisaniu tunelu tryb wyłączy się automatycznie."}
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                <button
-                  onClick={() => {
-                    setActiveDrawTool("draw");
-                    setAddMode(addMode === "point" ? "tunnel" : "point");
-                  }}
-                  style={{
-                    padding: "9px 10px",
-                    borderRadius: 12,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.06)",
-                    color: TEXT_LIGHT,
-                    cursor: "pointer",
-                    fontWeight: 900,
-                    fontSize: 12,
-                  }}
-                  title="Przełącz tryb"
-                >
-                  {addMode === "point" ? "Tunel" : "Punkt"}
-                </button>
-
-                <button
-                  onClick={() => {
-                    try {
-                      drawPolylineRef.current?.disable?.();
-                      editToolRef.current?.disable?.();
-                      deleteToolRef.current?.disable?.();
-                    } catch {}
-                    setActiveDrawTool("draw");
-                    setAddMode("none");
-                  }}
-                  style={{
-                    padding: "9px 10px",
-                    borderRadius: 12,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.06)",
-                    color: TEXT_LIGHT,
-                    cursor: "pointer",
-                    fontWeight: 900,
-                    fontSize: 12,
-                  }}
-                  title="Wyjdź z trybu dodawania"
-                >
-                  Zakończ
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+        <button
+          onClick={() => setAddMode("none")}
+          style={{
+            padding: "9px 10px",
+            borderRadius: 12,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.06)",
+            color: TEXT_LIGHT,
+            cursor: "pointer",
+            fontWeight: 900,
+            fontSize: 12,
+          }}
+          title="Wyjdź z trybu dodawania"
+        >
+          Zakończ
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
 
         <RecentUpdatesPanel
           user={user}
