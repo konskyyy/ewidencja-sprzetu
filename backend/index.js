@@ -157,22 +157,6 @@ app.get("/api/points", async (req, res) => {
   }
 });
 
-
-// GET all points (priority first)
-app.get("/api/points", authRequired, async (req, res) => {
-  try {
-    const q = await pool.query(
-      `SELECT id, title, director, winner, note, status, lat, lng, COALESCE(priority,false) AS priority
-       FROM points
-       ORDER BY COALESCE(priority,false) DESC, id DESC`
-    );
-    res.json(q.rows);
-  } catch (e) {
-    console.error("GET POINTS ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
 // SET point priority (true/false)
 app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
   try {
