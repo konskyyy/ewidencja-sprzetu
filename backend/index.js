@@ -51,6 +51,20 @@ const pool = new Pool({
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
+app.get("/assets", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, type, status, quantity, unit, serial_number, lat, lng, notes, created_at, updated_at
+      FROM assets
+      ORDER BY id DESC
+    `);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("GET /assets error:", err);
+    res.status(500).json({ error: "DB error" });
+  }
+});
+
 
 // ===== VERSION (debug deploy check) =====
 app.get("/api/version", (req, res) => {
