@@ -80,7 +80,6 @@ function statusLabel(v) {
   return typeLabel(v);
 }
 
-
 function statusColor(status) {
   if (status === "tachimetr") return "#3b82f6";
   if (status === "pochylomierz") return "#22c55e";
@@ -1976,31 +1975,23 @@ export default function App() {
   }
 
   const filteredPoints = useMemo(() => {
-    return points
-      .filter((p) => visibleStatus[p.status] !== false)
-      .slice()
-      .sort(byPriorityThenIdDesc);
-  }, [points, visibleStatus]);
+  return points
+    .filter((p) => visibleTypes[p.status] !== false)
+    .slice()
+    .sort(byPriorityThenIdDesc);
+}, [points, visibleTypes]);
 
-  const filteredDevicesSearch = useMemo(() => {
-    const q = String(projectQuery || "").trim().toLowerCase();
-    if (!q) return filteredPoints;
+const counts = useMemo(() => {
+  const c = {};
+  for (const t of DEVICE_TYPES) c[t.value] = 0;
 
-    return filteredPoints.filter((x) => {
-      const label = String(x.title || "").toLowerCase();
-      const idStr = String(x.id);
-      return label.includes(q) || idStr.includes(q);
-    });
-  }, [filteredPoints, projectQuery]);
+  for (const p of points) {
+    const k = p.status;
+    c[k] = (c[k] || 0) + 1;
+  }
+  return c;
+}, [points]);
 
-  const counts = useMemo(() => {
-    const c = { planowany: 0, przetarg: 0, realizacja: 0, nieaktualny: 0 };
-    for (const p of points) {
-      const st = p.status || "planowany";
-      c[st] = (c[st] || 0) + 1;
-    }
-    return c;
-  }, [points]);
   const [createOpen, setCreateOpen] = useState(false);
 const [createForm, setCreateForm] = useState({
   title: "",
