@@ -916,66 +916,69 @@ function RecentUpdatesPanel({
   const [items, setItems] = useState([]);
   const [expanded, setExpanded] = useState({});
 
- async function load() {
+async function load() {
+  setLoading(true);
+  setErr("");
   try {
     const res = await authFetch(`${API}/updates/recent?limit=30`);
     const data = await readJsonOrThrow(res);
-    setUpdates(data);
+    const list = Array.isArray(data) ? data : [];
+    setItems(list);
   } catch (e) {
-    if (e?.status === 401) {
-      logout("expired");
-      return;
-    }
-    setUpdatesError(String(e?.message || e));
+    if (e?.status === 401) return onUnauthorized?.();
+    setErr(String(e?.message || e));
+  } finally {
+    setLoading(false);
   }
 }
 
-  async function markAllRead() {
-    if (items.length === 0) return;
 
-    setItems([]);
-    setExpanded({});
+ async function markAllRead() {
+  if (items.length === 0) return;
 
-    try {
-      const res = await authFetch(`${API}/updates/read-all?limit=500`, {
-        method: "POST",
-      });
-      await readJsonOrThrow(res);
-      setOpen(false);
-    } catch (e) {
-      if (e?.status === 401) return onUnauthorized?.();
-      setErr(String(e?.message || e));
-      load();
-    }
-  }
+  setItems([]);
+  setExpanded({});
 
-  async function markRead(u) {
-    const itemKey = `${u.kind}:${u.entity_id}:${u.id}`;
-
-    setItems((prev) => prev.filter((x) => `${x.kind}:${x.entity_id}:${x.id}` !== itemKey));
-    setExpanded((prev) => {
-      const next = { ...(prev || {}) };
-      delete next[itemKey];
-      return next;
+  try {
+    const res = await authFetch(`${API}/updates/read-all?limit=500`, {
+      method: "POST",
     });
-
-    try {
-      const res = await authFetch(`${API}/updates/read`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          kind: u.kind,
-          entity_id: u.entity_id,
-          comment_id: u.id,
-        }),
-      });
-      await readJsonOrThrow(res);
-    } catch (e) {
-      if (e?.status === 401) return onUnauthorized?.();
-      setErr(String(e?.message || e));
-      load();
-    }
+    await readJsonOrThrow(res);
+    setOpen(false);
+  } catch (e) {
+    if (e?.status === 401) return onUnauthorized?.();
+    setErr(String(e?.message || e));
+    load();
   }
+}
+
+async function markRead(u) {
+  const itemKey = `${u.kind}:${u.entity_id}:${u.id}`;
+
+  setItems((prev) => prev.filter((x) => `${x.kind}:${x.entity_id}:${x.id}` !== itemKey));
+  setExpanded((prev) => {
+    const next = { ...(prev || {}) };
+    delete next[itemKey];
+    return next;
+  });
+
+  try {
+    const res = await authFetch(`${API}/updates/read`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        kind: u.kind,
+        entity_id: u.entity_id,
+        comment_id: u.id,
+      }),
+    });
+    await readJsonOrThrow(res);
+  } catch (e) {
+    if (e?.status === 401) return onUnauthorized?.();
+    setErr(String(e?.message || e));
+    load();
+  }
+}
 
   useEffect(() => {
     if (!user?.id) return;
