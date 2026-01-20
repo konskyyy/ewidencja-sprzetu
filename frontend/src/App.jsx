@@ -210,7 +210,7 @@ function ChanceRing({ value = 50, size = 44, tooltip = "" }) {
           letterSpacing: 0.2,
         }}
       >
-        Szansa
+        Stan
       </div>
 
       <div
