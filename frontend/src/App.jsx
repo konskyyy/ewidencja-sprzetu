@@ -1996,21 +1996,30 @@ export default function App() {
 /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
 const crosshairRef = useRef(null);
 const [pickDragging, setPickDragging] = useState(false);
+const [isDraggingMap, setIsDraggingMap] = useState(false);
 
 useEffect(() => {
+  // poza trybem wskazywania — chowamy krzyż i sprzątamy
   if (addMode !== "point") {
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
     setPickDragging(false);
     return;
   }
 
+  // w trakcie przeciągania mapy — chowamy krzyż (żeby było widać łapkę)
+  if (isDraggingMap) {
+    if (crosshairRef.current) crosshairRef.current.style.display = "none";
+  }
+
   let raf = 0;
 
   const move = (e) => {
+    // jeśli mapę przeciągasz, nie pokazuj krzyża
+    if (isDraggingMap) return;
+
     const el = crosshairRef.current;
     if (!el) return;
 
-    // pokazuj krzyż dopiero jak mamy pierwszą pozycję
     if (el.style.display !== "block") el.style.display = "block";
 
     cancelAnimationFrame(raf);
@@ -2045,7 +2054,7 @@ useEffect(() => {
     cancelAnimationFrame(raf);
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
   };
-}, [addMode]);
+}, [addMode, isDraggingMap]);
 
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
@@ -3014,7 +3023,7 @@ function pickLocationFromMap(latlng) {
       {/* MAP */}
      <main
   className={`${addMode === "point" ? "tmPickMode" : ""} ${
-    addMode === "point" && pickDragging ? "tmPickModeDragging" : ""
+    addMode === "point" && isDraggingMap ? "tmPickModeDragging" : ""
   }`}
   style={{
     width: "100%",
@@ -3303,7 +3312,20 @@ function pickLocationFromMap(latlng) {
             }}
           />
 
-          <MapRefSetter onReady={(map) => (mapRef.current = map)} />
+          <MapRefSetter
+  onReady={(map) => {
+    mapRef.current = map;
+
+    // zdejmij poprzednie, gdyby Hot Reload odpalał kilka razy
+    try {
+      map.off("dragstart");
+      map.off("dragend");
+    } catch {}
+
+    map.on("dragstart", () => setIsDraggingMap(true));
+    map.on("dragend", () => setIsDraggingMap(false));
+  }}
+/>
 
           <ZoomControl position="bottomright" />
           <TileLayer
