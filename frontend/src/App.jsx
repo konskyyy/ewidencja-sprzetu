@@ -3316,16 +3316,25 @@ function pickLocationFromMap(latlng) {
   onReady={(map) => {
     mapRef.current = map;
 
-    // zdejmij poprzednie, gdyby Hot Reload odpalał kilka razy
+    // stałe handlery (żeby można je było zdjąć poprawnie)
+    const handleDragStart = () => setIsDraggingMap(true);
+    const handleDragEnd = () => setIsDraggingMap(false);
+
+    // zdejmij tylko te konkretne (gdyby HMR odpalił ponownie)
     try {
-      map.off("dragstart");
-      map.off("dragend");
+      map.off("dragstart", handleDragStart);
+      map.off("dragend", handleDragEnd);
     } catch {}
 
-    map.on("dragstart", () => setIsDraggingMap(true));
-    map.on("dragend", () => setIsDraggingMap(false));
+    map.on("dragstart", handleDragStart);
+    map.on("dragend", handleDragEnd);
+
+    // zapamiętaj handlery w mapie (żeby kolejne HMR mogło je zdjąć)
+    map.__tm_dragStart = handleDragStart;
+    map.__tm_dragEnd = handleDragEnd;
   }}
 />
+
 
           <ZoomControl position="bottomright" />
           <TileLayer
