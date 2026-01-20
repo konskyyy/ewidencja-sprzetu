@@ -510,21 +510,6 @@ app.get("/api/updates/recent", authRequired, async (req, res) => {
           pc.edited
         from point_comments pc
         join assets a on a.id = pc.point_id
-
-        union all
-
-        select
-          tc.id as id,
-          'tunnels'::text as kind,
-          tc.tunnel_id as entity_id,
-          t.name as entity_title,
-          tc.user_id,
-          tc.user_email,
-          tc.body,
-          tc.created_at,
-          tc.edited
-        from tunnel_comments tc
-        join tunnels t on t.id = tc.tunnel_id
       )
       select f.*
       from feed f
@@ -548,6 +533,7 @@ app.get("/api/updates/recent", authRequired, async (req, res) => {
   }
 });
 
+
 app.post("/api/updates/read-all", authRequired, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -564,14 +550,6 @@ app.post("/api/updates/read-all", authRequired, async (req, res) => {
           'points'::text as kind,
           pc.point_id as entity_id
         from point_comments pc
-
-        union all
-
-        select
-          tc.id as comment_id,
-          'tunnels'::text as kind,
-          tc.tunnel_id as entity_id
-        from tunnel_comments tc
       ),
       unread as (
         select f.*
@@ -600,6 +578,7 @@ app.post("/api/updates/read-all", authRequired, async (req, res) => {
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+
 
 app.post("/api/updates/read", authRequired, async (req, res) => {
   try {
