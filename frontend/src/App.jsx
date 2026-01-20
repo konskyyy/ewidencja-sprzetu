@@ -2326,14 +2326,15 @@ async function togglePointPriority(pt) {
   }
 }
 function pickLocationFromMap(latlng) {
-  // po kliknięciu w mapę uzupełniamy formularz i zostawiamy modal otwarty
   setCreateForm((f) => ({
     ...f,
     lat: String(latlng.lat),
     lng: String(latlng.lng),
   }));
 
-  // opcjonalnie: przybliż mapę do kliknięcia
+  setCreateOpen(true);     // <-- modal otwiera się dopiero teraz
+  setAddMode("none");     // zostawiamy point (możesz też ustawić "none" jeśli wolisz)
+
   try {
     mapRef.current?.flyTo([latlng.lat, latlng.lng], Math.max(mapRef.current.getZoom(), 12), {
       animate: true,
@@ -2631,19 +2632,20 @@ function pickLocationFromMap(latlng) {
 
   <button
     onClick={() => {
-      // tryb mapy — TEŻ OTWIERA TEN SAM MODAL
-      setAddMode("point");
-      setCreateOpen(true);
+  // tryb mapy: modal ma się pojawić dopiero po kliknięciu na mapie
+  setCreateOpen(false);
+  setAddMode((m) => (m === "point" ? "none" : "point"));
 
-      // jeśli zaczynasz nowe dodawanie, wyczyść formularz
-      setCreateForm({
-        title: "",
-        status: "tachimetr",
-        note: "",
-        lat: "",
-        lng: "",
-      });
-    }}
+  // przygotuj pusty formularz (żeby po kliknięciu mapy od razu był czysty)
+  setCreateForm({
+    title: "",
+    status: "tachimetr",
+    note: "",
+    lat: "",
+    lng: "",
+  });
+}}
+
     style={{
       padding: "9px 10px",
       borderRadius: 12,
@@ -3252,7 +3254,7 @@ function pickLocationFromMap(latlng) {
           ) : null}
 
           <ClickHandler
-              enabled={addMode === "point" && createOpen}
+              enabled={addMode === "point"} onPick={pickLocationFromMap} />
               onPick={pickLocationFromMap}
           />
 
@@ -3410,7 +3412,7 @@ function pickLocationFromMap(latlng) {
   open={createOpen}
   onClose={() => {
     setCreateOpen(false);
-    if (addMode === "manual") setAddMode("none");
+    if (addMode === "none") setAddMode("none");
   }}
   onCreate={createDeviceFromForm}
   form={createForm}
