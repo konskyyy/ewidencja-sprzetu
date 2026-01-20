@@ -154,7 +154,7 @@ body {
   color: rgba(255, 255, 255, 0.55);
   opacity: 1; /* ważne dla Safari */
 }
-/* Czerwony celownik bez kursora */
+/* ===== Czerwony celownik (widoczny zamiast kursora) ===== */
 .tmCursorCrosshair {
   position: absolute;
   z-index: 3000;
@@ -187,34 +187,21 @@ body {
   transform: translate(-50%, -50%);
   border-radius: 2px;
 }
-/* TRYB: WSKAŻ NA MAPIE — usuń "grab/hand" Leafleta */
+
+/* ========================================================= */
+/* TRYB: WSKAŻ NA MAPIE — UKRYJ SYSTEMOWY KURSOR (WAŻNE) */
+/* ========================================================= */
+
+.tmPickMode,
+.tmPickMode * {
+  cursor: none !important;
+}
+
+/* Leaflet często używa grab / pointer / auto */
 .tmPickMode .leaflet-container,
-.tmPickMode .leaflet-container * {
-  cursor: default !important;
-}
-
-/* Podczas przeciągania mapy (LPM + ruch) pokaż grabbing */
-.tmPickModeDragging .leaflet-container,
-.tmPickModeDragging .leaflet-container * {
-  cursor: grabbing !important;
-}
-/* ===== HARD OVERRIDE: Leaflet hand/grab cursor ===== */
-.tmPickMode {
-  cursor: default !important;
-}
-
-/* Leaflet często używa .leaflet-grab oraz .leaflet-dragging */
+.tmPickMode .leaflet-container *,
 .tmPickMode .leaflet-grab,
-.tmPickMode .leaflet-grab * {
-  cursor: default !important;
-}
-
-.tmPickMode .leaflet-dragging,
-.tmPickMode .leaflet-dragging * {
-  cursor: grabbing !important;
-}
-
-/* Elementy interaktywne (tile pane, overlays, svg) też potrafią nadpisywać */
+.tmPickMode .leaflet-grab *,
 .tmPickMode .leaflet-pane,
 .tmPickMode .leaflet-pane *,
 .tmPickMode .leaflet-tile-pane,
@@ -225,10 +212,20 @@ body {
 .tmPickMode .leaflet-marker-pane *,
 .tmPickMode .leaflet-shadow-pane,
 .tmPickMode .leaflet-shadow-pane * {
-  cursor: default !important;
+  cursor: none !important;
 }
 
-/* W czasie drag ma być grabbing niezależnie od pane */
+/* ========================================================= */
+/* PODCZAS DRAG (LPM + ruch) — pokaż grabbing */
+/* ========================================================= */
+
+.tmPickModeDragging,
+.tmPickModeDragging * {
+  cursor: grabbing !important;
+}
+
+.tmPickModeDragging .leaflet-container,
+.tmPickModeDragging .leaflet-container *,
 .tmPickModeDragging .leaflet-pane,
 .tmPickModeDragging .leaflet-pane *,
 .tmPickModeDragging .leaflet-tile-pane,
@@ -241,7 +238,3 @@ body {
 .tmPickModeDragging .leaflet-shadow-pane * {
   cursor: grabbing !important;
 }
-
-
-
-
