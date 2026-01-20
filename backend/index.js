@@ -496,6 +496,7 @@ app.get("/api/updates/recent", authRequired, async (req, res) => {
 
     const userId = req.user.id;
 
+    // FEED TYLKO DLA URZĄDZEŃ (points -> assets через point_comments)
     const sql = `
       with feed as (
         select
@@ -532,6 +533,7 @@ app.get("/api/updates/recent", authRequired, async (req, res) => {
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+
 
 app.post("/api/updates/read-all", authRequired, async (req, res) => {
   try {
@@ -620,8 +622,8 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
     const commentId = Number(req.body?.comment_id);
 
     if (kind !== "points") {
-      return res.status(400).json({ error: "kind musi być points" });
-    }
+  return res.status(400).json({ error: "kind musi być points" });
+}
     if (!Number.isFinite(entityId) || !Number.isFinite(commentId)) {
       return res.status(400).json({ error: "Złe entity_id/comment_id" });
     }
