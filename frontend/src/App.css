@@ -187,6 +187,17 @@ body {
   transform: translate(-50%, -50%);
   border-radius: 2px;
 }
+/* TRYB: WSKAŻ NA MAPIE — usuń "grab/hand" Leafleta */
+.tmPickMode .leaflet-container,
+.tmPickMode .leaflet-container * {
+  cursor: default !important;
+}
+
+/* Podczas przeciągania mapy (LPM + ruch) pokaż grabbing */
+.tmPickModeDragging .leaflet-container,
+.tmPickModeDragging .leaflet-container * {
+  cursor: grabbing !important;
+}
 
 
 

@@ -2962,26 +2962,15 @@ function pickLocationFromMap(latlng) {
 
       {/* MAP */}
      <main
-  onMouseMove={(e) => {
-    if (addMode !== "point") return;
-    const r = e.currentTarget.getBoundingClientRect();
-    setCursorPos({
-      x: e.clientX - r.left,
-      y: e.clientY - r.top,
-      inside: true,
-    });
-  }}
-  onMouseLeave={() => {
-    setCursorPos((p) => ({ ...p, inside: false }));
-  }}
+  className={
+    addMode === "point"
+      ? `tmPickMode${isDraggingMap ? " tmPickModeDragging" : ""}`
+      : ""
+  }
   style={{
     width: "100%",
     height: "100%",
     position: "relative",
-    cursor:
-  addMode === "point"
-    ? (isDraggingMap ? "grabbing" : "default") // brak łapki, łapka tylko przy drag
-    : "default",
   }}
 >
 
