@@ -198,6 +198,50 @@ body {
 .tmPickModeDragging .leaflet-container * {
   cursor: grabbing !important;
 }
+/* ===== HARD OVERRIDE: Leaflet hand/grab cursor ===== */
+.tmPickMode {
+  cursor: default !important;
+}
+
+/* Leaflet często używa .leaflet-grab oraz .leaflet-dragging */
+.tmPickMode .leaflet-grab,
+.tmPickMode .leaflet-grab * {
+  cursor: default !important;
+}
+
+.tmPickMode .leaflet-dragging,
+.tmPickMode .leaflet-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Elementy interaktywne (tile pane, overlays, svg) też potrafią nadpisywać */
+.tmPickMode .leaflet-pane,
+.tmPickMode .leaflet-pane *,
+.tmPickMode .leaflet-tile-pane,
+.tmPickMode .leaflet-tile-pane *,
+.tmPickMode .leaflet-overlay-pane,
+.tmPickMode .leaflet-overlay-pane *,
+.tmPickMode .leaflet-marker-pane,
+.tmPickMode .leaflet-marker-pane *,
+.tmPickMode .leaflet-shadow-pane,
+.tmPickMode .leaflet-shadow-pane * {
+  cursor: default !important;
+}
+
+/* W czasie drag ma być grabbing niezależnie od pane */
+.tmPickModeDragging .leaflet-pane,
+.tmPickModeDragging .leaflet-pane *,
+.tmPickModeDragging .leaflet-tile-pane,
+.tmPickModeDragging .leaflet-tile-pane *,
+.tmPickModeDragging .leaflet-overlay-pane,
+.tmPickModeDragging .leaflet-overlay-pane *,
+.tmPickModeDragging .leaflet-marker-pane,
+.tmPickModeDragging .leaflet-marker-pane *,
+.tmPickModeDragging .leaflet-shadow-pane,
+.tmPickModeDragging .leaflet-shadow-pane * {
+  cursor: grabbing !important;
+}
+
 
 
 
