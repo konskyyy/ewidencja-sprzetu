@@ -1605,96 +1605,6 @@ function EditDeviceModal({
     </div>
   );
 }
-
-
-function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
-  useMapEvents({
-    click(e) {
-      if (!enabled) return;
-      if (suppressRef?.current) return;
-
-      const target = e?.originalEvent?.target;
-      if (!target) return;
-
-      const isInteractive = target.closest(
-        ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-control, .leaflet-tooltip"
-      );
-
-      if (isInteractive) return;
-
-      try {
-        mapRef?.current?.closePopup?.();
-      } catch {}
-
-      onDeselect?.();
-    },
-  });
-
-  return null;
-}
-export default function App() {
-  const [projectQuery, setProjectQuery] = useState("");
-
-  /** ===== global refresh trigger for updates feed ===== */
-  const [updatesTick, setUpdatesTick] = useState(0);
-  function bumpUpdates() {
-    setUpdatesTick((x) => x + 1);
-  }
-
-  /** ===== JOURNAL COUNTS + ACQUIRED (localStorage) ===== */
-  const [journalCounts, setJournalCounts] = useState(() => {
-    try {
-      const raw = localStorage.getItem("journalCounts");
-      const parsed = raw ? JSON.parse(raw) : null;
-      return {
-        points: parsed?.points && typeof parsed.points === "object" ? parsed.points : {},
-        tunnels: parsed?.tunnels && typeof parsed.tunnels === "object" ? parsed.tunnels : {},
-      };
-    } catch {
-      return { points: {}, tunnels: {} };
-    }
-  });
-
-  function handleCountsChange(kind, id, count) {
-    setJournalCounts((prev) => ({
-      ...prev,
-      [kind]: { ...(prev[kind] || {}), [id]: Number(count) || 0 },
-    }));
-  }
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "journalCounts",
-        JSON.stringify(journalCounts || { points: {}, tunnels: {} })
-      );
-    } catch {}
-  }, [journalCounts]);
-
-  const [acquiredMap, setAcquiredMap] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("acquiredMap") || "{}") || {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("acquiredMap", JSON.stringify(acquiredMap || {}));
-    } catch {}
-  }, [acquiredMap]);
-
-  function isAcquired(kind, id) {
-    return acquiredMap?.[`${kind}:${id}`] === true;
-  }
-
-  function setAcquired(kind, id, value) {
-    setAcquiredMap((prev) => ({
-      ...(prev || {}),
-      [`${kind}:${id}`]: !!value,
-    }));
-  }
   function CreateDeviceModal({
   open,
   onClose,
@@ -1875,6 +1785,95 @@ export default function App() {
     </div>
   );
 }
+
+function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
+  useMapEvents({
+    click(e) {
+      if (!enabled) return;
+      if (suppressRef?.current) return;
+
+      const target = e?.originalEvent?.target;
+      if (!target) return;
+
+      const isInteractive = target.closest(
+        ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-control, .leaflet-tooltip"
+      );
+
+      if (isInteractive) return;
+
+      try {
+        mapRef?.current?.closePopup?.();
+      } catch {}
+
+      onDeselect?.();
+    },
+  });
+
+  return null;
+}
+export default function App() {
+  const [projectQuery, setProjectQuery] = useState("");
+
+  /** ===== global refresh trigger for updates feed ===== */
+  const [updatesTick, setUpdatesTick] = useState(0);
+  function bumpUpdates() {
+    setUpdatesTick((x) => x + 1);
+  }
+
+  /** ===== JOURNAL COUNTS + ACQUIRED (localStorage) ===== */
+  const [journalCounts, setJournalCounts] = useState(() => {
+    try {
+      const raw = localStorage.getItem("journalCounts");
+      const parsed = raw ? JSON.parse(raw) : null;
+      return {
+        points: parsed?.points && typeof parsed.points === "object" ? parsed.points : {},
+        tunnels: parsed?.tunnels && typeof parsed.tunnels === "object" ? parsed.tunnels : {},
+      };
+    } catch {
+      return { points: {}, tunnels: {} };
+    }
+  });
+
+  function handleCountsChange(kind, id, count) {
+    setJournalCounts((prev) => ({
+      ...prev,
+      [kind]: { ...(prev[kind] || {}), [id]: Number(count) || 0 },
+    }));
+  }
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        "journalCounts",
+        JSON.stringify(journalCounts || { points: {}, tunnels: {} })
+      );
+    } catch {}
+  }, [journalCounts]);
+
+  const [acquiredMap, setAcquiredMap] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("acquiredMap") || "{}") || {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("acquiredMap", JSON.stringify(acquiredMap || {}));
+    } catch {}
+  }, [acquiredMap]);
+
+  function isAcquired(kind, id) {
+    return acquiredMap?.[`${kind}:${id}`] === true;
+  }
+
+  function setAcquired(kind, id, value) {
+    setAcquiredMap((prev) => ({
+      ...(prev || {}),
+      [`${kind}:${id}`]: !!value,
+    }));
+  }
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
