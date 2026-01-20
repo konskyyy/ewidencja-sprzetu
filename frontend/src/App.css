@@ -187,14 +187,18 @@ body {
   border-radius: 2px;
 }
 
-/* w trybie wskazywania chowamy kursor nad mapą */
-.tmPickMode .leaflet-container,
-.tmPickMode .leaflet-container * {
+/* TRYB WSKAZYWANIA:
+   ukrywamy kursor TYLKO na mapie (a nie na absolutnie wszystkich dzieciach) */
+.tmPickMode .leaflet-container {
   cursor: none !important;
 }
 
-/* podczas przeciągania: grabbing */
-.tmPickModeDragging .leaflet-container,
-.tmPickModeDragging .leaflet-container * {
+/* Leaflet nadaje "grab" przez .leaflet-grab — wyciszamy */
+.tmPickMode .leaflet-container.leaflet-grab {
+  cursor: none !important;
+}
+
+/* Podczas przeciągania: pokaż grabbing (Leaflet ustawia .leaflet-dragging na kontenerze) */
+.tmPickMode .leaflet-container.leaflet-dragging {
   cursor: grabbing !important;
 }
