@@ -66,11 +66,11 @@ const NE_COUNTRIES_URL =
   "https://d2ad6b4ur7yvpq.cloudfront.net/naturalearth-3.3.0/ne_50m_admin_0_countries.geojson";
 const KEEP_COUNTRIES_A3 = new Set(["POL", "LTU", "LVA", "EST"]);
 
-function ClickHandler({ enabled, onAdd }) {
+function ClickHandler({ enabled, onPick }) {
   useMapEvents({
     click(e) {
       if (!enabled) return;
-      onAdd(e.latlng);
+      onPick?.(e.latlng);
     },
   });
   return null;
@@ -2325,6 +2325,22 @@ async function togglePointPriority(pt) {
     setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
   }
 }
+function pickLocationFromMap(latlng) {
+  // po kliknięciu w mapę uzupełniamy formularz i zostawiamy modal otwarty
+  setCreateForm((f) => ({
+    ...f,
+    lat: String(latlng.lat),
+    lng: String(latlng.lng),
+  }));
+
+  // opcjonalnie: przybliż mapę do kliknięcia
+  try {
+    mapRef.current?.flyTo([latlng.lat, latlng.lng], Math.max(mapRef.current.getZoom(), 12), {
+      animate: true,
+      duration: 0.5,
+    });
+  } catch {}
+}
 
   /** ===== LOGIN UI ===== */
   if (mode === "checking") {
@@ -2479,7 +2495,7 @@ async function togglePointPriority(pt) {
                       flexShrink: 0,
                     }}
                   >
-                    BD
+                    GEO
                   </span>
 
                   <div
@@ -2601,7 +2617,8 @@ async function togglePointPriority(pt) {
       padding: "9px 10px",
       borderRadius: 12,
       border: `1px solid ${BORDER}`,
-      background: addMode === "manual" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+      background:
+        addMode === "manual" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
       color: TEXT_LIGHT,
       cursor: "pointer",
       fontWeight: 800,
@@ -2614,21 +2631,31 @@ async function togglePointPriority(pt) {
 
   <button
     onClick={() => {
-      // tryb mapy
-      setCreateOpen(false);
-      setAddMode((m) => (m === "point" ? "none" : "point"));
+      // tryb mapy — TEŻ OTWIERA TEN SAM MODAL
+      setAddMode("point");
+      setCreateOpen(true);
+
+      // jeśli zaczynasz nowe dodawanie, wyczyść formularz
+      setCreateForm({
+        title: "",
+        status: "tachimetr",
+        note: "",
+        lat: "",
+        lng: "",
+      });
     }}
     style={{
       padding: "9px 10px",
       borderRadius: 12,
       border: `1px solid ${BORDER}`,
-      background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+      background:
+        addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
       color: TEXT_LIGHT,
       cursor: "pointer",
       fontWeight: 800,
       fontSize: 12,
     }}
-    title="Kliknij mapę, aby dodać urządzenie"
+    title="Kliknij mapę, aby wskazać lokalizację urządzenia"
   >
     📍 Wskaż na mapie
   </button>
@@ -2638,7 +2665,7 @@ async function togglePointPriority(pt) {
   {addMode === "manual"
     ? "Dodawanie: ręcznie — wpisz współrzędne i zapisz."
     : addMode === "point"
-    ? "Dodawanie: opis na mapie — kliknij na mapie, żeby dodać urządzenie."
+    ? "Dodawanie: wskaż na mapie — kliknij na mapie, aby uzupełnić lat/lng w formularzu."
     : "Wybierz tryb dodawania."}
 </div>
 
@@ -3224,7 +3251,11 @@ async function togglePointPriority(pt) {
             />
           ) : null}
 
-          <ClickHandler enabled={addMode === "point"} onAdd={addPoint} />
+          <ClickHandler
+              enabled={addMode === "point" && createOpen}
+              onPick={pickLocationFromMap}
+          />
+
 
           {/* URZĄDZENIA */}
           {filteredPoints.map((pt) => (
