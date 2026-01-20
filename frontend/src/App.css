@@ -189,32 +189,19 @@ body {
   border-radius: 2px;
 }
 
-/* TRYB WSKAZYWANIA:
-   ukrywamy kursor TYLKO na mapie */
+/* TRYB WSKAZYWANIA — chowamy kursor nad mapą */
 .tmPickMode .leaflet-container {
   cursor: none !important;
 }
 
-/* Leaflet nadaje "grab" przez .leaflet-grab — wyciszamy */
+/* Leaflet bywa "grab" */
 .tmPickMode .leaflet-container.leaflet-grab {
   cursor: none !important;
 }
 
-/* Czasem kursor łapie się na pane/tile — też ukryj, ale bez gwiazdki na wszystko */
-.tmPickMode .leaflet-pane,
-.tmPickMode .leaflet-tile-pane,
-.tmPickMode .leaflet-overlay-pane {
-  cursor: none !important;
-}
-
-/* Podczas przeciągania: pokaż grabbing (Leaflet ustawia .leaflet-dragging na kontenerze) */
-.tmPickMode .leaflet-container.leaflet-dragging {
-  cursor: grabbing !important;
-}
-
-/* Podczas przeciągania: pane też ma grabbing */
-.tmPickMode .leaflet-container.leaflet-dragging .leaflet-pane,
-.tmPickMode .leaflet-container.leaflet-dragging .leaflet-tile-pane,
-.tmPickMode .leaflet-container.leaflet-dragging .leaflet-overlay-pane {
+/* PODCZAS DRAG: pokazujemy łapkę (grabbing) i to musi wygrać z cursor:none */
+.tmPickModeDragging .leaflet-container,
+.tmPickModeDragging .leaflet-container.leaflet-grab,
+.tmPickModeDragging .leaflet-container.leaflet-dragging {
   cursor: grabbing !important;
 }
