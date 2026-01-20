@@ -916,21 +916,19 @@ function RecentUpdatesPanel({
   const [items, setItems] = useState([]);
   const [expanded, setExpanded] = useState({});
 
-  async function load() {
-    setLoading(true);
-    setErr("");
-    try {
-      const res = await authFetch(`${API}/updates/recent?limit=30`);
-      const data = await readJsonOrThrow(res);
-      const list = Array.isArray(data) ? data : [];
-      setItems(list);
-    } catch (e) {
-      if (e?.status === 401) return onUnauthorized?.();
-      setErr(String(e?.message || e));
-    } finally {
-      setLoading(false);
+ async function loadUpdates() {
+  try {
+    const res = await authFetch(`${API}/updates/recent?limit=30`);
+    const data = await readJsonOrThrow(res);
+    setUpdates(data);
+  } catch (e) {
+    if (e?.status === 401) {
+      logout("expired");
+      return;
     }
+    setUpdatesError(String(e?.message || e));
   }
+}
 
   async function markAllRead() {
     if (items.length === 0) return;
