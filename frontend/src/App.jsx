@@ -916,7 +916,7 @@ function RecentUpdatesPanel({
   const [items, setItems] = useState([]);
   const [expanded, setExpanded] = useState({});
 
- async function loadUpdates() {
+ async function load() {
   try {
     const res = await authFetch(`${API}/updates/recent?limit=30`);
     const data = await readJsonOrThrow(res);
