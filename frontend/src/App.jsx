@@ -2961,13 +2961,13 @@ function pickLocationFromMap(latlng) {
           cursor: addMode === "point" ? "crosshair" : "default",
         }}
       >
-        {addMode === "point" ? (
-  <div className="tmCrosshairWrap">
-    <div className="tmCrosshair">
-      <div className="tmCrosshairDot" />
-    </div>
-  </div>
+        {addMode === "point" && cursorPos.inside ? (
+  <div
+    className="tmCursorCrosshair"
+    style={{ left: cursorPos.x, top: cursorPos.y }}
+  />
 ) : null}
+
 
         {!sidebarOpen ? (
           <button
