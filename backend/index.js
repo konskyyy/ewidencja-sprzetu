@@ -613,50 +613,37 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
 });
 
 
-app.post("/api/updates/read-all", authRequired, async (req, res) => {
+app.post("/api/updates/read", authRequired, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const kind = String(req.body?.kind || "");
+    const entityId = Number(req.body?.entity_id);
+    const commentId = Number(req.body?.comment_id);
 
-    const rawLimit = Number(req.query.limit);
-    const limit = Number.isFinite(rawLimit)
-      ? Math.max(1, Math.min(500, rawLimit))
-      : 300;
+    if (kind !== "points") {
+      return res.status(400).json({ error: "kind musi być points" });
+    }
+    if (!Number.isFinite(entityId) || !Number.isFinite(commentId)) {
+      return res.status(400).json({ error: "Złe entity_id/comment_id" });
+    }
 
-    const sql = `
-      with feed as (
-        select
-          pc.id as comment_id,
-          'points'::text as kind,
-          pc.point_id as entity_id
-        from point_comments pc
-      ),
-      unread as (
-        select f.*
-        from feed f
-        where not exists (
-          select 1
-          from updates_read ur
-          where ur.user_id = $1
-            and ur.kind = f.kind
-            and ur.entity_id = f.entity_id
-            and ur.comment_id = f.comment_id
-        )
-        limit $2
-      )
+    const q = await pool.query(
+      `
       insert into updates_read (user_id, kind, entity_id, comment_id)
-      select $1, kind, entity_id, comment_id
-      from unread
-      on conflict (user_id, kind, entity_id, comment_id) do nothing
-      returning id;
-    `;
+      values ($1,$2,$3,$4)
+      on conflict (user_id, kind, entity_id, comment_id)
+      do update set read_at = now()
+      returning user_id, kind, entity_id, comment_id, read_at
+      `,
+      [req.user.id, kind, entityId, commentId]
+    );
 
-    const q = await pool.query(sql, [userId, limit]);
-    res.json({ ok: true, inserted: q.rowCount });
+    res.json({ ok: true, row: q.rows[0] });
   } catch (e) {
-    console.error("POST UPDATES READ-ALL ERROR:", e);
+    console.error("POST UPDATES READ ERROR:", e);
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+
 
 
 app.post("/api/updates/read", authRequired, async (req, res) => {
