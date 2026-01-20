@@ -188,53 +188,55 @@ body {
   border-radius: 2px;
 }
 
-/* ========================================================= */
-/* TRYB: WSKAŻ NA MAPIE — UKRYJ SYSTEMOWY KURSOR (WAŻNE) */
-/* ========================================================= */
-
-.tmPickMode,
-.tmPickMode * {
-  cursor: none !important;
+/* ===== Czerwony celownik (widoczny zamiast kursora) ===== */
+.tmCursorCrosshair {
+  position: fixed;              /* FIX: nie ginie w warstwach mapy */
+  z-index: 999999;              /* FIX: zawsze nad Leafletem */
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  display: block;
 }
 
-/* Leaflet często używa grab / pointer / auto */
+.tmCursorCrosshair::before,
+.tmCursorCrosshair::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(255, 50, 50, 0.95);
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.35);
+}
+
+.tmCursorCrosshair::before {
+  width: 22px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+}
+
+.tmCursorCrosshair::after {
+  width: 2px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
+}
+
+/* ========================================================= */
+/* TRYB: WSKAŻ NA MAPIE — ukryj kursor TYLKO na mapie */
+/* ========================================================= */
+
 .tmPickMode .leaflet-container,
-.tmPickMode .leaflet-container *,
-.tmPickMode .leaflet-grab,
-.tmPickMode .leaflet-grab *,
-.tmPickMode .leaflet-pane,
-.tmPickMode .leaflet-pane *,
-.tmPickMode .leaflet-tile-pane,
-.tmPickMode .leaflet-tile-pane *,
-.tmPickMode .leaflet-overlay-pane,
-.tmPickMode .leaflet-overlay-pane *,
-.tmPickMode .leaflet-marker-pane,
-.tmPickMode .leaflet-marker-pane *,
-.tmPickMode .leaflet-shadow-pane,
-.tmPickMode .leaflet-shadow-pane * {
+.tmPickMode .leaflet-container * {
   cursor: none !important;
 }
 
 /* ========================================================= */
-/* PODCZAS DRAG (LPM + ruch) — pokaż grabbing */
+/* PODCZAS DRAG (LPM + ruch) — pokaż grabbing tylko na mapie */
 /* ========================================================= */
-
-.tmPickModeDragging,
-.tmPickModeDragging * {
-  cursor: grabbing !important;
-}
 
 .tmPickModeDragging .leaflet-container,
-.tmPickModeDragging .leaflet-container *,
-.tmPickModeDragging .leaflet-pane,
-.tmPickModeDragging .leaflet-pane *,
-.tmPickModeDragging .leaflet-tile-pane,
-.tmPickModeDragging .leaflet-tile-pane *,
-.tmPickModeDragging .leaflet-overlay-pane,
-.tmPickModeDragging .leaflet-overlay-pane *,
-.tmPickModeDragging .leaflet-marker-pane,
-.tmPickModeDragging .leaflet-marker-pane *,
-.tmPickModeDragging .leaflet-shadow-pane,
-.tmPickModeDragging .leaflet-shadow-pane * {
+.tmPickModeDragging .leaflet-container * {
   cursor: grabbing !important;
 }
