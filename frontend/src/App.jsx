@@ -1620,6 +1620,7 @@ function EditDeviceModal({
   TEXT_LIGHT,
   MUTED,
   GLASS_BG,
+  DEVICE_TYPES
 }) {
   if (!open) return null;
 
@@ -1731,17 +1732,19 @@ function EditDeviceModal({
             placeholder="np. Laptop Dell 5420"
           />
 
-          <label style={labelStyleLocal}>Status</label>
-          <select
+          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
+<select
   value={form.status}
   onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+  style={inputStyleLocal}
 >
-  {DEVICE_TYPES.map((t) => (
+  {(DEVICE_TYPES || []).map((t) => (
     <option key={t.value} value={t.value}>
       {t.label}
     </option>
   ))}
 </select>
+
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
@@ -2316,8 +2319,6 @@ async function togglePointPriority(pt) {
     setApiError("");
     const body = {
       title: "Nowe urządzenie",
-      director: "",
-      winner: "",
       note: "",
       status: "tachimetr",
       lat: latlng.lat,
