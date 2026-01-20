@@ -2002,18 +2002,14 @@ useEffect(() => {
   // poza trybem wskazywania — chowamy krzyż i sprzątamy
   if (addMode !== "point") {
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
-    setPickDragging(false);
     return;
   }
 
   let raf = 0;
 
-  // ref, żeby event listenery zawsze widziały aktualny stan dragowania
-  const dragRef = { current: isDraggingMap };
-
   const move = (e) => {
-    // jeśli mapę przeciągasz, nie pokazuj krzyża
-    if (dragRef.current) return;
+    // podczas drag mapy: krzyż ma być schowany
+    if (isDraggingMap) return;
 
     const el = crosshairRef.current;
     if (!el) return;
@@ -2027,44 +2023,24 @@ useEffect(() => {
     });
   };
 
-  const down = (e) => {
-    if (e.button !== 0) return;
-    setPickDragging(true);
-  };
-
-  const up = () => setPickDragging(false);
-
   const hide = () => {
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
-    setPickDragging(false);
   };
-
-  // listener na zmianę dragowania (zawsze aktualizuje dragRef)
-  const syncDrag = () => {
-    dragRef.current = !!isDraggingMap;
-    if (dragRef.current) {
-      if (crosshairRef.current) crosshairRef.current.style.display = "none";
-    }
-  };
-
-  // ustaw na start
-  syncDrag();
 
   window.addEventListener("mousemove", move, { passive: true });
-  window.addEventListener("mousedown", down);
-  window.addEventListener("mouseup", up);
   window.addEventListener("blur", hide);
+
+  // jak tylko zaczynasz dragować mapę -> natychmiast schowaj krzyż
+  if (isDraggingMap) hide();
 
   return () => {
     window.removeEventListener("mousemove", move);
-    window.removeEventListener("mousedown", down);
-    window.removeEventListener("mouseup", up);
     window.removeEventListener("blur", hide);
     cancelAnimationFrame(raf);
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
   };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [addMode]);
+}, [addMode, isDraggingMap]);
+
 
 // osobny efekt: tylko aktualizacja isDraggingMap (bez przepinania listenerów)
 useEffect(() => {
