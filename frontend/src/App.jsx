@@ -1982,7 +1982,18 @@ export default function App() {
   const markerRefs = useRef({});
   const suppressNextMapClickRef = useRef(false);
 
-    /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
+
+  /** ===== Filters + Add mode ===== */
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const [addMode, setAddMode] = useState("none"); // none | point | manual
+  const [visibleTypes, setVisibleTypes] = useState(() => {
+  const obj = {};
+  for (const t of DEVICE_TYPES) obj[t.value] = true;
+  return obj;
+});
+
+/** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
 const crosshairRef = useRef(null);
 const [pickDragging, setPickDragging] = useState(false);
 
@@ -2035,17 +2046,6 @@ useEffect(() => {
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
   };
 }, [addMode]);
-
-  /** ===== Filters + Add mode ===== */
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [filtersOpen, setFiltersOpen] = useState(true);
-  const [addMode, setAddMode] = useState("none"); // none | point | manual
-  const [visibleTypes, setVisibleTypes] = useState(() => {
-  const obj = {};
-  for (const t of DEVICE_TYPES) obj[t.value] = true;
-  return obj;
-});
-
 
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
