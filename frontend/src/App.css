@@ -154,4 +154,60 @@ body {
   color: rgba(255, 255, 255, 0.55);
   opacity: 1; /* ważne dla Safari */
 }
+/* Celownik w trybie dodawania urządzenia */
+.tmCrosshairWrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* nie blokuje klikania na mapie */
+  z-index: 1750;
+}
+
+.tmCrosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  height: 54px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.04),
+              0 0 24px rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(8px);
+}
+
+.tmCrosshair::before,
+.tmCrosshair::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+}
+
+.tmCrosshair::before {
+  width: 2px;
+  height: 34px;
+}
+
+.tmCrosshair::after {
+  width: 34px;
+  height: 2px;
+}
+
+.tmCrosshairDot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.95);
+  box-shadow: 0 0 14px rgba(59, 130, 246, 0.35);
+}
+
 
