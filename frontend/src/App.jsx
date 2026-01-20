@@ -1560,12 +1560,13 @@ function EditDeviceModal({
   onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
   style={inputStyleLocal}
 >
-            {DEVICE_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+  {DEVICE_TYPES.map((t) => (
+    <option key={t.value} value={t.value}>
+      {t.label}
+    </option>
+  ))}
+</select>
+
 
           <label style={labelStyleLocal}>Opis urządzenia</label>
           <textarea
@@ -1973,6 +1974,9 @@ export default function App() {
   const mapRef = useRef(null);
   const markerRefs = useRef({});
   const suppressNextMapClickRef = useRef(false);
+    /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0, inside: false });
+
 
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -2952,15 +2956,27 @@ function pickLocationFromMap(latlng) {
       </aside>
 
       {/* MAP */}
-      <main
-      
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "relative",
-          cursor: addMode === "point" ? "crosshair" : "default",
-        }}
-      >
+     <main
+  onMouseMove={(e) => {
+    if (addMode !== "point") return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setCursorPos({
+      x: e.clientX - r.left,
+      y: e.clientY - r.top,
+      inside: true,
+    });
+  }}
+  onMouseLeave={() => {
+    setCursorPos((p) => ({ ...p, inside: false }));
+  }}
+  style={{
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    cursor: addMode === "point" ? "none" : "default", // ukrywamy systemowy, zostaje nasz celownik
+  }}
+>
+
         {addMode === "point" && cursorPos.inside ? (
   <div
     className="tmCursorCrosshair"
