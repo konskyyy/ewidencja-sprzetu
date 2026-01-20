@@ -3303,22 +3303,7 @@ function pickLocationFromMap(latlng) {
             }}
           />
 
-          <MapRefSetter
-  onReady={(map) => {
-    mapRef.current = map;
-
-    // bezpieczeństwo: upewnij się, że drag jest włączony
-    try {
-      map.dragging.enable();
-      map.touchZoom.enable();
-      map.doubleClickZoom.enable();
-      map.scrollWheelZoom.enable();
-      map.boxZoom.enable();
-      map.keyboard.enable();
-      if (map.tap) map.tap.enable();
-    } catch {}
-  }}
-/>
+          <MapRefSetter onReady={(map) => (mapRef.current = map)} />
 
           <ZoomControl position="bottomright" />
           <TileLayer
