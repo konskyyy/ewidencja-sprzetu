@@ -3306,17 +3306,18 @@ function pickLocationFromMap(latlng) {
   onReady={(map) => {
     mapRef.current = map;
 
-    // zdejmij poprzednie, gdyby Hot Reload odpalał kilka razy
+    // bezpieczeństwo: upewnij się, że drag jest włączony
     try {
-      map.off("dragstart");
-      map.off("dragend");
+      map.dragging.enable();
+      map.touchZoom.enable();
+      map.doubleClickZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.boxZoom.enable();
+      map.keyboard.enable();
+      if (map.tap) map.tap.enable();
     } catch {}
-
-    map.on("dragstart", () => setIsDraggingMap(true));
-    map.on("dragend", () => setIsDraggingMap(false));
   }}
 />
-
 
           <ZoomControl position="bottomright" />
           <TileLayer
