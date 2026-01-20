@@ -68,10 +68,14 @@ const KEEP_COUNTRIES_A3 = new Set(["POL", "LTU", "LVA", "EST"]);
 
 function ClickHandler({ enabled, onPick }) {
   useMapEvents({
-    click(e) {
-      if (!enabled) return;
-      onPick?.(e.latlng);
-    },
+   click(e) {
+  if (!enabled) return;
+
+  // jeśli właśnie przeciągałeś mapę, nie dodawaj punktu przypadkiem
+  if (e?.originalEvent?.defaultPrevented) return;
+
+  onPick?.(e.latlng);
+},
   });
   return null;
 }
@@ -1976,6 +1980,7 @@ export default function App() {
   const suppressNextMapClickRef = useRef(false);
     /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0, inside: false });
+  const [isDraggingMap, setIsDraggingMap] = useState(false);
 
 
   /** ===== Filters + Add mode ===== */
@@ -2973,7 +2978,10 @@ function pickLocationFromMap(latlng) {
     width: "100%",
     height: "100%",
     position: "relative",
-    cursor: addMode === "point" ? "none" : "default", // ukrywamy systemowy, zostaje nasz celownik
+    cursor:
+  addMode === "point"
+    ? (isDraggingMap ? "grabbing" : "default") // brak łapki, łapka tylko przy drag
+    : "default",
   }}
 >
 
@@ -3257,7 +3265,21 @@ function pickLocationFromMap(latlng) {
             }}
           />
 
-          <MapRefSetter onReady={(map) => (mapRef.current = map)} />
+          <MapRefSetter
+  onReady={(map) => {
+    mapRef.current = map;
+
+    // zdejmij poprzednie, gdyby Hot Reload odpalał kilka razy
+    try {
+      map.off("dragstart");
+      map.off("dragend");
+    } catch {}
+
+    map.on("dragstart", () => setIsDraggingMap(true));
+    map.on("dragend", () => setIsDraggingMap(false));
+  }}
+/>
+
 
           <ZoomControl position="bottomright" />
           <TileLayer

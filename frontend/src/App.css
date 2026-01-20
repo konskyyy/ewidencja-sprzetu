@@ -154,13 +154,13 @@ body {
   color: rgba(255, 255, 255, 0.55);
   opacity: 1; /* ważne dla Safari */
 }
-/* Czysty celownik pod kursorem */
+/* Czerwony celownik bez kursora */
 .tmCursorCrosshair {
   position: absolute;
-  width: 28px;
-  height: 28px;
-  pointer-events: none;
   z-index: 3000;
+  width: 22px;
+  height: 22px;
+  pointer-events: none;
   transform: translate(-50%, -50%);
 }
 
@@ -170,22 +170,23 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  transform: translate(-50%, -50%);
+  background: rgba(255, 50, 50, 0.95);
+  box-shadow: 0 0 10px rgba(255, 50, 50, 0.35);
 }
 
-/* pionowa linia */
 .tmCursorCrosshair::before {
-  width: 2px;
-  height: 28px;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+  width: 22px;
+  height: 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
 }
 
-/* pozioma linia */
 .tmCursorCrosshair::after {
-  width: 28px;
-  height: 2px;
-  box-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
+  width: 2px;
+  height: 22px;
+  transform: translate(-50%, -50%);
+  border-radius: 2px;
 }
+
 
 
