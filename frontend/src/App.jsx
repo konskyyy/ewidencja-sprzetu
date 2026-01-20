@@ -1978,10 +1978,60 @@ export default function App() {
   const mapRef = useRef(null);
   const markerRefs = useRef({});
   const suppressNextMapClickRef = useRef(false);
+
     /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
-  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0, inside: false });
+const crosshairRef = useRef(null);
 const [pickDragging, setPickDragging] = useState(false);
 
+useEffect(() => {
+  if (addMode !== "point") {
+    if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    setPickDragging(false);
+    return;
+  }
+
+  let raf = 0;
+
+  const move = (e) => {
+    const el = crosshairRef.current;
+    if (!el) return;
+
+    // pokazuj krzyż dopiero jak mamy pierwszą pozycję
+    if (el.style.display !== "block") el.style.display = "block";
+
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      el.style.left = `${e.clientX}px`;
+      el.style.top = `${e.clientY}px`;
+    });
+  };
+
+  const down = (e) => {
+    if (e.button !== 0) return;
+    setPickDragging(true);
+  };
+
+  const up = () => setPickDragging(false);
+
+  const hide = () => {
+    if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    setPickDragging(false);
+  };
+
+  window.addEventListener("mousemove", move, { passive: true });
+  window.addEventListener("mousedown", down);
+  window.addEventListener("mouseup", up);
+  window.addEventListener("blur", hide);
+
+  return () => {
+    window.removeEventListener("mousemove", move);
+    window.removeEventListener("mousedown", down);
+    window.removeEventListener("mouseup", up);
+    window.removeEventListener("blur", hide);
+    cancelAnimationFrame(raf);
+    if (crosshairRef.current) crosshairRef.current.style.display = "none";
+  };
+}, [addMode]);
 
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -2970,30 +3020,15 @@ function pickLocationFromMap(latlng) {
     height: "100%",
     position: "relative",
   }}
-  onMouseMove={(e) => {
-    if (addMode !== "point") return;
-    setCursorPos({ x: e.clientX, y: e.clientY, inside: true });
-  }}
-  onMouseEnter={() => {
-    if (addMode !== "point") return;
-    setCursorPos((p) => ({ ...p, inside: true }));
-  }}
-  onMouseLeave={() => {
-    setCursorPos((p) => ({ ...p, inside: false }));
-    setPickDragging(false);
-  }}
-  onMouseDown={(e) => {
-    if (addMode !== "point") return;
-    if (e.button !== 0) return;
-    setPickDragging(true);
-  }}
-  onMouseUp={() => {
-    setPickDragging(false);
-  }}
 >
-  {addMode === "point" && cursorPos.inside ? (
-    <div className="tmCursorCrosshair" style={{ left: cursorPos.x, top: cursorPos.y }} />
+  {addMode === "point" ? (
+    <div
+      ref={crosshairRef}
+      className="tmCursorCrosshair"
+      style={{ display: "none" }}
+    />
   ) : null}
+
 
         {!sidebarOpen ? (
           <button
