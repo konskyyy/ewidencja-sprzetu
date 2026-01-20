@@ -3410,7 +3410,7 @@ function pickLocationFromMap(latlng) {
   open={createOpen}
   onClose={() => {
     setCreateOpen(false);
-    if (addMode === "none") setAddMode("none");
+    if (addMode === "manual") setAddMode("none");
   }}
   onCreate={createDeviceFromForm}
   form={createForm}
@@ -3419,6 +3419,7 @@ function pickLocationFromMap(latlng) {
   TEXT_LIGHT={TEXT_LIGHT}
   MUTED={MUTED}
   GLASS_BG={GLASS_BG_DARK}
+  DEVICE_TYPES={DEVICE_TYPES}
 />
 
       </main>
