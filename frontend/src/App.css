@@ -188,15 +188,13 @@ body {
   border-radius: 2px;
 }
 
-/* ===== Czerwony celownik (widoczny zamiast kursora) ===== */
 .tmCursorCrosshair {
-  position: fixed;              /* FIX: nie ginie w warstwach mapy */
-  z-index: 999999;              /* FIX: zawsze nad Leafletem */
+  position: fixed;
+  z-index: 999999;
   width: 22px;
   height: 22px;
   pointer-events: none;
   transform: translate(-50%, -50%);
-  display: block;
 }
 
 .tmCursorCrosshair::before,
@@ -223,19 +221,13 @@ body {
   border-radius: 2px;
 }
 
-/* ========================================================= */
-/* TRYB: WSKAŻ NA MAPIE — ukryj kursor TYLKO na mapie */
-/* ========================================================= */
-
+/* tryb wskazywania: ukryj kursor TYLKO na mapie */
 .tmPickMode .leaflet-container,
 .tmPickMode .leaflet-container * {
   cursor: none !important;
 }
 
-/* ========================================================= */
-/* PODCZAS DRAG (LPM + ruch) — pokaż grabbing tylko na mapie */
-/* ========================================================= */
-
+/* podczas drag: pokaż grabbing */
 .tmPickModeDragging .leaflet-container,
 .tmPickModeDragging .leaflet-container * {
   cursor: grabbing !important;

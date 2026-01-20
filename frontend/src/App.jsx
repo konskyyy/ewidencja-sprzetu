@@ -1980,7 +1980,7 @@ export default function App() {
   const suppressNextMapClickRef = useRef(false);
     /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0, inside: false });
-  const [isDraggingMap, setIsDraggingMap] = useState(false);
+const [pickDragging, setPickDragging] = useState(false);
 
 
   /** ===== Filters + Add mode ===== */
@@ -2962,25 +2962,38 @@ function pickLocationFromMap(latlng) {
 
       {/* MAP */}
      <main
-  className={
-    addMode === "point"
-      ? `tmPickMode${isDraggingMap ? " tmPickModeDragging" : ""}`
-      : ""
-  }
+  className={`${addMode === "point" ? "tmPickMode" : ""} ${
+    addMode === "point" && pickDragging ? "tmPickModeDragging" : ""
+  }`}
   style={{
     width: "100%",
     height: "100%",
     position: "relative",
   }}
+  onMouseMove={(e) => {
+    if (addMode !== "point") return;
+    setCursorPos({ x: e.clientX, y: e.clientY, inside: true });
+  }}
+  onMouseEnter={() => {
+    if (addMode !== "point") return;
+    setCursorPos((p) => ({ ...p, inside: true }));
+  }}
+  onMouseLeave={() => {
+    setCursorPos((p) => ({ ...p, inside: false }));
+    setPickDragging(false);
+  }}
+  onMouseDown={(e) => {
+    if (addMode !== "point") return;
+    if (e.button !== 0) return;
+    setPickDragging(true);
+  }}
+  onMouseUp={() => {
+    setPickDragging(false);
+  }}
 >
-
-        {addMode === "point" && cursorPos.inside ? (
-  <div
-    className="tmCursorCrosshair"
-    style={{ left: cursorPos.x, top: cursorPos.y }}
-  />
-) : null}
-
+  {addMode === "point" && cursorPos.inside ? (
+    <div className="tmCursorCrosshair" style={{ left: cursorPos.x, top: cursorPos.y }} />
+  ) : null}
 
         {!sidebarOpen ? (
           <button
