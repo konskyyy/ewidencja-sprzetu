@@ -2006,16 +2006,14 @@ useEffect(() => {
     return;
   }
 
-  // w trakcie przeciągania mapy — chowamy krzyż (żeby było widać łapkę)
-  if (isDraggingMap) {
-    if (crosshairRef.current) crosshairRef.current.style.display = "none";
-  }
-
   let raf = 0;
+
+  // ref, żeby event listenery zawsze widziały aktualny stan dragowania
+  const dragRef = { current: isDraggingMap };
 
   const move = (e) => {
     // jeśli mapę przeciągasz, nie pokazuj krzyża
-    if (isDraggingMap) return;
+    if (dragRef.current) return;
 
     const el = crosshairRef.current;
     if (!el) return;
@@ -2041,6 +2039,17 @@ useEffect(() => {
     setPickDragging(false);
   };
 
+  // listener na zmianę dragowania (zawsze aktualizuje dragRef)
+  const syncDrag = () => {
+    dragRef.current = !!isDraggingMap;
+    if (dragRef.current) {
+      if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    }
+  };
+
+  // ustaw na start
+  syncDrag();
+
   window.addEventListener("mousemove", move, { passive: true });
   window.addEventListener("mousedown", down);
   window.addEventListener("mouseup", up);
@@ -2054,7 +2063,16 @@ useEffect(() => {
     cancelAnimationFrame(raf);
     if (crosshairRef.current) crosshairRef.current.style.display = "none";
   };
-}, [addMode, isDraggingMap]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [addMode]);
+
+// osobny efekt: tylko aktualizacja isDraggingMap (bez przepinania listenerów)
+useEffect(() => {
+  if (addMode !== "point") return;
+  if (isDraggingMap) {
+    if (crosshairRef.current) crosshairRef.current.style.display = "none";
+  }
+}, [isDraggingMap, addMode]);
 
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
