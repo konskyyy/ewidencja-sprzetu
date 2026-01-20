@@ -2953,6 +2953,7 @@ function pickLocationFromMap(latlng) {
 
       {/* MAP */}
       <main
+      
         style={{
           width: "100%",
           height: "100%",
@@ -2960,6 +2961,14 @@ function pickLocationFromMap(latlng) {
           cursor: addMode === "point" ? "crosshair" : "default",
         }}
       >
+        {addMode === "point" ? (
+  <div className="tmCrosshairWrap">
+    <div className="tmCrosshair">
+      <div className="tmCrosshairDot" />
+    </div>
+  </div>
+) : null}
+
         {!sidebarOpen ? (
           <button
             onClick={() => setSidebarOpen(true)}
