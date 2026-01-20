@@ -3254,10 +3254,9 @@ function pickLocationFromMap(latlng) {
           ) : null}
 
           <ClickHandler
-              enabled={addMode === "point"} onPick={pickLocationFromMap} />
-              onPick={pickLocationFromMap}
+              enabled={addMode === "point"} 
+              onPick={pickLocationFromMap} 
           />
-
 
           {/* URZĄDZENIA */}
           {filteredPoints.map((pt) => (
