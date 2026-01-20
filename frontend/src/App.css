@@ -154,6 +154,8 @@ body {
   color: rgba(255, 255, 255, 0.55);
   opacity: 1; /* ważne dla Safari */
 }
+
+/* Crosshair - czerwony */
 .tmCursorCrosshair {
   position: fixed;
   z-index: 999999;
