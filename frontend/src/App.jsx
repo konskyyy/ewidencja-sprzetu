@@ -1358,25 +1358,6 @@ function EditDeviceModal({
   Urządzenie na magazynie (brak współrzędnych)
 </label>
 
-{form.in_storage ? (
-  <>
-    <label style={labelStyleLocal}>Magazyn</label>
-    <select
-      value={form.warehouse || "GEO_BB"}
-      onChange={(e) =>
-        setForm((f) => ({ ...f, warehouse: e.target.value }))
-      }
-      style={inputStyleLocal}
-    >
-      {WAREHOUSES.map((w) => (
-        <option key={w.value} value={w.value}>
-          {w.label}
-        </option>
-      ))}
-    </select>
-  </>
-) : null}
-
   const [form, setForm] = useState({
     title: "",
     status: "tachimetr",
@@ -1538,119 +1519,151 @@ function EditDeviceModal({
   };
 
   return (
-    <div
-      style={overlayStyle}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div style={modalStyle}>
-        <div style={headerStyle}>
-          <div style={{ minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 13,
-                lineHeight: 1.15,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {title}
-            </div>
-            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              Dostosuj dane urządzenia i zapisz zmiany.
-            </div>
+  <div
+    style={overlayStyle}
+    onMouseDown={(e) => {
+      if (e.target === e.currentTarget) onClose();
+    }}
+  >
+    <div style={modalStyle}>
+      <div style={headerStyle}>
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 13,
+              lineHeight: 1.15,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {title}
           </div>
+          <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+            Dostosuj dane urządzenia i zapisz zmiany.
+          </div>
+        </div>
 
+        <button
+          onClick={onClose}
+          style={{
+            ...btnStyle,
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.06)",
+            flexShrink: 0,
+          }}
+        >
+          Zamknij
+        </button>
+      </div>
+
+      <div style={bodyStyle}>
+        {err ? (
+          <div
+            style={{
+              padding: 10,
+              borderRadius: 14,
+              border: "1px solid rgba(255,120,120,0.45)",
+              background: "rgba(255,120,120,0.12)",
+              color: "rgba(255,255,255,0.95)",
+              fontSize: 12,
+            }}
+          >
+            {err}
+          </div>
+        ) : null}
+
+        <label style={labelStyleLocal}>Nazwa urządzenia</label>
+        <input
+          value={form.title}
+          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+          style={inputStyleLocal}
+        />
+
+        <label style={labelStyleLocal}>Rodzaj urządzenia</label>
+        <select
+          value={form.status}
+          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+          style={inputStyleLocal}
+        >
+          {DEVICE_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </select>
+
+        <label style={labelStyleLocal}>Opis urządzenia</label>
+        <textarea
+          value={form.note}
+          onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+          style={textareaStyleLocal}
+        />
+
+        {/* MAGAZYN */}
+        <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={!!form.in_storage}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                in_storage: e.target.checked,
+                warehouse: e.target.checked ? f.warehouse || "GEO_BB" : null,
+              }))
+            }
+          />
+          Urządzenie na magazynie (brak współrzędnych)
+        </label>
+
+        {form.in_storage ? (
+          <>
+            <label style={labelStyleLocal}>Magazyn</label>
+            <select
+              value={form.warehouse || "GEO_BB"}
+              onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
+              style={inputStyleLocal}
+            >
+              {WAREHOUSES.map((w) => (
+                <option key={w.value} value={w.value}>
+                  {w.label}
+                </option>
+              ))}
+            </select>
+          </>
+        ) : null}
+
+        <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
             onClick={onClose}
             style={{
               ...btnStyle,
-              padding: "8px 10px",
-              background: "rgba(255,255,255,0.06)",
-              flexShrink: 0,
+              background: "rgba(255,255,255,0.05)",
             }}
           >
-            Zamknij
+            Anuluj
           </button>
-        </div>
 
-        <div style={bodyStyle}>
-          {err ? (
-            <div
-              style={{
-                padding: 10,
-                borderRadius: 14,
-                border: "1px solid rgba(255,120,120,0.45)",
-                background: "rgba(255,120,120,0.12)",
-                color: "rgba(255,255,255,0.95)",
-                fontSize: 12,
-              }}
-            >
-              {err}
-            </div>
-          ) : null}
-
-          <label style={labelStyleLocal}>Nazwa urządzenia</label>
-          <input
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            style={inputStyleLocal}
-          />
-
-          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
-          <select
-  value={form.status}
-  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-  style={inputStyleLocal}
->
-  {DEVICE_TYPES.map((t) => (
-    <option key={t.value} value={t.value}>
-      {t.label}
-    </option>
-  ))}
-</select>
-
-
-          <label style={labelStyleLocal}>Opis urządzenia</label>
-          <textarea
-            value={form.note}
-            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            style={textareaStyleLocal}
-          />
-
-          <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button
-              onClick={onClose}
-              style={{
-                ...btnStyle,
-                background: "rgba(255,255,255,0.05)",
-              }}
-            >
-              Anuluj
-            </button>
-
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              style={{
-                ...btnStyle,
-                background: "rgba(255,255,255,0.10)",
-                opacity: saving ? 0.75 : 1,
-                cursor: saving ? "default" : "pointer",
-              }}
-            >
-              {saving ? "Zapisuję..." : "Zapisz"}
-            </button>
-          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              ...btnStyle,
+              background: "rgba(255,255,255,0.10)",
+              opacity: saving ? 0.75 : 1,
+              cursor: saving ? "default" : "pointer",
+            }}
+          >
+            {saving ? "Zapisuję..." : "Zapisz"}
+          </button>
         </div>
       </div>
     </div>
-  );
-}
+  </div>
+);
+
   function CreateDeviceModal({
   open,
   onClose,
