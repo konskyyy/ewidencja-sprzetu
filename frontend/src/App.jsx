@@ -2769,7 +2769,7 @@ async function togglePointPriority(pt) {
     }}
     title="Dodaj urządzenie przez wpisanie współrzędnych"
   >
-    ➕ Ręcznie
+    ➕ Magazyn
   </button>
 
   <button
