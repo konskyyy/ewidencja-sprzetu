@@ -30,6 +30,13 @@ const GLASS_BG_DARK = "rgba(22,42,64,0.90)";
 const GLASS_SHADOW = "0 10px 28px rgba(0,0,0,0.35)";
 const GLASS_HIGHLIGHT =
   "radial-gradient(700px 400px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)";
+  
+const WAREHOUSES = [
+  { value: "GEO_BB", label: "GEO BB" },
+  { value: "GEO_OM", label: "GEO OM" },
+  { value: "GEO_LD", label: "GEO LD" },
+];
+
 
 /** ===== MAP CONSTS ===== */
 const POLAND_BOUNDS = [
@@ -1751,9 +1758,10 @@ function EditDeviceModal({
               <label style={labelStyleLocal}>Lat</label>
               <input
                 value={form.lat}
+                disabled={!!form.in_storage}
                 onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
-                style={inputStyleLocal}
-                placeholder="np. 52.2297"
+                style={inputStyleLocal},                placeholder="np. 52.2297"
+                
               />
             </div>
             <div>
@@ -2101,6 +2109,8 @@ const [createForm, setCreateForm] = useState({
   note: "",
   lat: "",
   lng: "",
+  in_storage: false,
+  warehouse: "",
 });
 
 function showAllTypes() {
@@ -2674,6 +2684,8 @@ function pickLocationFromMap(latlng) {
         note: "",
         lat: "",
         lng: "",
+        in_storage: false,
+        warehouse: "",
       });
     }}
     style={{
@@ -2689,7 +2701,7 @@ function pickLocationFromMap(latlng) {
     }}
     title="Dodaj urządzenie przez wpisanie współrzędnych"
   >
-    ➕ Dodaj urządzenie
+    ➕ Magazyn
   </button>
 
   <button

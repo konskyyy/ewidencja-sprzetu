@@ -3,6 +3,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const WAREHOUSES = ["GEO_BB", "GEO_OM", "GEO_LD"];
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
@@ -36,6 +37,8 @@ app.options("*", cors());
 const PORT = process.env.PORT || 3001;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+const in_storage = body.in_storage === true || body.in_storage === "true";
+const warehouse = (body.warehouse ?? "").toString().trim();
 
 if (!DATABASE_URL) {
   console.error("❌ DATABASE_URL is missing");
@@ -104,6 +107,41 @@ function authRequired(req, res, next) {
     return res.status(401).json({ error: "Niepoprawny token" });
   }
 }
+function normalizeStorage(body) {
+  const in_storage = body.in_storage === true || body.in_storage === "true";
+  const warehouse = (body.warehouse ?? "").toString().trim();
+
+  if (in_storage) {
+    if (!WAREHOUSES.includes(warehouse)) {
+      const err = new Error("Niepoprawny magazyn.");
+      err.status = 400;
+      throw err;
+    }
+    return {
+      in_storage: true,
+      warehouse,
+      lat: null,
+      lng: null,
+    };
+  }
+
+  // nie magazyn -> lat/lng obowiązkowe
+  const lat = Number(body.lat);
+  const lng = Number(body.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const err = new Error("Podaj poprawne współrzędne lat/lng.");
+    err.status = 400;
+    throw err;
+  }
+
+  return {
+    in_storage: false,
+    warehouse: null,
+    lat,
+    lng,
+  };
+}
+
 
 app.post("/api/auth/register", (req, res) => {
   return res.status(403).json({ error: "Rejestracja jest wyłączona" });
