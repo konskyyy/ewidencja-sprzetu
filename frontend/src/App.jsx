@@ -1340,48 +1340,30 @@ function EditDeviceModal({
   MUTED,
   GLASS_BG,
 }) {
-  const DEVICE_TYPES = [
-    { value: "tachimetr", label: "Tachimetr" },
-    { value: "pochylomierz", label: "Pochyłomierz" },
-    { value: "czujnik_drgan", label: "Czujnik drgań" },
-    { value: "inklinometr", label: "Inklinometr" },
-  ];
-  <label style={labelStyleLocal}>
-  <input
-    type="checkbox"
-    checked={!!form.in_storage}
-    onChange={(e) =>
-      setForm((f) => ({ ...f, in_storage: e.target.checked }))
-    }
-    style={{ marginRight: 8 }}
-  />
-  Urządzenie na magazynie (brak współrzędnych)
-</label>
-
   const [form, setForm] = useState({
     title: "",
     status: "tachimetr",
     note: "",
+    in_storage: true,
+    warehouse: "GEO_BB",
   });
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
+
   function normalizeDeviceType(v) {
-  const s = String(v || "").trim().toLowerCase();
+    const s = String(v || "").trim().toLowerCase();
 
-  // jeśli już jest nowy typ — zostaw
-  if (s === "tachimetr") return "tachimetr";
-  if (s === "pochylomierz") return "pochylomierz";
-  if (s === "czujnik_drgan") return "czujnik_drgan";
-  if (s === "inklinometr") return "inklinometr";
+    if (s === "tachimetr") return "tachimetr";
+    if (s === "pochylomierz") return "pochylomierz";
+    if (s === "czujnik_drgan") return "czujnik_drgan";
+    if (s === "inklinometr") return "inklinometr";
 
-  // stare statusy -> domyślny nowy typ
-  if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny")
+    if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny")
+      return "tachimetr";
+
     return "tachimetr";
-
-  // cokolwiek innego -> domyślnie
-  return "tachimetr";
-}
+  }
 
   useEffect(() => {
     if (!open || !device) return;
@@ -1390,13 +1372,12 @@ function EditDeviceModal({
     setSaving(false);
 
     setForm({
-  title: device.title ?? "",
-  status: normalizeDeviceType(device.status),
-  note: device.note ?? "",
-  in_storage: device.in_storage === true,
-  warehouse: device.warehouse ?? "GEO_BB",
-});
-
+      title: device.title ?? "",
+      status: normalizeDeviceType(device.status),
+      note: device.note ?? "",
+      in_storage: device.in_storage === true,
+      warehouse: device.warehouse ?? "GEO_BB",
+    });
   }, [open, device]);
 
   if (!open || !device) return null;
@@ -1419,7 +1400,6 @@ function EditDeviceModal({
       return;
     }
 
-    // bezpieczeństwo: jeśli ktoś podmieni value ręcznie
     const allowed = new Set(DEVICE_TYPES.map((x) => x.value));
     if (!allowed.has(payload.status)) {
       setErr("Wybierz poprawny rodzaj urządzenia.");
@@ -1519,150 +1499,151 @@ function EditDeviceModal({
   };
 
   return (
-  <div
-    style={overlayStyle}
-    onMouseDown={(e) => {
-      if (e.target === e.currentTarget) onClose();
-    }}
-  >
-    <div style={modalStyle}>
-      <div style={headerStyle}>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              lineHeight: 1.15,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {title}
-          </div>
-          <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-            Dostosuj dane urządzenia i zapisz zmiany.
-          </div>
-        </div>
-
-        <button
-          onClick={onClose}
-          style={{
-            ...btnStyle,
-            padding: "8px 10px",
-            background: "rgba(255,255,255,0.06)",
-            flexShrink: 0,
-          }}
-        >
-          Zamknij
-        </button>
-      </div>
-
-      <div style={bodyStyle}>
-        {err ? (
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 14,
-              border: "1px solid rgba(255,120,120,0.45)",
-              background: "rgba(255,120,120,0.12)",
-              color: "rgba(255,255,255,0.95)",
-              fontSize: 12,
-            }}
-          >
-            {err}
-          </div>
-        ) : null}
-
-        <label style={labelStyleLocal}>Nazwa urządzenia</label>
-        <input
-          value={form.title}
-          onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-          style={inputStyleLocal}
-        />
-
-        <label style={labelStyleLocal}>Rodzaj urządzenia</label>
-        <select
-          value={form.status}
-          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-          style={inputStyleLocal}
-        >
-          {DEVICE_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-
-        <label style={labelStyleLocal}>Opis urządzenia</label>
-        <textarea
-          value={form.note}
-          onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-          style={textareaStyleLocal}
-        />
-
-        {/* MAGAZYN */}
-        <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
-          <input
-            type="checkbox"
-            checked={!!form.in_storage}
-            onChange={(e) =>
-              setForm((f) => ({
-                ...f,
-                in_storage: e.target.checked,
-                warehouse: e.target.checked ? f.warehouse || "GEO_BB" : null,
-              }))
-            }
-          />
-          Urządzenie na magazynie (brak współrzędnych)
-        </label>
-
-        {form.in_storage ? (
-          <>
-            <label style={labelStyleLocal}>Magazyn</label>
-            <select
-              value={form.warehouse || "GEO_BB"}
-              onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
-              style={inputStyleLocal}
+    <div
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div style={modalStyle}>
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
             >
-              {WAREHOUSES.map((w) => (
-                <option key={w.value} value={w.value}>
-                  {w.label}
-                </option>
-              ))}
-            </select>
-          </>
-        ) : null}
+              {title}
+            </div>
+            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+              Dostosuj dane urządzenia i zapisz zmiany.
+            </div>
+          </div>
 
-        <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
           <button
             onClick={onClose}
             style={{
               ...btnStyle,
-              background: "rgba(255,255,255,0.05)",
+              padding: "8px 10px",
+              background: "rgba(255,255,255,0.06)",
+              flexShrink: 0,
             }}
           >
-            Anuluj
+            Zamknij
           </button>
+        </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              ...btnStyle,
-              background: "rgba(255,255,255,0.10)",
-              opacity: saving ? 0.75 : 1,
-              cursor: saving ? "default" : "pointer",
-            }}
+        <div style={bodyStyle}>
+          {err ? (
+            <div
+              style={{
+                padding: 10,
+                borderRadius: 14,
+                border: "1px solid rgba(255,120,120,0.45)",
+                background: "rgba(255,120,120,0.12)",
+                color: "rgba(255,255,255,0.95)",
+                fontSize: 12,
+              }}
+            >
+              {err}
+            </div>
+          ) : null}
+
+          <label style={labelStyleLocal}>Nazwa urządzenia</label>
+          <input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            style={inputStyleLocal}
+          />
+
+          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
+          <select
+            value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+            style={inputStyleLocal}
           >
-            {saving ? "Zapisuję..." : "Zapisz"}
-          </button>
+            {DEVICE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+
+          <label style={labelStyleLocal}>Opis urządzenia</label>
+          <textarea
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            style={textareaStyleLocal}
+          />
+
+          {/* MAGAZYN */}
+          <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={!!form.in_storage}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  in_storage: e.target.checked,
+                  warehouse: e.target.checked ? f.warehouse || "GEO_BB" : null,
+                }))
+              }
+            />
+            Urządzenie na magazynie (brak współrzędnych)
+          </label>
+
+          {form.in_storage ? (
+            <>
+              <label style={labelStyleLocal}>Magazyn</label>
+              <select
+                value={form.warehouse || "GEO_BB"}
+                onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
+                style={inputStyleLocal}
+              >
+                {WAREHOUSES.map((w) => (
+                  <option key={w.value} value={w.value}>
+                    {w.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
+
+          <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button
+              onClick={onClose}
+              style={{
+                ...btnStyle,
+                background: "rgba(255,255,255,0.05)",
+              }}
+            >
+              Anuluj
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                ...btnStyle,
+                background: "rgba(255,255,255,0.10)",
+                opacity: saving ? 0.75 : 1,
+                cursor: saving ? "default" : "pointer",
+              }}
+            >
+              {saving ? "Zapisuję..." : "Zapisz"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
 
   function CreateDeviceModal({
   open,
@@ -2056,7 +2037,6 @@ export default function App() {
 
 /** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
 const crosshairRef = useRef(null);
-const [pickDragging, setPickDragging] = useState(false);
 const [isDraggingMap, setIsDraggingMap] = useState(false);
 
 useEffect(() => {
@@ -2417,46 +2397,7 @@ async function togglePointPriority(pt) {
       setApiError(`Nie mogę dodać urządzenia: ${String(e)}`);
     }
   }
-  async function createDeviceFromForm() {
-  setApiError("");
-
-  const lat = Number(createForm.lat);
-  const lng = Number(createForm.lng);
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    setApiError("Podaj poprawne współrzędne lat/lng.");
-    return;
-  }
-
-  const body = {
-    title: String(createForm.title || "Nowe urządzenie"),
-    note: String(createForm.note || ""),
-    status: String(createForm.status || "tachimetr"),
-    lat,
-    lng,
-  };
-
-  try {
-    const res = await authFetch(`${API}/points`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await readJsonOrThrow(res);
-    const normalized = { ...data, priority: data?.priority === true };
-
-    setPoints((p) => [normalized, ...p]);
-    setSelectedPointId(normalized.id);
-
-    focusPoint(normalized);
-
-    setCreateOpen(false);
-    setAddMode("none");
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
-  }
-}
+ async function createDeviceFromForm() {
 function pickLocationFromMap(latlng) {
   setCreateForm((f) => ({
     ...f,
@@ -2761,7 +2702,7 @@ function pickLocationFromMap(latlng) {
     }}
     title="Dodaj urządzenie przez wpisanie współrzędnych"
   >
-    ➕ Magazyn
+    ➕ Ręcznie
   </button>
 
   <button
