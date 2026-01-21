@@ -1330,6 +1330,7 @@ async function markRead(u) {
 }
 
 /** ===== EDIT MODAL ===== */
+/** ===== EDIT MODAL ===== */
 function EditDeviceModal({
   open,
   device,
@@ -1340,30 +1341,33 @@ function EditDeviceModal({
   MUTED,
   GLASS_BG,
 }) {
-  const [form, setForm] = useState({
-    title: "",
-    status: "tachimetr",
-    note: "",
-    in_storage: true,
-    warehouse: "GEO_BB",
-  });
-
-  const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState("");
-
   function normalizeDeviceType(v) {
     const s = String(v || "").trim().toLowerCase();
 
+    // nowe typy
     if (s === "tachimetr") return "tachimetr";
     if (s === "pochylomierz") return "pochylomierz";
     if (s === "czujnik_drgan") return "czujnik_drgan";
     if (s === "inklinometr") return "inklinometr";
 
-    if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny")
+    // stare statusy -> domyślny nowy typ
+    if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny") {
       return "tachimetr";
+    }
 
     return "tachimetr";
   }
+
+  const [form, setForm] = useState({
+    title: "",
+    status: "tachimetr",
+    note: "",
+    in_storage: false,
+    warehouse: "GEO_BB",
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
     if (!open || !device) return;
@@ -1378,6 +1382,7 @@ function EditDeviceModal({
       in_storage: device.in_storage === true,
       warehouse: device.warehouse ?? "GEO_BB",
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, device]);
 
   if (!open || !device) return null;
@@ -1645,7 +1650,7 @@ function EditDeviceModal({
   );
 }
 
-  function CreateDeviceModal({
+function CreateDeviceModal({
   open,
   onClose,
   onCreate,
@@ -1655,7 +1660,7 @@ function EditDeviceModal({
   TEXT_LIGHT,
   MUTED,
   GLASS_BG,
-  DEVICE_TYPES
+  DEVICE_TYPES,
 }) {
   if (!open) return null;
 
@@ -1768,46 +1773,45 @@ function EditDeviceModal({
           />
 
           <label style={labelStyleLocal}>Rodzaj urządzenia</label>
-<select
-  value={form.status}
-  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-  style={inputStyleLocal}
->
-  {(DEVICE_TYPES || []).map((t) => (
-    <option key={t.value} value={t.value}>
-      {t.label}
-    </option>
-  ))}
-</select>
+          <select
+            value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+            style={inputStyleLocal}
+          >
+            {(DEVICE_TYPES || []).map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
 
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={labelStyleLocal}>Lat</label>
+              <input
+                type="number"
+                step="any"
+                value={form.lat}
+                disabled={!!form.in_storage}
+                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 52.2297"
+              />
+            </div>
 
-         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-  <div>
-    <label style={labelStyleLocal}>Lat</label>
-    <input
-      type="number"
-      step="any"
-      value={form.lat}
-      disabled={!!form.in_storage}
-      onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
-      style={inputStyleLocal}
-      placeholder="np. 52.2297"
-    />
-  </div>
-
-  <div>
-    <label style={labelStyleLocal}>Lng</label>
-    <input
-      type="number"
-      step="any"
-      value={form.lng}
-      disabled={!!form.in_storage}
-      onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
-      style={inputStyleLocal}
-      placeholder="np. 21.0122"
-    />
-  </div>
-</div>
+            <div>
+              <label style={labelStyleLocal}>Lng</label>
+              <input
+                type="number"
+                step="any"
+                value={form.lng}
+                disabled={!!form.in_storage}
+                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 21.0122"
+              />
+            </div>
+          </div>
 
           <label style={labelStyleLocal}>Opis</label>
           <textarea
@@ -1823,10 +1827,7 @@ function EditDeviceModal({
             <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
               Anuluj
             </button>
-            <button
-              onClick={onCreate}
-              style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}
-            >
+            <button onClick={onCreate} style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}>
               Zapisz i dodaj
             </button>
           </div>
@@ -1835,6 +1836,7 @@ function EditDeviceModal({
     </div>
   );
 }
+
 
 function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
   useMapEvents({
