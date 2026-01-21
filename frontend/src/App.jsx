@@ -3382,25 +3382,22 @@ function pickLocationFromMap(latlng) {
   onReady={(map) => {
     mapRef.current = map;
 
-    // stałe handlery (żeby można je było zdjąć poprawnie)
+    // zdejmij poprzednie (HMR / ponowny mount)
+    try {
+      if (map.__tm_dragStart) map.off("dragstart", map.__tm_dragStart);
+      if (map.__tm_dragEnd) map.off("dragend", map.__tm_dragEnd);
+    } catch {}
+
     const handleDragStart = () => setIsDraggingMap(true);
     const handleDragEnd = () => setIsDraggingMap(false);
-
-    // zdejmij tylko te konkretne (gdyby HMR odpalił ponownie)
-    try {
-      map.off("dragstart", handleDragStart);
-      map.off("dragend", handleDragEnd);
-    } catch {}
 
     map.on("dragstart", handleDragStart);
     map.on("dragend", handleDragEnd);
 
-    // zapamiętaj handlery w mapie (żeby kolejne HMR mogło je zdjąć)
     map.__tm_dragStart = handleDragStart;
     map.__tm_dragEnd = handleDragEnd;
   }}
 />
-
 
           <ZoomControl position="bottomright" />
           <TileLayer
