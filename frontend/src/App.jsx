@@ -30,12 +30,6 @@ const GLASS_BG_DARK = "rgba(22,42,64,0.90)";
 const GLASS_SHADOW = "0 10px 28px rgba(0,0,0,0.35)";
 const GLASS_HIGHLIGHT =
   "radial-gradient(700px 400px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)";
-  
-const WAREHOUSES = [
-  { value: "GEO_BB", label: "GEO BB" },
-  { value: "GEO_OM", label: "GEO OM" },
-  { value: "GEO_LD", label: "GEO LD" },
-];
 
 
 /** ===== MAP CONSTS ===== */
@@ -49,6 +43,11 @@ const DEVICE_TYPES = [
   { value: "pochylomierz", label: "Pochyłomierz" },
   { value: "czujnik_drgan", label: "Czujnik drgań" },
   { value: "inklinometr", label: "Inklinometr" },
+];
+const WAREHOUSES = [
+  { value: "GEO_BB", label: "GEO BB" },
+  { value: "GEO_OM", label: "GEO OM" },
+  { value: "GEO_LD", label: "GEO LD" },
 ];
 
 // jeden „source of truth” kolorów
@@ -1347,6 +1346,36 @@ function EditDeviceModal({
     { value: "czujnik_drgan", label: "Czujnik drgań" },
     { value: "inklinometr", label: "Inklinometr" },
   ];
+  <label style={labelStyleLocal}>
+  <input
+    type="checkbox"
+    checked={!!form.in_storage}
+    onChange={(e) =>
+      setForm((f) => ({ ...f, in_storage: e.target.checked }))
+    }
+    style={{ marginRight: 8 }}
+  />
+  Urządzenie na magazynie (brak współrzędnych)
+</label>
+
+{form.in_storage ? (
+  <>
+    <label style={labelStyleLocal}>Magazyn</label>
+    <select
+      value={form.warehouse || "GEO_BB"}
+      onChange={(e) =>
+        setForm((f) => ({ ...f, warehouse: e.target.value }))
+      }
+      style={inputStyleLocal}
+    >
+      {WAREHOUSES.map((w) => (
+        <option key={w.value} value={w.value}>
+          {w.label}
+        </option>
+      ))}
+    </select>
+  </>
+) : null}
 
   const [form, setForm] = useState({
     title: "",
@@ -1380,10 +1409,13 @@ function EditDeviceModal({
     setSaving(false);
 
     setForm({
-      title: device.title ?? "",
-      status: normalizeDeviceType(device.status),
-      note: device.note ?? "",
-    });
+  title: device.title ?? "",
+  status: normalizeDeviceType(device.status),
+  note: device.note ?? "",
+  in_storage: device.in_storage === true,
+  warehouse: device.warehouse ?? "GEO_BB",
+});
+
   }, [open, device]);
 
   if (!open || !device) return null;
@@ -1397,6 +1429,8 @@ function EditDeviceModal({
       title: String(form.title || ""),
       status: normalizeDeviceType(form.status),
       note: String(form.note || ""),
+      in_storage: !!form.in_storage,
+      warehouse: form.in_storage ? String(form.warehouse || "GEO_BB") : null,
     };
 
     if (!payload.title.trim()) {
@@ -1753,27 +1787,33 @@ function EditDeviceModal({
 </select>
 
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div>
-              <label style={labelStyleLocal}>Lat</label>
-              <input
-                value={form.lat}
-                disabled={!!form.in_storage}
-                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
-                style={inputStyleLocal},                placeholder="np. 52.2297"
-                
-              />
-            </div>
-            <div>
-              <label style={labelStyleLocal}>Lng</label>
-              <input
-                value={form.lng}
-                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
-                style={inputStyleLocal}
-                placeholder="np. 21.0122"
-              />
-            </div>
-          </div>
+         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+  <div>
+    <label style={labelStyleLocal}>Lat</label>
+    <input
+      type="number"
+      step="any"
+      value={form.lat}
+      disabled={!!form.in_storage}
+      onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
+      style={inputStyleLocal}
+      placeholder="np. 52.2297"
+    />
+  </div>
+
+  <div>
+    <label style={labelStyleLocal}>Lng</label>
+    <input
+      type="number"
+      step="any"
+      value={form.lng}
+      disabled={!!form.in_storage}
+      onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
+      style={inputStyleLocal}
+      placeholder="np. 21.0122"
+    />
+  </div>
+</div>
 
           <label style={labelStyleLocal}>Opis</label>
           <textarea
@@ -2127,6 +2167,7 @@ function hideAllTypes() {
 
 function focusPoint(pt) {
   const map = mapRef.current;
+  if (pt.in_storage === true) return;
   if (!map || !pt) return;
 
   const lat = Number(pt.lat);
@@ -2274,12 +2315,18 @@ async function saveEditedDevice(payload) {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        lat: pt.lat,
-        lng: pt.lng,
-        title: payload.title,
-        note: payload.note,
-        status: payload.status,
-      }),
+  title: payload.title,
+  note: payload.note,
+  status: payload.status,
+
+  // magazyn:
+  in_storage: payload.in_storage === true,
+  warehouse: payload.in_storage ? payload.warehouse : null,
+
+  // współrzędne tylko jeśli NIE magazyn
+  lat: payload.in_storage ? null : pt.lat,
+  lng: payload.in_storage ? null : pt.lng,
+}),
     });
 
     const updated = await readJsonOrThrow(res);
@@ -3366,27 +3413,29 @@ function pickLocationFromMap(latlng) {
           />
 
           {/* URZĄDZENIA */}
-          {filteredPoints.map((pt) => (
-            <Marker
-              key={`pt-${pt.id}`}
-              position={[Number(pt.lat), Number(pt.lng)]}
-              icon={pinIcons[pt.status] || pinIcons.__default}
-              bubblingMouseEvents={false}
-              ref={(ref) => {
-                if (ref) markerRefs.current[pt.id] = ref;
-              }}
-              eventHandlers={{
-                click: (e) => {
-                  suppressNextMapClickRef.current = true;
-                  setTimeout(() => (suppressNextMapClickRef.current = false), 0);
+          {filteredPoints
+  .filter((pt) => pt.in_storage !== true) // ⬅️ TYLKO te na mapie
+  .map((pt) => (
+    <Marker
+      key={`pt-${pt.id}`}
+      position={[Number(pt.lat), Number(pt.lng)]}
+      icon={pinIcons[pt.status] || pinIcons.__default}
+      bubblingMouseEvents={false}
+      ref={(ref) => {
+        if (ref) markerRefs.current[pt.id] = ref;
+      }}
+      eventHandlers={{
+        click: (e) => {
+          suppressNextMapClickRef.current = true;
+          setTimeout(() => (suppressNextMapClickRef.current = false), 0);
 
-                  setSelectedPointId(pt.id);
-                  try {
-                    e?.target?.openPopup?.();
-                  } catch {}
-                },
-              }}
-            >
+          setSelectedPointId(pt.id);
+          try {
+            e?.target?.openPopup?.();
+          } catch {}
+        },
+      }}
+    >
               <Popup closeButton={false} className="tmPopup">
                 <div
                   style={{
