@@ -2298,7 +2298,91 @@ async function deleteSelectedDevice() {
     } catch {}
   }
 }
+function pickLocationFromMap(latlng) {
+  setCreateForm((f) => ({
+    ...f,
+    lat: String(latlng.lat),
+    lng: String(latlng.lng),
+  }));
 
+  setCreateOpen(true);   // modal ma się otworzyć po kliknięciu mapy
+  setAddMode("none");
+
+  try {
+    mapRef.current?.flyTo(
+      [latlng.lat, latlng.lng],
+      Math.max(mapRef.current.getZoom(), 12),
+      { animate: true, duration: 0.5 }
+    );
+  } catch {}
+}
+
+async function createDeviceFromForm() {
+  setApiError("");
+
+  const title = String(createForm.title || "").trim();
+  const status = String(createForm.status || "tachimetr");
+  const note = String(createForm.note || "");
+
+  const in_storage = createForm.in_storage === true;
+  const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
+
+  const lat = Number(createForm.lat);
+  const lng = Number(createForm.lng);
+
+  if (!title) {
+    setApiError("Podaj nazwę urządzenia.");
+    return;
+  }
+
+  if (!in_storage) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      setApiError("Podaj poprawne współrzędne (lat/lng).");
+      return;
+    }
+  }
+
+  try {
+    const res = await authFetch(`${API}/points`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        status,
+        note,
+        in_storage,
+        warehouse,
+        lat: in_storage ? null : lat,
+        lng: in_storage ? null : lng,
+      }),
+    });
+
+    const data = await readJsonOrThrow(res);
+    const normalized = { ...data, priority: data?.priority === true };
+
+    setPoints((p) => [normalized, ...p]);
+    setSelectedPointId(normalized.id);
+
+    if (!normalized.in_storage) focusPoint(normalized);
+
+    setCreateOpen(false);
+    setAddMode("none");
+
+    // wyczyść formularz
+    setCreateForm({
+      title: "",
+      status: "tachimetr",
+      note: "",
+      lat: "",
+      lng: "",
+      in_storage: false,
+      warehouse: "",
+    });
+  } catch (e) {
+    if (e?.status === 401) return logout("expired");
+    setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
+  }
+}
 async function saveEditedDevice(payload) {
   const pt = selectedPoint;
   if (!pt) return;
@@ -2399,25 +2483,6 @@ async function togglePointPriority(pt) {
       setApiError(`Nie mogę dodać urządzenia: ${String(e)}`);
     }
   }
- async function createDeviceFromForm() {
-function pickLocationFromMap(latlng) {
-  setCreateForm((f) => ({
-    ...f,
-    lat: String(latlng.lat),
-    lng: String(latlng.lng),
-  }));
-
-  setCreateOpen(true);     // <-- modal otwiera się dopiero teraz
-  setAddMode("none");     // zostawiamy point (możesz też ustawić "none" jeśli wolisz)
-
-  try {
-    mapRef.current?.flyTo([latlng.lat, latlng.lng], Math.max(mapRef.current.getZoom(), 12), {
-      animate: true,
-      duration: 0.5,
-    });
-  } catch {}
-}
-
   /** ===== LOGIN UI ===== */
   if (mode === "checking") {
     return (
@@ -2720,6 +2785,8 @@ function pickLocationFromMap(latlng) {
     note: "",
     lat: "",
     lng: "",
+    in_storage: false,
+    warehouse: "",
   });
 }}
 
