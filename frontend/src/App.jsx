@@ -2030,6 +2030,7 @@ export default function App() {
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [storageOpen, setStorageOpen] = useState(true);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
   const [visibleTypes, setVisibleTypes] = useState(() => {
   const obj = {};
@@ -2122,6 +2123,36 @@ const filteredDevicesSearch = useMemo(() => {
     return title.includes(q) || note.includes(q);
   });
 }, [filteredPoints, projectQuery]);
+
+const storageDevices = useMemo(() => {
+  return (Array.isArray(points) ? points : []).filter((p) => p?.in_storage === true);
+}, [points]);
+
+const storageByWarehouse = useMemo(() => {
+  const map = {};
+  for (const w of WAREHOUSES) map[w.value] = [];
+  for (const p of storageDevices) {
+    const key = p.warehouse || "GEO_BB";
+    if (!map[key]) map[key] = [];
+    map[key].push(p);
+  }
+  // sort w magazynie: priorytet i id (jak na mapie)
+  for (const k of Object.keys(map)) map[k] = map[k].slice().sort(byPriorityThenIdDesc);
+  return map;
+}, [storageDevices]);
+
+const filteredStorageSearch = useMemo(() => {
+  const q = String(projectQuery || "").trim().toLowerCase();
+  const all = storageDevices.slice().sort(byPriorityThenIdDesc);
+  if (!q) return all;
+
+  return all.filter((p) => {
+    const title = String(p?.title || p?.name || "").toLowerCase();
+    const note = String(p?.note || p?.notes || "").toLowerCase();
+    const wh = String(p?.warehouse || "").toLowerCase();
+    return title.includes(q) || note.includes(q) || wh.includes(q);
+  });
+}, [storageDevices, projectQuery]);
 
 
 const counts = useMemo(() => {
@@ -2965,6 +2996,144 @@ async function togglePointPriority(pt) {
                     marginBottom: 8,
                   }}
                 >
+                  <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
+
+{/* MAGAZYN */}
+<div
+  style={{
+    borderRadius: 14,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.04)",
+    backgroundImage: GLASS_HIGHLIGHT,
+    padding: 10,
+    marginBottom: 10,
+  }}
+>
+  <div
+    onClick={() => setStorageOpen((o) => !o)}
+    style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      cursor: "pointer",
+      fontWeight: 900,
+      fontSize: 13,
+    }}
+  >
+    <span>Magazyny</span>
+    <span style={{ fontSize: 12, color: MUTED }}>
+      {storageDevices.length} {storageOpen ? "▾" : "▸"}
+    </span>
+  </div>
+
+  {storageOpen ? (
+    <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+      {/* kafelki magazynów */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+        {WAREHOUSES.map((w) => {
+          const n = (storageByWarehouse[w.value] || []).length;
+          return (
+            <div
+              key={w.value}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.05)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 10,
+              }}
+              title={w.label}
+            >
+              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {w.label}</span>
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>{n}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* lista urządzeń magazynowych (podlega wyszukiwaniu projectQuery) */}
+      {filteredStorageSearch.length === 0 ? (
+        <div style={{ fontSize: 11, color: MUTED, padding: "6px 2px" }}>
+          Brak urządzeń w magazynie (lub brak wyników dla wyszukiwania).
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 8, maxHeight: 220, overflow: "auto", paddingRight: 4 }}>
+          {filteredStorageSearch.map((x) => {
+            const selected = x.id === selectedPointId;
+            const whLabel = WAREHOUSES.find((w) => w.value === x.warehouse)?.label || x.warehouse || "GEO_BB";
+
+            return (
+              <div
+                key={`storage-${x.id}`}
+                onClick={() => {
+                  setSelectedPointId(x.id);
+                  // nie ma flyTo (bo magazyn), więc od razu edycja:
+                  setEditOpen(true);
+                }}
+                style={{
+                  padding: 9,
+                  borderRadius: 14,
+                  border: x.priority
+                    ? "2px solid rgba(255,216,77,0.70)"
+                    : selected
+                    ? "2px solid rgba(255,255,255,0.35)"
+                    : `1px solid ${BORDER}`,
+                  background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                    📦
+                  </span>
+
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 12,
+                      minWidth: 0,
+                      overflow: "hidden",
+                      display: "-webkit-box",
+                      WebkitBoxOrient: "vertical",
+                      WebkitLineClamp: 2,
+                      lineClamp: 2,
+                      whiteSpace: "normal",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {x.title || `Urządzenie #${x.id}`}
+                  </span>
+
+                  <span style={{ ...pillStyle, marginLeft: "auto", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {whLabel}
+                  </span>
+                </div>
+
+                <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
+                  <span style={{ ...pillStyle, fontWeight: 800 }}>
+                    {statusLabel(x.status)}
+                  </span>
+
+                  {x.note ? (
+                    <span style={{ fontSize: 11, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {x.note}
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: 11, color: MUTED, opacity: 0.8 }}>Brak notatki</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  ) : null}
+</div>
+
                   <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
                   <div
@@ -3039,15 +3208,8 @@ async function togglePointPriority(pt) {
                           }}
                         >
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span
-                              style={{
-                                width: 14,
-                                display: "flex",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              📍
+                            <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                              {x.in_storage ? "📦" : "📍"}
                             </span>
 
                             <span
