@@ -2996,7 +2996,9 @@ async function togglePointPriority(pt) {
                     marginBottom: 8,
                   }}
                 >
-                  <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
+
+
+<div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
 
 {/* MAGAZYN */}
 <div
@@ -3028,7 +3030,6 @@ async function togglePointPriority(pt) {
 
   {storageOpen ? (
     <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-      {/* kafelki magazynów */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
         {WAREHOUSES.map((w) => {
           const n = (storageByWarehouse[w.value] || []).length;
@@ -3054,7 +3055,6 @@ async function togglePointPriority(pt) {
         })}
       </div>
 
-      {/* lista urządzeń magazynowych (podlega wyszukiwaniu projectQuery) */}
       {filteredStorageSearch.length === 0 ? (
         <div style={{ fontSize: 11, color: MUTED, padding: "6px 2px" }}>
           Brak urządzeń w magazynie (lub brak wyników dla wyszukiwania).
@@ -3063,14 +3063,16 @@ async function togglePointPriority(pt) {
         <div style={{ display: "grid", gap: 8, maxHeight: 220, overflow: "auto", paddingRight: 4 }}>
           {filteredStorageSearch.map((x) => {
             const selected = x.id === selectedPointId;
-            const whLabel = WAREHOUSES.find((w) => w.value === x.warehouse)?.label || x.warehouse || "GEO_BB";
+            const whLabel =
+              WAREHOUSES.find((w) => w.value === x.warehouse)?.label ||
+              x.warehouse ||
+              "GEO_BB";
 
             return (
               <div
                 key={`storage-${x.id}`}
                 onClick={() => {
                   setSelectedPointId(x.id);
-                  // nie ma flyTo (bo magazyn), więc od razu edycja:
                   setEditOpen(true);
                 }}
                 style={{
@@ -3113,17 +3115,19 @@ async function togglePointPriority(pt) {
                 </div>
 
                 <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ ...pillStyle, fontWeight: 800 }}>
-                    {statusLabel(x.status)}
+                  <span style={{ ...pillStyle, fontWeight: 800 }}>{statusLabel(x.status)}</span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: MUTED,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      opacity: x.note ? 1 : 0.8,
+                    }}
+                  >
+                    {x.note || "Brak notatki"}
                   </span>
-
-                  {x.note ? (
-                    <span style={{ fontSize: 11, color: MUTED, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {x.note}
-                    </span>
-                  ) : (
-                    <span style={{ fontSize: 11, color: MUTED, opacity: 0.8 }}>Brak notatki</span>
-                  )}
                 </div>
               </div>
             );
@@ -3133,6 +3137,7 @@ async function togglePointPriority(pt) {
     </div>
   ) : null}
 </div>
+
 
                   <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
@@ -3185,65 +3190,62 @@ async function togglePointPriority(pt) {
 
                 <div style={{ overflow: "auto", paddingRight: 4, flex: 1, minHeight: 0 }}>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {filteredDevicesSearch.map((x) => {
-                      const selected = x.id === selectedPointId;
+                   {filteredDevicesSearch.map((x) => {
+  const selected = x.id === selectedPointId;
 
-                      return (
-                        <div
-                          key={`device-${x.id}`}
-                          onClick={() => {
-                            setSelectedPointId(x.id);
-                            focusPoint(x);
-                          }}
-                          style={{
-                            padding: 9,
-                            borderRadius: 14,
-                            border: x.priority
-                              ? "2px solid rgba(255,216,77,0.70)"
-                              : selected
-                              ? "2px solid rgba(255,255,255,0.35)"
-                              : `1px solid ${BORDER}`,
-                            background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                              {x.in_storage ? "📦" : "📍"}
-                            </span>
+  return (
+    <div
+      key={`device-${x.id}`}
+      onClick={() => {
+        if (x.in_storage) {
+          setSelectedPointId(x.id);
+          setEditOpen(true);
+        } else {
+          setSelectedPointId(x.id);
+          focusPoint(x);
+        }
+      }}
+      style={{
+        padding: 9,
+        borderRadius: 14,
+        border: x.priority
+          ? "2px solid rgba(255,216,77,0.70)"
+          : selected
+          ? "2px solid rgba(255,255,255,0.35)"
+          : `1px solid ${BORDER}`,
+        background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
+        cursor: "pointer",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+          {x.in_storage ? "📦" : "📍"}
+        </span>
 
-                            <span
-                              style={{
-                                fontWeight: 800,
-                                fontSize: 12,
-                                minWidth: 0,
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitBoxOrient: "vertical",
-                                WebkitLineClamp: 2,
-                                lineClamp: 2,
-                                whiteSpace: "normal",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {x.title || `Urządzenie #${x.id}`}
-                            </span>
+        <span
+          style={{
+            fontWeight: 800,
+            fontSize: 12,
+            minWidth: 0,
+            overflow: "hidden",
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: 2,
+            lineClamp: 2,
+            whiteSpace: "normal",
+            lineHeight: 1.2,
+          }}
+        >
+          {x.title || `Urządzenie #${x.id}`}
+        </span>
 
-                            <span
-                              style={{
-                                ...pillStyle,
-                                marginLeft: "auto",
-                                whiteSpace: "nowrap",
-                                flexShrink: 0,
-                                fontWeight: 700,
-                              }}
-                            >
-                              {statusLabel(x.status)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+        <span style={{ ...pillStyle, marginLeft: "auto", whiteSpace: "nowrap", flexShrink: 0, fontWeight: 700 }}>
+          {statusLabel(x.status)}
+        </span>
+      </div>
+    </div>
+  );
+})}
 
                     {filteredDevicesSearch.length === 0 ? (
                       <div style={{ ...emptyBoxStyle, fontSize: 11 }}>
