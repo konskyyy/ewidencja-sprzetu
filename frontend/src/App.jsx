@@ -2755,7 +2755,7 @@ async function togglePointPriority(pt) {
                 </div>
               ) : null}
 
-              {/* Dodawanie */}
+                           {/* Dodawanie */}
               <div
                 style={{
                   padding: 10,
@@ -2772,81 +2772,114 @@ async function togglePointPriority(pt) {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-  <button
-    onClick={() => {
-      // tryb ręczny
-      setAddMode("manual");
-      setCreateOpen(true);
-      setCreateForm({
-        title: "",
-        status: "tachimetr",
-        note: "",
-        lat: "",
-        lng: "",
-        in_storage: false,
-        warehouse: "",
-      });
-    }}
-    style={{
-      padding: "9px 10px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background:
-        addMode === "manual" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-      color: TEXT_LIGHT,
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 12,
-    }}
-    title="Dodaj urządzenie przez wpisanie współrzędnych"
-  >
-    ➕ Magazyn
-  </button>
+                  {/* RĘCZNIE (lat/lng) */}
+                  <button
+                    onClick={() => {
+                      setAddMode("manual");
+                      setCreateOpen(true);
+                      setCreateForm({
+                        title: "",
+                        status: "tachimetr",
+                        note: "",
+                        lat: "",
+                        lng: "",
+                        in_storage: false,
+                        warehouse: "GEO_BB",
+                      });
+                    }}
+                    style={{
+                      padding: "9px 10px",
+                      borderRadius: 12,
+                      border: `1px solid ${BORDER}`,
+                      background:
+                        addMode === "manual"
+                          ? "rgba(255,255,255,0.14)"
+                          : "rgba(255,255,255,0.08)",
+                      color: TEXT_LIGHT,
+                      cursor: "pointer",
+                      fontWeight: 800,
+                      fontSize: 12,
+                    }}
+                    title="Dodaj urządzenie ręcznie (wpisz współrzędne)"
+                  >
+                    ➕ Ręcznie
+                  </button>
 
-  <button
-    onClick={() => {
-  // tryb mapy: modal ma się pojawić dopiero po kliknięciu na mapie
-  setCreateOpen(false);
-  setAddMode((m) => (m === "point" ? "none" : "point"));
+                  {/* MAGAZYN */}
+                  <button
+                    onClick={() => {
+                      setAddMode("manual"); // modal otwieramy od razu (bez trybu mapy)
+                      setCreateOpen(true);
+                      setCreateForm({
+                        title: "",
+                        status: "tachimetr",
+                        note: "",
+                        lat: "",
+                        lng: "",
+                        in_storage: true,
+                        warehouse: "GEO_BB",
+                      });
+                    }}
+                    style={{
+                      padding: "9px 10px",
+                      borderRadius: 12,
+                      border: `1px solid ${BORDER}`,
+                      background: "rgba(255,255,255,0.08)",
+                      color: TEXT_LIGHT,
+                      cursor: "pointer",
+                      fontWeight: 800,
+                      fontSize: 12,
+                    }}
+                    title="Dodaj urządzenie do magazynu (bez współrzędnych)"
+                  >
+                    📦 Magazyn
+                  </button>
 
-  // przygotuj pusty formularz (żeby po kliknięciu mapy od razu był czysty)
-  setCreateForm({
-    title: "",
-    status: "tachimetr",
-    note: "",
-    lat: "",
-    lng: "",
-    in_storage: false,
-    warehouse: "",
-  });
-}}
+                  {/* WSKAŻ NA MAPIE */}
+                  <button
+                    onClick={() => {
+                      setCreateOpen(false);
+                      setAddMode((m) => (m === "point" ? "none" : "point"));
 
-    style={{
-      padding: "9px 10px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background:
-        addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-      color: TEXT_LIGHT,
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 12,
-    }}
-    title="Kliknij mapę, aby wskazać lokalizację urządzenia"
-  >
-    📍 Wskaż na mapie
-  </button>
-</div>
+                      setCreateForm({
+                        title: "",
+                        status: "tachimetr",
+                        note: "",
+                        lat: "",
+                        lng: "",
+                        in_storage: false,
+                        warehouse: "GEO_BB",
+                      });
+                    }}
+                    style={{
+                      gridColumn: "1 / -1",
+                      padding: "9px 10px",
+                      borderRadius: 12,
+                      border: `1px solid ${BORDER}`,
+                      background:
+                        addMode === "point"
+                          ? "rgba(255,255,255,0.14)"
+                          : "rgba(255,255,255,0.08)",
+                      color: TEXT_LIGHT,
+                      cursor: "pointer",
+                      fontWeight: 800,
+                      fontSize: 12,
+                    }}
+                    title="Kliknij mapę, aby wskazać lokalizację urządzenia"
+                  >
+                    📍 Wskaż na mapie
+                  </button>
+                </div>
 
-<div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
-  {addMode === "manual"
-    ? "Dodawanie: ręcznie — wpisz współrzędne i zapisz."
-    : addMode === "point"
-    ? "Dodawanie: wskaż na mapie — kliknij na mapie, aby uzupełnić lat/lng w formularzu."
-    : "Wybierz tryb dodawania."}
-</div>
-
+                <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
+                  {addMode === "manual"
+                    ? "Dodawanie: modal — uzupełnij dane i zapisz."
+                    : addMode === "point"
+                    ? "Dodawanie: wskaż na mapie — kliknij mapę, aby uzupełnić lat/lng i otworzyć formularz."
+                    : "Wybierz tryb dodawania."}
+                </div>
               </div>
+
 
               {/* NARZĘDZIA */}
               <div
@@ -2998,147 +3031,160 @@ async function togglePointPriority(pt) {
                 >
 
 
-<div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
+                <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
 
-{/* MAGAZYN */}
-<div
-  style={{
-    borderRadius: 14,
-    border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.04)",
-    backgroundImage: GLASS_HIGHLIGHT,
-    padding: 10,
-    marginBottom: 10,
-  }}
->
-  <div
-    onClick={() => setStorageOpen((o) => !o)}
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      cursor: "pointer",
-      fontWeight: 900,
-      fontSize: 13,
-    }}
-  >
-    <span>Magazyny</span>
-    <span style={{ fontSize: 12, color: MUTED }}>
-      {storageDevices.length} {storageOpen ? "▾" : "▸"}
-    </span>
-  </div>
+                                <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
 
-  {storageOpen ? (
-    <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {WAREHOUSES.map((w) => {
-          const n = (storageByWarehouse[w.value] || []).length;
-          return (
-            <div
-              key={w.value}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 10,
-              }}
-              title={w.label}
-            >
-              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {w.label}</span>
-              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>{n}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredStorageSearch.length === 0 ? (
-        <div style={{ fontSize: 11, color: MUTED, padding: "6px 2px" }}>
-          Brak urządzeń w magazynie (lub brak wyników dla wyszukiwania).
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: 8, maxHeight: 220, overflow: "auto", paddingRight: 4 }}>
-          {filteredStorageSearch.map((x) => {
-            const selected = x.id === selectedPointId;
-            const whLabel =
-              WAREHOUSES.find((w) => w.value === x.warehouse)?.label ||
-              x.warehouse ||
-              "GEO_BB";
-
-            return (
-              <div
-                key={`storage-${x.id}`}
-                onClick={() => {
-                  setSelectedPointId(x.id);
-                  setEditOpen(true);
-                }}
-                style={{
-                  padding: 9,
-                  borderRadius: 14,
-                  border: x.priority
-                    ? "2px solid rgba(255,216,77,0.70)"
-                    : selected
-                    ? "2px solid rgba(255,255,255,0.35)"
-                    : `1px solid ${BORDER}`,
-                  background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
-                    📦
-                  </span>
-
-                  <span
+                {/* MAGAZYN */}
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.04)",
+                    backgroundImage: GLASS_HIGHLIGHT,
+                    padding: 10,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    onClick={() => setStorageOpen((o) => !o)}
                     style={{
-                      fontWeight: 800,
-                      fontSize: 12,
-                      minWidth: 0,
-                      overflow: "hidden",
-                      display: "-webkit-box",
-                      WebkitBoxOrient: "vertical",
-                      WebkitLineClamp: 2,
-                      lineClamp: 2,
-                      whiteSpace: "normal",
-                      lineHeight: 1.2,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      fontWeight: 900,
+                      fontSize: 13,
                     }}
                   >
-                    {x.title || `Urządzenie #${x.id}`}
-                  </span>
+                    <span>Magazyny</span>
+                    <span style={{ fontSize: 12, color: MUTED }}>
+                      {storageDevices.length} {storageOpen ? "▾" : "▸"}
+                    </span>
+                  </div>
 
-                  <span style={{ ...pillStyle, marginLeft: "auto", whiteSpace: "nowrap", flexShrink: 0 }}>
-                    {whLabel}
-                  </span>
+                  {storageOpen ? (
+                    <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+                      {/* kafelki magazynów */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        {WAREHOUSES.map((w) => {
+                          const n = (storageByWarehouse[w.value] || []).length;
+                          return (
+                            <div
+                              key={w.value}
+                              style={{
+                                padding: "8px 10px",
+                                borderRadius: 12,
+                                border: `1px solid ${BORDER}`,
+                                background: "rgba(255,255,255,0.05)",
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                gap: 10,
+                              }}
+                              title={w.label}
+                            >
+                              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {w.label}</span>
+                              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>{n}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* lista urządzeń magazynowych */}
+                      {filteredStorageSearch.length === 0 ? (
+                        <div style={{ fontSize: 11, color: MUTED, padding: "6px 2px" }}>
+                          Brak urządzeń w magazynie (lub brak wyników dla wyszukiwania).
+                        </div>
+                      ) : (
+                        <div style={{ display: "grid", gap: 8, maxHeight: 220, overflow: "auto", paddingRight: 4 }}>
+                          {filteredStorageSearch.map((x) => {
+                            const selected = x.id === selectedPointId;
+                            const whLabel =
+                              WAREHOUSES.find((w) => w.value === x.warehouse)?.label ||
+                              x.warehouse ||
+                              "GEO_BB";
+
+                            return (
+                              <div
+                                key={`storage-${x.id}`}
+                                onClick={() => {
+                                  setSelectedPointId(x.id);
+                                  setEditOpen(true);
+                                }}
+                                style={{
+                                  padding: 9,
+                                  borderRadius: 14,
+                                  border: x.priority
+                                    ? "2px solid rgba(255,216,77,0.70)"
+                                    : selected
+                                    ? "2px solid rgba(255,255,255,0.35)"
+                                    : `1px solid ${BORDER}`,
+                                  background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                  <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
+                                    📦
+                                  </span>
+
+                                  <span
+                                    style={{
+                                      fontWeight: 800,
+                                      fontSize: 12,
+                                      minWidth: 0,
+                                      overflow: "hidden",
+                                      display: "-webkit-box",
+                                      WebkitBoxOrient: "vertical",
+                                      WebkitLineClamp: 2,
+                                      lineClamp: 2,
+                                      whiteSpace: "normal",
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {x.title || `Urządzenie #${x.id}`}
+                                  </span>
+
+                                  <span style={{ ...pillStyle, marginLeft: "auto", whiteSpace: "nowrap", flexShrink: 0 }}>
+                                    {whLabel}
+                                  </span>
+                                </div>
+
+                                <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
+                                  <span style={{ ...pillStyle, fontWeight: 800 }}>{statusLabel(x.status)}</span>
+                                  <span
+                                    style={{
+                                      fontSize: 11,
+                                      color: MUTED,
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                      whiteSpace: "nowrap",
+                                      opacity: x.note ? 1 : 0.8,
+                                    }}
+                                  >
+                                    {x.note || "Brak notatki"}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
 
-                <div style={{ marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{ ...pillStyle, fontWeight: 800 }}>{statusLabel(x.status)}</span>
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: MUTED,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      opacity: x.note ? 1 : 0.8,
-                    }}
-                  >
-                    {x.note || "Brak notatki"}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  ) : null}
-</div>
-
-
+                {/* HEADER listy urządzeń */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    marginBottom: 8,
+                  }}
+                >
                   <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
                   <div
@@ -3167,7 +3213,7 @@ async function togglePointPriority(pt) {
                   </div>
                 </div>
 
-                <input
+                                               <input
                   className="projectSearch"
                   value={projectQuery}
                   onChange={(e) => setProjectQuery(e.target.value)}
@@ -3190,62 +3236,79 @@ async function togglePointPriority(pt) {
 
                 <div style={{ overflow: "auto", paddingRight: 4, flex: 1, minHeight: 0 }}>
                   <div style={{ display: "grid", gap: 8 }}>
-                   {filteredDevicesSearch.map((x) => {
-  const selected = x.id === selectedPointId;
+                    {filteredDevicesSearch.map((x) => {
+                      const selected = x.id === selectedPointId;
 
-  return (
-    <div
-      key={`device-${x.id}`}
-      onClick={() => {
-        if (x.in_storage) {
-          setSelectedPointId(x.id);
-          setEditOpen(true);
-        } else {
-          setSelectedPointId(x.id);
-          focusPoint(x);
-        }
-      }}
-      style={{
-        padding: 9,
-        borderRadius: 14,
-        border: x.priority
-          ? "2px solid rgba(255,216,77,0.70)"
-          : selected
-          ? "2px solid rgba(255,255,255,0.35)"
-          : `1px solid ${BORDER}`,
-        background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
-        cursor: "pointer",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ width: 14, display: "flex", justifyContent: "center", flexShrink: 0 }}>
-          {x.in_storage ? "📦" : "📍"}
-        </span>
+                      return (
+                        <div
+                          key={`device-${x.id}`}
+                          onClick={() => {
+                            setSelectedPointId(x.id);
 
-        <span
-          style={{
-            fontWeight: 800,
-            fontSize: 12,
-            minWidth: 0,
-            overflow: "hidden",
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: 2,
-            lineClamp: 2,
-            whiteSpace: "normal",
-            lineHeight: 1.2,
-          }}
-        >
-          {x.title || `Urządzenie #${x.id}`}
-        </span>
+                            if (x.in_storage) {
+                              setEditOpen(true);
+                            } else {
+                              focusPoint(x);
+                            }
+                          }}
+                          style={{
+                            padding: 9,
+                            borderRadius: 14,
+                            border: x.priority
+                              ? "2px solid rgba(255,216,77,0.70)"
+                              : selected
+                              ? "2px solid rgba(255,255,255,0.35)"
+                              : `1px solid ${BORDER}`,
+                            background: x.priority
+                              ? "rgba(255,216,77,0.08)"
+                              : "rgba(255,255,255,0.05)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                            <span
+                              style={{
+                                width: 14,
+                                display: "flex",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              {x.in_storage ? "📦" : "📍"}
+                            </span>
 
-        <span style={{ ...pillStyle, marginLeft: "auto", whiteSpace: "nowrap", flexShrink: 0, fontWeight: 700 }}>
-          {statusLabel(x.status)}
-        </span>
-      </div>
-    </div>
-  );
-})}
+                            <span
+                              style={{
+                                fontWeight: 800,
+                                fontSize: 12,
+                                minWidth: 0,
+                                overflow: "hidden",
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 2,
+                                lineClamp: 2,
+                                whiteSpace: "normal",
+                                lineHeight: 1.2,
+                              }}
+                            >
+                              {x.title || `Urządzenie #${x.id}`}
+                            </span>
+
+                            <span
+                              style={{
+                                ...pillStyle,
+                                marginLeft: "auto",
+                                whiteSpace: "nowrap",
+                                flexShrink: 0,
+                                fontWeight: 700,
+                              }}
+                            >
+                              {statusLabel(x.status)}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
 
                     {filteredDevicesSearch.length === 0 ? (
                       <div style={{ ...emptyBoxStyle, fontSize: 11 }}>
@@ -3254,6 +3317,8 @@ async function togglePointPriority(pt) {
                     ) : null}
                   </div>
                 </div>
+
+
               </div>
             </div>
           </>
