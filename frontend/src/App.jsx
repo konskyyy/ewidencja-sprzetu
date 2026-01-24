@@ -3147,7 +3147,21 @@ async function togglePointPriority(pt) {
                     marginBottom: 8,
                   }}
                 >
-                  <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
+                  <div className="devices-header">
+  <div className="devices-title">Lista urządzeń</div>
+
+  <div className="devices-legend">
+    <div className="legend-item">
+      <span className="legend-icon">📦</span>
+      <span>urządzenie na magazynie</span>
+    </div>
+    <div className="legend-item">
+      <span className="legend-icon">📍</span>
+      <span>sprzęt w terenie</span>
+    </div>
+  </div>
+</div>
+
 
                   <div
                     style={{

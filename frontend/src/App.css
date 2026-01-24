@@ -209,3 +209,33 @@ body {
 .tmPickModeDragging .tmCursorCrosshair {
   display: none !important;
 }
+
+.devices-header {
+  margin-bottom: 10px;
+}
+
+.devices-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 6px;
+}
+
+.devices-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
