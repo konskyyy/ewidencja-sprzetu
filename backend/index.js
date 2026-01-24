@@ -702,6 +702,9 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
 // ===== START =====
 (async () => {
   await ensureSchema();
+  app.use((req, res) => {
+  res.status(404).json({ error: "Not Found", path: req.path, method: req.method });
+});
 
   app.listen(PORT, () => {
     console.log(`Backend działa na porcie ${PORT}`);
