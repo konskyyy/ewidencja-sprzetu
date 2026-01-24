@@ -1484,12 +1484,21 @@ function EditDeviceModal({
     setErr("");
 
     const payload = {
-      title: String(form.title || ""),
-      status: normalizeDeviceType(form.status),
-      note: String(form.note || ""),
-      in_storage: !!form.in_storage,
-      warehouse: form.in_storage ? String(form.warehouse || "GEO_BB") : null,
-    };
+  title: form.title,
+  status: form.status,
+  note: form.note,
+  in_storage: !!form.in_storage,
+  warehouse: form.in_storage ? form.warehouse : null,
+  lat: form.in_storage ? null : Number(form.lat),
+  lng: form.in_storage ? null : Number(form.lng),
+};
+
+await authFetch(`${API}/api/points`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(payload),
+});
+
 
     if (!payload.title.trim()) {
       setErr("Nazwa urządzenia nie może być pusta.");
