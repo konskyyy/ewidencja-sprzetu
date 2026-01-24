@@ -1772,6 +1772,32 @@ async function handleSave() {
   GLASS_BG={GLASS_BG_DARK}
   GLASS_SHADOW={GLASS_SHADOW}
 />
+function useLockBodyScroll(locked) {
+  useEffect(() => {
+    if (!locked) return;
+
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [locked]);
+}
+
+function useEscapeToClose(open, onClose) {
+  useEffect(() => {
+    if (!open) return;
+
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+}
+
 function WarehouseDevicesModal({
   open,
   warehouseKey,
@@ -1783,9 +1809,13 @@ function WarehouseDevicesModal({
   TEXT_LIGHT,
   GLASS_BG,
   GLASS_SHADOW,
+  DEVICE_TYPES, // ✅ dodane: nie polegamy na globalu
 }) {
   const [q, setQ] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+
+  useLockBodyScroll(open);
+  useEscapeToClose(open, onClose);
 
   useEffect(() => {
     if (!open) return;
@@ -1797,13 +1827,12 @@ function WarehouseDevicesModal({
     const query = String(q || "").trim().toLowerCase();
 
     return (Array.isArray(items) ? items : []).filter((p) => {
-      if (typeFilter !== "all" && String(p.status) !== String(typeFilter)) return false;
-
+      if (typeFilter !== "all" && String(p?.status) !== String(typeFilter)) return false;
       if (!query) return true;
 
       const title = String(p?.title || "").toLowerCase();
       const note = String(p?.note || "").toLowerCase();
-      const id = String(p?.id || "");
+      const id = String(p?.id ?? "");
       return title.includes(query) || note.includes(query) || id.includes(query);
     });
   }, [items, q, typeFilter]);
@@ -1881,10 +1910,7 @@ function WarehouseDevicesModal({
     fontSize: 12,
   };
 
-  const tableWrapStyle = {
-    padding: 12,
-    overflow: "auto",
-  };
+  const tableWrapStyle = { padding: 12, overflow: "auto" };
 
   const thStyle = {
     textAlign: "left",
@@ -1906,6 +1932,8 @@ function WarehouseDevicesModal({
     verticalAlign: "top",
   };
 
+  const safeDeviceTypes = Array.isArray(DEVICE_TYPES) ? DEVICE_TYPES : [];
+
   return (
     <div
       style={overlayStyle}
@@ -1913,7 +1941,13 @@ function WarehouseDevicesModal({
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div style={modalStyle}>
+      <div
+        style={modalStyle}
+        onMouseDown={(e) => {
+          // ✅ klik wewnątrz nie zamyka
+          e.stopPropagation();
+        }}
+      >
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
             <div
@@ -1925,14 +1959,14 @@ function WarehouseDevicesModal({
                 textOverflow: "ellipsis",
               }}
             >
-              Magazyn: {warehouseKey}
+              Magazyn: {warehouseKey || "(nieznany)"}
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              {filtered.length} / {items?.length || 0} urządzeń
+              {filtered.length} / {Array.isArray(items) ? items.length : 0} urządzeń
             </div>
           </div>
 
-          <button onClick={onClose} style={btnStyle}>
+          <button onClick={onClose} style={btnStyle} type="button">
             Zamknij
           </button>
         </div>
@@ -1951,7 +1985,7 @@ function WarehouseDevicesModal({
             style={inputStyleLocal}
           >
             <option value="all">Wszystkie rodzaje</option>
-            {DEVICE_TYPES.map((t) => (
+            {safeDeviceTypes.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>
@@ -2027,6 +2061,7 @@ function WarehouseDevicesModal({
                         width: "100%",
                       }}
                       title="Otwórz urządzenie"
+                      type="button"
                     >
                       Otwórz
                     </button>
@@ -2060,8 +2095,11 @@ function CreateDeviceModal({
   MUTED,
   GLASS_BG,
   DEVICE_TYPES,
-  WAREHOUSES
+  WAREHOUSES,
 }) {
+  useLockBodyScroll(open);
+  useEscapeToClose(open, onClose);
+
   if (!open) return null;
 
   const overlayStyle = {
@@ -2140,25 +2178,37 @@ function CreateDeviceModal({
     fontSize: 12,
   };
 
+  const safeDeviceTypes = Array.isArray(DEVICE_TYPES) ? DEVICE_TYPES : [];
+  const safeWarehouses = Array.isArray(WAREHOUSES) ? WAREHOUSES : [];
+
   return (
     <div
       style={overlayStyle}
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div style={modalStyle}>
+      <div
+        style={modalStyle}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
-              Dodaj urządzenie (ręcznie)
+              Dodaj urządzenie
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              Wpisz współrzędne i zapisz.
+              Uzupełnij dane i zapisz.
             </div>
           </div>
 
-          <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}>
+          <button
+            onClick={onClose}
+            style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}
+            type="button"
+          >
             Zamknij
           </button>
         </div>
@@ -2178,48 +2228,48 @@ function CreateDeviceModal({
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
             style={inputStyleLocal}
           >
-            {(DEVICE_TYPES || []).map((t) => (
+            {safeDeviceTypes.map((t) => (
               <option key={t.value} value={t.value}>
                 {t.label}
               </option>
             ))}
           </select>
-          {/* MAGAZYN */}
-<label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
-  <input
-    type="checkbox"
-    checked={!!form.in_storage}
-    onChange={(e) => {
-      const checked = e.target.checked;
-      setForm((f) => ({
-        ...f,
-        in_storage: checked,
-        // gdy magazyn = true -> czyść współrzędne i ustaw domyślny warehouse
-        lat: checked ? "" : f.lat,
-        lng: checked ? "" : f.lng,
-        warehouse: checked ? (f.warehouse || "GEO_BB") : f.warehouse,
-      }));
-    }}
-  />
-  Urządzenie na magazynie (bez współrzędnych)
-</label>
 
-{form.in_storage ? (
-  <>
-    <label style={labelStyleLocal}>Wybierz magazyn</label>
-    <select
-      value={form.warehouse || "GEO_BB"}
-      onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
-      style={inputStyleLocal}
-    >
-      {WAREHOUSES.map((w) => (
-        <option key={w.value} value={w.value}>
-          {w.label}
-        </option>
-      ))}
-    </select>
-  </>
-) : null}
+          {/* MAGAZYN */}
+          <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={!!form.in_storage}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setForm((f) => ({
+                  ...f,
+                  in_storage: checked,
+                  lat: checked ? "" : f.lat,
+                  lng: checked ? "" : f.lng,
+                  warehouse: checked ? (f.warehouse || "GEO_BB") : f.warehouse,
+                }));
+              }}
+            />
+            Urządzenie na magazynie (bez współrzędnych)
+          </label>
+
+          {form.in_storage ? (
+            <>
+              <label style={labelStyleLocal}>Wybierz magazyn</label>
+              <select
+                value={form.warehouse || "GEO_BB"}
+                onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
+                style={inputStyleLocal}
+              >
+                {safeWarehouses.map((w) => (
+                  <option key={w.value} value={w.value}>
+                    {w.label}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
@@ -2260,10 +2310,18 @@ function CreateDeviceModal({
           <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
+            <button
+              onClick={onClose}
+              style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}
+              type="button"
+            >
               Anuluj
             </button>
-            <button onClick={onCreate} style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}>
+            <button
+              onClick={onCreate}
+              style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}
+              type="button"
+            >
               Zapisz i dodaj
             </button>
           </div>
@@ -2272,7 +2330,6 @@ function CreateDeviceModal({
     </div>
   );
 }
-
 
 function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
   useMapEvents({
@@ -2283,9 +2340,13 @@ function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
       const target = e?.originalEvent?.target;
       if (!target) return;
 
-      const isInteractive = target.closest(
-        ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-control, .leaflet-tooltip"
-      );
+      // ✅ target bywa node bez closest (np. SVG path/text)
+      const closest = typeof target.closest === "function" ? target.closest.bind(target) : null;
+
+      const isInteractive =
+        closest?.(
+          ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-control, .leaflet-tooltip"
+        ) ?? false;
 
       if (isInteractive) return;
 
@@ -2299,6 +2360,7 @@ function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
 
   return null;
 }
+
 export default function App() {
   const [projectQuery, setProjectQuery] = useState("");
 
