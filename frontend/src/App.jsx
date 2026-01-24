@@ -1749,6 +1749,7 @@ function CreateDeviceModal({
   MUTED,
   GLASS_BG,
   DEVICE_TYPES,
+  WAREHOUSES
 }) {
   if (!open) return null;
 
@@ -1872,6 +1873,42 @@ function CreateDeviceModal({
               </option>
             ))}
           </select>
+          {/* MAGAZYN */}
+<label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
+  <input
+    type="checkbox"
+    checked={!!form.in_storage}
+    onChange={(e) => {
+      const checked = e.target.checked;
+      setForm((f) => ({
+        ...f,
+        in_storage: checked,
+        // gdy magazyn = true -> czyść współrzędne i ustaw domyślny warehouse
+        lat: checked ? "" : f.lat,
+        lng: checked ? "" : f.lng,
+        warehouse: checked ? (f.warehouse || "GEO_BB") : f.warehouse,
+      }));
+    }}
+  />
+  Urządzenie na magazynie (bez współrzędnych)
+</label>
+
+{form.in_storage ? (
+  <>
+    <label style={labelStyleLocal}>Wybierz magazyn</label>
+    <select
+      value={form.warehouse || "GEO_BB"}
+      onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
+      style={inputStyleLocal}
+    >
+      {WAREHOUSES.map((w) => (
+        <option key={w.value} value={w.value}>
+          {w.label}
+        </option>
+      ))}
+    </select>
+  </>
+) : null}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <div>
@@ -2445,6 +2482,10 @@ async function createDeviceFromForm() {
 
   const in_storage = createForm.in_storage === true;
   const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
+  if (in_storage && !warehouse) {
+  setApiError("Wybierz magazyn.");
+  return;
+}
 
   const lat = Number(createForm.lat);
   const lng = Number(createForm.lng);
@@ -2494,7 +2535,7 @@ async function createDeviceFromForm() {
       note: "",
       lat: "",
       lng: "",
-      in_storage: false,
+      in_storage: true,
       warehouse: "",
     });
   } catch (e) {
@@ -3743,6 +3784,7 @@ async function togglePointPriority(pt) {
           TEXT_LIGHT={TEXT_LIGHT}
           MUTED={MUTED}
           GLASS_BG={GLASS_BG_DARK}
+          WAREHOUSES={WAREHOUSES}
         />
         <CreateDeviceModal
   open={createOpen}
@@ -3758,6 +3800,7 @@ async function togglePointPriority(pt) {
   MUTED={MUTED}
   GLASS_BG={GLASS_BG_DARK}
   DEVICE_TYPES={DEVICE_TYPES}
+  WAREHOUSES={WAREHOUSES}
 />
 
       </main>
