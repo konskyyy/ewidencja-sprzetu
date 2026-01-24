@@ -248,6 +248,9 @@ async function readJsonOrThrow(res) {
 
   return data;
 }
+function toBool(v) {
+  return v === true || v === 1 || v === "1" || v === "true";
+}
 
 function MapRefSetter({ onReady }) {
   const map = useMap();
@@ -2250,7 +2253,7 @@ const filteredDevicesSearch = useMemo(() => {
 }, [filteredPoints, projectQuery]);
 
 const storageDevices = useMemo(() => {
-  return (Array.isArray(points) ? points : []).filter((p) => p?.in_storage === true);
+  return (Array.isArray(points) ? points : []).filter((p) => toBool(p?.in_storage));
 }, [points]);
 
 const storageByWarehouse = useMemo(() => {
@@ -2408,7 +2411,8 @@ async function loadPoints() {
 
     setPoints(
       Array.isArray(data)
-        ? data.map((p) => ({ ...p, priority: p.priority === true }))
+        ? data.map((p) => ({ ...p, priority: p.priority === true,in_storage: toBool(p.in_storage), warehouse: p.warehouse ?? null,
+         }))
         : []
     );
   } catch (e) {
@@ -2481,14 +2485,38 @@ async function createDeviceFromForm() {
   const note = String(createForm.note || "");
 
   const in_storage = createForm.in_storage === true;
-  const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
-  if (in_storage && !warehouse) {
-  setApiError("Wybierz magazyn.");
-  return;
+const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
+
+const lat = in_storage ? null : Number(createForm.lat);
+const lng = in_storage ? null : Number(createForm.lng);
+
+if (!title) { ... }
+
+if (in_storage) {
+  if (!warehouse) {
+    setApiError("Wybierz magazyn.");
+    return;
+  }
+} else {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    setApiError("Podaj poprawne współrzędne (lat/lng).");
+    return;
+  }
 }
 
-  const lat = Number(createForm.lat);
-  const lng = Number(createForm.lng);
+const res = await authFetch(`${API}/points`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    title,
+    status,
+    note,
+    in_storage,
+    warehouse,
+    lat, // null jeśli magazyn
+    lng, // null jeśli magazyn
+  }),
+});
 
   if (!title) {
     setApiError("Podaj nazwę urządzenia.");
@@ -2518,7 +2546,7 @@ async function createDeviceFromForm() {
     });
 
     const data = await readJsonOrThrow(res);
-    const normalized = { ...data, priority: data?.priority === true };
+    const normalized = { ...data, priority: data?.priority === true, in_storage: toBool(data?.in_storage), warehouse: data?.warehouse || null };
 
     setPoints((p) => [normalized, ...p]);
     setSelectedPointId(normalized.id);
@@ -3636,7 +3664,7 @@ async function togglePointPriority(pt) {
 
           {/* URZĄDZENIA */}
           {filteredPoints
-  .filter((pt) => pt.in_storage !== true) // ⬅️ TYLKO te na mapie
+  .filter((pt) => !toBool(pt.in_storage)) // ⬅️ TYLKO te na mapie
   .map((pt) => (
     <Marker
       key={`pt-${pt.id}`}
