@@ -2735,572 +2735,558 @@ async function togglePointPriority(pt) {
         overflow: "hidden",
       }}
     >
-      {/* SIDEBAR */}
-      <aside
+     {/* SIDEBAR */}
+<aside
+  style={{
+    color: TEXT_LIGHT,
+    borderRight: sidebarOpen ? `1px solid ${BORDER}` : "none",
+    overflow: "hidden",
+    width: sidebarOpen ? sidebarWidthOpen : sidebarWidthClosed,
+    transition: "width 200ms ease",
+    background: GLASS_BG,
+    backgroundImage: GLASS_HIGHLIGHT,
+    backdropFilter: "blur(8px)",
+    boxShadow: GLASS_SHADOW,
+  }}
+>
+  {sidebarOpen ? (
+    <>
+      {/* HEADER */}
+      <div
         style={{
-          color: TEXT_LIGHT,
-          borderRight: sidebarOpen ? `1px solid ${BORDER}` : "none",
-          overflow: "hidden",
-          width: sidebarOpen ? sidebarWidthOpen : sidebarWidthClosed,
-          transition: "width 200ms ease",
-          background: GLASS_BG,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "12px 12px",
+          borderBottom: `1px solid ${BORDER}`,
+          background: GLASS_BG_DARK,
           backgroundImage: GLASS_HIGHLIGHT,
-          backdropFilter: "blur(8px)",
-          boxShadow: GLASS_SHADOW,
+          backdropFilter: "blur(10px)",
         }}
       >
-        {sidebarOpen ? (
-          <>
-            {/* HEADER */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          title="Zwiń panel"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.06)",
+            color: TEXT_LIGHT,
+            cursor: "pointer",
+            display: "grid",
+            placeItems: "center",
+            fontSize: 16,
+            lineHeight: 1,
+            padding: 0,
+            boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+          }}
+        >
+          ⟨
+        </button>
+
+        <div style={{ display: "grid", gap: 3, flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 900,
+                letterSpacing: 0.6,
+                padding: "3px 8px",
+                borderRadius: 999,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.88)",
+                flexShrink: 0,
+              }}
+            >
+              GEO
+            </span>
+
+            <div
+              style={{
+                fontWeight: 900,
+                letterSpacing: 0.2,
+                fontSize: 14,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Ewidencja sprzętu
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 999,
+                background: "rgba(34,197,94,0.95)",
+                boxShadow: "0 0 12px rgba(34,197,94,0.22)",
+                flexShrink: 0,
+              }}
+            />
+            <div
+              style={{
+                fontSize: 11,
+                color: MUTED,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Zalogowano:{" "}
+              <b style={{ color: "rgba(255,255,255,0.88)" }}>
+                {user?.email || "(użytkownik)"}
+              </b>
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={() => logout()}
+          style={{
+            padding: "8px 10px",
+            borderRadius: 12,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.06)",
+            color: TEXT_LIGHT,
+            cursor: "pointer",
+            fontWeight: 900,
+            fontSize: 11,
+            boxShadow: "0 10px 22px rgba(0,0,0,0.16)",
+          }}
+        >
+          Wyloguj
+        </button>
+      </div>
+
+      <div
+        style={{
+          padding: 10,
+          height: "calc(100% - 55px)",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {apiError ? (
+          <div
+            style={{
+              padding: 10,
+              borderRadius: 14,
+              border: "1px solid rgba(255,120,120,0.45)",
+              background: "rgba(255,120,120,0.12)",
+              color: "rgba(255,255,255,0.95)",
+              fontSize: 11,
+              marginBottom: 10,
+            }}
+          >
+            {apiError}
+          </div>
+        ) : null}
+
+        {/* Dodawanie */}
+        <div
+          style={{
+            padding: 10,
+            borderRadius: 14,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.04)",
+            backgroundImage: GLASS_HIGHLIGHT,
+            backdropFilter: "blur(8px)",
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>
+            Dodawanie urządzenia
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {/* MAGAZYN */}
+            <button
+              onClick={() => {
+                setAddMode("manual");
+                setCreateOpen(true);
+                setCreateForm({
+                  title: "",
+                  status: "tachimetr",
+                  note: "",
+                  lat: "",
+                  lng: "",
+                  in_storage: true,
+                  warehouse: "GEO_BB",
+                });
+              }}
+              style={{
+                padding: "9px 10px",
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.08)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              📦 Magazyn
+            </button>
+
+            {/* WSKAŻ NA MAPIE */}
+            <button
+              onClick={() => {
+                setCreateOpen(false);
+                setAddMode((m) => (m === "point" ? "none" : "point"));
+                setCreateForm({
+                  title: "",
+                  status: "tachimetr",
+                  note: "",
+                  lat: "",
+                  lng: "",
+                  in_storage: false,
+                  warehouse: "GEO_BB",
+                });
+              }}
+              style={{
+                padding: "9px 10px",
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              📍 Wskaż na mapie
+            </button>
+          </div>
+
+          <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
+            {addMode === "manual"
+              ? "Dodawanie: modal — uzupełnij dane i zapisz."
+              : addMode === "point"
+              ? "Dodawanie: wskaż na mapie — kliknij mapę, aby uzupełnić lat/lng i otworzyć formularz."
+              : "Wybierz tryb dodawania."}
+          </div>
+        </div>
+
+        {/* NARZĘDZIA */}
+        <div
+          style={{
+            padding: 10,
+            borderRadius: 14,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.04)",
+            backgroundImage: GLASS_HIGHLIGHT,
+            backdropFilter: "blur(8px)",
+            marginBottom: 10,
+            display: "flex",
+            flexDirection: "column",
+            minHeight: 0,
+            flex: 1,
+          }}
+        >
+          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Narzędzia</div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+              marginBottom: 10,
+            }}
+          >
+            <button
+              onClick={() => {
+                loadPoints();
+              }}
+              style={{
+                width: "100%",
+                padding: 9,
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.08)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              {loadingPoints ? "Ładuję..." : "Odśwież"}
+            </button>
+
+            <button
+              onClick={() => {
+                setSelectedPointId(null);
+                try {
+                  mapRef.current?.closePopup?.();
+                } catch {}
+              }}
+              style={{
+                width: "100%",
+                padding: 9,
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.05)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              Odznacz
+            </button>
+          </div>
+
+          {selectedPoint ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <button
+                onClick={() => {
+                  if (selectedPoint) togglePointPriority(selectedPoint);
+                }}
+                style={{
+                  padding: "9px 10px",
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  background: "rgba(255,255,255,0.08)",
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  justifyContent: "center",
+                  color: TEXT_LIGHT,
+                }}
+                title="Oznacz jako ważne"
+              >
+                <span
+                  style={{
+                    fontSize: 16,
+                    lineHeight: 1,
+                    color: selectedPoint?.priority
+                      ? "rgba(255,255,255,0.65)"
+                      : "rgba(245,158,11,0.95)",
+                    textShadow: selectedPoint?.priority ? "none" : "0 0 12px rgba(245,158,11,0.25)",
+                  }}
+                >
+                  ❗
+                </span>
+                <span style={{ fontSize: 12, whiteSpace: "nowrap" }}>Ważne</span>
+              </button>
+
+              <button
+                onClick={() => setEditOpen(true)}
+                style={{
+                  padding: 9,
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  background: "rgba(255,255,255,0.10)",
+                  color: TEXT_LIGHT,
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: 12,
+                }}
+              >
+                Edytuj
+              </button>
+
+              <button
+                onClick={deleteSelectedDevice}
+                style={{
+                  padding: 9,
+                  borderRadius: 12,
+                  border: "1px solid rgba(255,80,80,0.55)",
+                  background: "rgba(255,80,80,0.14)",
+                  color: TEXT_LIGHT,
+                  cursor: "pointer",
+                  fontWeight: 800,
+                  fontSize: 12,
+                }}
+              >
+                Usuń
+              </button>
+            </div>
+          ) : null}
+
+          <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
+
+          {/* LISTA URZĄDZEŃ — nagłówek + legenda (bez zmiany fontu) */}
+          <div style={{ marginBottom: 10 }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "space-between",
                 gap: 10,
-                padding: "12px 12px",
-                borderBottom: `1px solid ${BORDER}`,
-                background: GLASS_BG_DARK,
-                backgroundImage: GLASS_HIGHLIGHT,
-                backdropFilter: "blur(10px)",
               }}
             >
-              <button
-                onClick={() => setSidebarOpen(false)}
-                title="Zwiń panel"
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.06)",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  display: "grid",
-                  placeItems: "center",
-                  fontSize: 16,
-                  lineHeight: 1,
-                  padding: 0,
-                  boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
-                }}
-              >
-                ⟨
-              </button>
+              {/* zostawiamy dokładnie taki sam styl jak w innych nagłówkach sekcji */}
+              <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
-              <div style={{ display: "grid", gap: 3, flex: 1, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 900,
-                      letterSpacing: 0.6,
-                      padding: "3px 8px",
-                      borderRadius: 999,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.88)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    GEO
-                  </span>
-
-                  <div
-                    style={{
-                      fontWeight: 900,
-                      letterSpacing: 0.2,
-                      fontSize: 14,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Ewidencja sprzętu
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: 999,
-                      background: "rgba(34,197,94,0.95)",
-                      boxShadow: "0 0 12px rgba(34,197,94,0.22)",
-                      flexShrink: 0,
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: MUTED,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    Zalogowano:{" "}
-                    <b style={{ color: "rgba(255,255,255,0.88)" }}>
-                      {user?.email || "(użytkownik)"}
-                    </b>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => logout()}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.06)",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  fontWeight: 900,
-                  fontSize: 11,
-                  boxShadow: "0 10px 22px rgba(0,0,0,0.16)",
-                }}
-              >
-                Wyloguj
-              </button>
-            </div>
-
-            <div
-              style={{
-                padding: 10,
-                height: "calc(100% - 55px)",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {apiError ? (
-                <div
-                  style={{
-                    padding: 10,
-                    borderRadius: 14,
-                    border: "1px solid rgba(255,120,120,0.45)",
-                    background: "rgba(255,120,120,0.12)",
-                    color: "rgba(255,255,255,0.95)",
-                    fontSize: 11,
-                    marginBottom: 10,
-                  }}
-                >
-                  {apiError}
-                </div>
-              ) : null}
-
-                           {/* Dodawanie */}
               <div
                 style={{
-                  padding: 10,
-                  borderRadius: 14,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.04)",
-                  backgroundImage: GLASS_HIGHLIGHT,
-                  backdropFilter: "blur(8px)",
-                  marginBottom: 10,
-                }}
-              >
-                <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>
-                  Dodawanie urządzenia
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-  {/* MAGAZYN */}
-  <button
-    onClick={() => {
-      setAddMode("manual");
-      setCreateOpen(true);
-      setCreateForm({
-        title: "",
-        status: "tachimetr",
-        note: "",
-        lat: "",
-        lng: "",
-        in_storage: true,
-        warehouse: "GEO_BB",
-      });
-    }}
-    style={{
-      padding: "9px 10px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background: "rgba(255,255,255,0.08)",
-      color: TEXT_LIGHT,
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 12,
-    }}
-  >
-    📦 Magazyn
-  </button>
-
-  {/* WSKAŻ NA MAPIE */}
-  <button
-    onClick={() => {
-      setCreateOpen(false);
-      setAddMode((m) => (m === "point" ? "none" : "point"));
-      setCreateForm({
-        title: "",
-        status: "tachimetr",
-        note: "",
-        lat: "",
-        lng: "",
-        in_storage: false,
-        warehouse: "GEO_BB",
-      });
-    }}
-    style={{
-      padding: "9px 10px",
-      borderRadius: 12,
-      border: `1px solid ${BORDER}`,
-      background:
-        addMode === "point"
-          ? "rgba(255,255,255,0.14)"
-          : "rgba(255,255,255,0.08)",
-      color: TEXT_LIGHT,
-      cursor: "pointer",
-      fontWeight: 800,
-      fontSize: 12,
-    }}
-  >
-    📍 Wskaż na mapie
-  </button>
-</div>
-
-                <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
-                  {addMode === "manual"
-                    ? "Dodawanie: modal — uzupełnij dane i zapisz."
-                    : addMode === "point"
-                    ? "Dodawanie: wskaż na mapie — kliknij mapę, aby uzupełnić lat/lng i otworzyć formularz."
-                    : "Wybierz tryb dodawania."}
-                </div>
-              </div>
-
-
-              {/* NARZĘDZIA */}
-              <div
-                style={{
-                  padding: 10,
-                  borderRadius: 14,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.04)",
-                  backgroundImage: GLASS_HIGHLIGHT,
-                  backdropFilter: "blur(8px)",
-                  marginBottom: 10,
                   display: "flex",
-                  flexDirection: "column",
-                  minHeight: 0,
-                  flex: 1,
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 11,
+                  color: MUTED,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
                 }}
               >
-                <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Narzędzia</div>
-
-                <div
+                <span
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                    marginBottom: 10,
-                  }}
-                >
-                  <button
-                    onClick={() => {
-                      loadPoints();
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: 9,
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                  >
-                    {loadingPoints ? "Ładuję..." : "Odśwież"}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setSelectedPointId(null);
-                      try {
-                        mapRef.current?.closePopup?.();
-                      } catch {}
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: 9,
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.05)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                  >
-                    Odznacz
-                  </button>
-                </div>
-
-                {selectedPoint ? (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-                    <button
-                      onClick={() => {
-                        if (selectedPoint) togglePointPriority(selectedPoint);
-                      }}
-                      style={{
-                        padding: "9px 10px",
-                        borderRadius: 12,
-                        border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.08)",
-                        cursor: "pointer",
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        justifyContent: "center",
-                        color: TEXT_LIGHT,
-                      }}
-                      title="Oznacz jako ważne"
-                    >
-                      <span
-                        style={{
-                          fontSize: 16,
-                          lineHeight: 1,
-                          color:
-                            selectedPoint?.priority ? "rgba(255,255,255,0.65)" : "rgba(245,158,11,0.95)",
-                          textShadow: selectedPoint?.priority ? "none" : "0 0 12px rgba(245,158,11,0.25)",
-                        }}
-                      >
-                        ❗
-                      </span>
-                      <span style={{ fontSize: 12, whiteSpace: "nowrap" }}>Ważne</span>
-                    </button>
-
-                    <button
-                      onClick={() => setEditOpen(true)}
-                      style={{
-                        padding: 9,
-                        borderRadius: 12,
-                        border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.10)",
-                        color: TEXT_LIGHT,
-                        cursor: "pointer",
-                        fontWeight: 800,
-                        fontSize: 12,
-                      }}
-                    >
-                      Edytuj
-                    </button>
-
-                    <button
-                      onClick={deleteSelectedDevice}
-                      style={{
-                        padding: 9,
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,80,80,0.55)",
-                        background: "rgba(255,80,80,0.14)",
-                        color: TEXT_LIGHT,
-                        cursor: "pointer",
-                        fontWeight: 800,
-                        fontSize: 12,
-                      }}
-                    >
-                      Usuń
-                    </button>
-                  </div>
-                ) : null}
-
-                <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    marginBottom: 8,
-                  }}
-                >
-
-
-                <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-                                <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-               
-
-                
-                </div>
-
-                {/* HEADER listy urządzeń */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 10,
-                    marginBottom: 8,
-                  }}
-                >
-                  <div className="devices-header">
-<div className="section devices-section">
-  <div className="section-title">Lista urządzeń</div>
-
-  <div className="devices-legend">
-    <span className="legend-item">
-      <span className="legend-icon">📦</span> urządzenie na magazynie
-    </span>
-    <span className="legend-item">
-      <span className="legend-icon">📍</span> sprzęt w terenie
-    </span>
-  </div>
-
-
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      fontSize: 11,
-                      color: MUTED,
-                      whiteSpace: "nowrap",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: 999,
-                        border: "1px solid rgba(255,216,77,0.55)",
-                        background: "rgba(255,216,77,0.10)",
-                        boxShadow: "0 0 10px rgba(255,216,77,0.12)",
-                        display: "inline-block",
-                      }}
-                    />
-                    Ważne
-                  </div>
-                </div>
-
-                                               <input
-                  className="projectSearch"
-                  value={projectQuery}
-                  onChange={(e) => setProjectQuery(e.target.value)}
-                  placeholder="Szukaj urządzenia… (wpisz nazwę lub słowo klucz)"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    height: 36,
-                    padding: "0 10px",
-                    borderRadius: 12,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.06)",
-                    color: TEXT_LIGHT,
-                    outline: "none",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    marginBottom: 10,
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    border: "1px solid rgba(255,216,77,0.55)",
+                    background: "rgba(255,216,77,0.10)",
+                    boxShadow: "0 0 10px rgba(255,216,77,0.12)",
+                    display: "inline-block",
                   }}
                 />
-
-                <div style={{ overflow: "auto", paddingRight: 4, flex: 1, minHeight: 0 }}>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {filteredDevicesSearch.map((x) => {
-                      const selected = x.id === selectedPointId;
-
-                      return (
-                        <div
-                          key={`device-${x.id}`}
-                          onClick={() => {
-                            setSelectedPointId(x.id);
-
-                            if (x.in_storage) {
-                              setEditOpen(true);
-                            } else {
-                              focusPoint(x);
-                            }
-                          }}
-                          style={{
-                            padding: 9,
-                            borderRadius: 14,
-                            border: x.priority
-                              ? "2px solid rgba(255,216,77,0.70)"
-                              : selected
-                              ? "2px solid rgba(255,255,255,0.35)"
-                              : `1px solid ${BORDER}`,
-                            background: x.priority
-                              ? "rgba(255,216,77,0.08)"
-                              : "rgba(255,255,255,0.05)",
-                            cursor: "pointer",
-                          }}
-                        >
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <span
-                              style={{
-                                width: 14,
-                                display: "flex",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              {x.in_storage ? "📦" : "📍"}
-                            </span>
-
-                            <span
-                              style={{
-                                fontWeight: 800,
-                                fontSize: 12,
-                                minWidth: 0,
-                                overflow: "hidden",
-                                display: "-webkit-box",
-                                WebkitBoxOrient: "vertical",
-                                WebkitLineClamp: 2,
-                                lineClamp: 2,
-                                whiteSpace: "normal",
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {x.title || `Urządzenie #${x.id}`}
-                            </span>
-
-                            <span
-                              style={{
-                                ...pillStyle,
-                                marginLeft: "auto",
-                                whiteSpace: "nowrap",
-                                flexShrink: 0,
-                                fontWeight: 700,
-                              }}
-                            >
-                              {statusLabel(x.status)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {filteredDevicesSearch.length === 0 ? (
-                      <div style={{ ...emptyBoxStyle, fontSize: 11 }}>
-                        Brak danych dla zaznaczonych statusów / wyszukiwania.
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-
-
+                Ważne
               </div>
             </div>
-          </>
-        ) : null}
-      </aside>
 
-      {/* MAP */}
-     <main
+            {/* legenda POD tytułem (prosta i kompaktowa) */}
+            <div
+              style={{
+                marginTop: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                flexWrap: "wrap",
+                fontSize: 12,
+                color: "rgba(255,255,255,0.65)",
+              }}
+            >
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📦</span>
+                <span>urządzenie na magazynie</span>
+              </div>
+
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📍</span>
+                <span>sprzęt w terenie</span>
+              </div>
+            </div>
+          </div>
+
+          <input
+            className="projectSearch"
+            value={projectQuery}
+            onChange={(e) => setProjectQuery(e.target.value)}
+            placeholder="Szukaj urządzenia… (wpisz nazwę lub słowo klucz)"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              height: 36,
+              padding: "0 10px",
+              borderRadius: 12,
+              border: `1px solid ${BORDER}`,
+              background: "rgba(255,255,255,0.06)",
+              color: TEXT_LIGHT,
+              outline: "none",
+              fontSize: 12,
+              fontWeight: 700,
+              marginBottom: 10,
+            }}
+          />
+
+          <div style={{ overflow: "auto", paddingRight: 4, flex: 1, minHeight: 0 }}>
+            <div style={{ display: "grid", gap: 8 }}>
+              {filteredDevicesSearch.map((x) => {
+                const selected = x.id === selectedPointId;
+
+                return (
+                  <div
+                    key={`device-${x.id}`}
+                    onClick={() => {
+                      setSelectedPointId(x.id);
+
+                      if (x.in_storage) {
+                        setEditOpen(true);
+                      } else {
+                        focusPoint(x);
+                      }
+                    }}
+                    style={{
+                      padding: 9,
+                      borderRadius: 14,
+                      border: x.priority
+                        ? "2px solid rgba(255,216,77,0.70)"
+                        : selected
+                        ? "2px solid rgba(255,255,255,0.35)"
+                        : `1px solid ${BORDER}`,
+                      background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span
+                        style={{
+                          width: 14,
+                          display: "flex",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {x.in_storage ? "📦" : "📍"}
+                      </span>
+
+                      <span
+                        style={{
+                          fontWeight: 800,
+                          fontSize: 12,
+                          minWidth: 0,
+                          overflow: "hidden",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 2,
+                          lineClamp: 2,
+                          whiteSpace: "normal",
+                          lineHeight: 1.2,
+                        }}
+                      >
+                        {x.title || `Urządzenie #${x.id}`}
+                      </span>
+
+                      <span
+                        style={{
+                          ...pillStyle,
+                          marginLeft: "auto",
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {statusLabel(x.status)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {filteredDevicesSearch.length === 0 ? (
+                <div style={{ ...emptyBoxStyle, fontSize: 11 }}>
+                  Brak danych dla zaznaczonych statusów / wyszukiwania.
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  ) : null}
+</aside>
+
+{/* MAP */}
+<main
   className={`${addMode === "point" ? "tmPickMode" : ""} ${
     addMode === "point" && isDraggingMap ? "tmPickModeDragging" : ""
   }`}
@@ -3310,285 +3296,269 @@ async function togglePointPriority(pt) {
     position: "relative",
   }}
 >
-  {addMode === "point" ? (
-    <div
-      ref={crosshairRef}
-      className="tmCursorCrosshair"
-      style={{ display: "none" }}
-    />
+  {addMode === "point" ? <div ref={crosshairRef} className="tmCursorCrosshair" style={{ display: "none" }} /> : null}
+
+  <StorageOverlay
+    open={storageOpen}
+    onToggle={() => setStorageOpen((o) => !o)}
+    storageDevices={storageDevices}
+    storageByWarehouse={storageByWarehouse}
+    filteredStorageSearch={filteredStorageSearch}
+    selectedPointId={selectedPointId}
+    setSelectedPointId={setSelectedPointId}
+    setEditOpen={setEditOpen}
+    BORDER={BORDER}
+    MUTED={MUTED}
+    GLASS_BG={GLASS_BG}
+    GLASS_SHADOW={GLASS_SHADOW}
+  />
+
+  {!sidebarOpen ? (
+    <button
+      onClick={() => setSidebarOpen(true)}
+      title="Pokaż panel"
+      style={{
+        position: "absolute",
+        zIndex: 1500,
+        top: 12,
+        left: 12,
+        height: 44,
+        padding: "0 12px",
+        borderRadius: 14,
+        border: `1px solid ${BORDER}`,
+        background: GLASS_BG_DARK,
+        color: TEXT_LIGHT,
+        cursor: "pointer",
+        fontWeight: 800,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <span style={{ fontSize: 18, lineHeight: 1 }}>⟩</span>
+      <span style={{ fontSize: 13 }}>Panel główny</span>
+    </button>
   ) : null}
 
-<StorageOverlay
-  open={storageOpen}
-  onToggle={() => setStorageOpen((o) => !o)}
-  storageDevices={storageDevices}
-  storageByWarehouse={storageByWarehouse}
-  filteredStorageSearch={filteredStorageSearch}
-  selectedPointId={selectedPointId}
-  setSelectedPointId={setSelectedPointId}
-  setEditOpen={setEditOpen}
-  BORDER={BORDER}
-  MUTED={MUTED}
-  GLASS_BG={GLASS_BG}
-  GLASS_SHADOW={GLASS_SHADOW}
-/>
-
-
-        {!sidebarOpen ? (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            title="Pokaż panel"
-            style={{
-              position: "absolute",
-              zIndex: 1500,
-              top: 12,
-              left: 12,
-              height: 44,
-              padding: "0 12px",
-              borderRadius: 14,
-              border: `1px solid ${BORDER}`,
-              background: GLASS_BG_DARK,
-              color: TEXT_LIGHT,
-              cursor: "pointer",
-              fontWeight: 800,
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <span style={{ fontSize: 18, lineHeight: 1 }}>⟩</span>
-            <span style={{ fontSize: 13 }}>Panel główny</span>
-          </button>
-        ) : null}
-
-        {addMode === "point" ? (
-          <div
-            style={{
-              position: "absolute",
-              top: 12,
-              left: "50%",
-              transform: "translateX(-50%)",
-              zIndex: 1800,
-              width: "min(520px, calc(100% - 420px))",
-              maxWidth: "52vw",
-              borderRadius: 16,
-              border: `1px solid ${BORDER}`,
-              background: GLASS_BG,
-              backgroundImage:
-                "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-              color: TEXT_LIGHT,
-              boxShadow: GLASS_SHADOW,
-              overflow: "hidden",
-              backdropFilter: "blur(8px)",
-            }}
-          >
-            <div
-              style={{
-                padding: "10px 12px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-                fontWeight: 900,
-                background: "rgba(0,0,0,0.10)",
-              }}
-            >
-              <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <span style={{ whiteSpace: "nowrap" }}>Tryb: Urządzenie</span>
-                  <span style={{ fontSize: 11, color: MUTED, fontWeight: 800, opacity: 0.9 }}>
-                    Kliknij na mapie, aby dodać marker.
-                  </span>
-                </div>
-
-                <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, opacity: 0.85 }}>
-                  Po dodaniu urządzenia tryb wyłączy się automatycznie.
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                <button
-                  onClick={() => setAddMode("none")}
-                  style={{
-                    padding: "9px 10px",
-                    borderRadius: 12,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.06)",
-                    color: TEXT_LIGHT,
-                    cursor: "pointer",
-                    fontWeight: 900,
-                    fontSize: 12,
-                  }}
-                  title="Wyjdź z trybu dodawania"
-                >
-                  Zakończ
-                </button>
-              </div>
-            </div>
+  {addMode === "point" ? (
+    <div
+      style={{
+        position: "absolute",
+        top: 12,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1800,
+        width: "min(520px, calc(100% - 420px))",
+        maxWidth: "52vw",
+        borderRadius: 16,
+        border: `1px solid ${BORDER}`,
+        background: GLASS_BG,
+        backgroundImage: "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+        color: TEXT_LIGHT,
+        boxShadow: GLASS_SHADOW,
+        overflow: "hidden",
+        backdropFilter: "blur(8px)",
+      }}
+    >
+      <div
+        style={{
+          padding: "10px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 10,
+          fontWeight: 900,
+          background: "rgba(0,0,0,0.10)",
+        }}
+      >
+        <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ whiteSpace: "nowrap" }}>Tryb: Urządzenie</span>
+            <span style={{ fontSize: 11, color: MUTED, fontWeight: 800, opacity: 0.9 }}>
+              Kliknij na mapie, aby dodać marker.
+            </span>
           </div>
-        ) : null}
-      
 
-        <RecentUpdatesPanel
-          user={user}
-          authFetch={authFetch}
-          API={API}
-          BORDER={BORDER}
-          MUTED={MUTED}
-          TEXT_LIGHT={TEXT_LIGHT}
-          GLASS_BG={GLASS_BG}
-          GLASS_SHADOW={GLASS_SHADOW}
-          onUnauthorized={() => logout("expired")}
-          onJumpToProject={jumpToProject}
-          updatesTick={updatesTick}
-        />
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, opacity: 0.85 }}>
+            Po dodaniu urządzenia tryb wyłączy się automatycznie.
+          </div>
+        </div>
 
-        {/* PRAWA STRONA: Statusy + Dziennik */}
-        <div
-          style={{
-            position: "absolute",
-            zIndex: 1600,
-            top: 12,
-            right: 12,
-            width: 360,
-            display: "grid",
-            gap: 10,
-          }}
-        >
-          {/* STATUSY */}
-<div
-  style={{
-    borderRadius: 16,
-    border: `1px solid ${BORDER}`,
-    background: GLASS_BG,
-    backgroundImage:
-      "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-    backdropFilter: "blur(8px)",
-    color: TEXT_LIGHT,
-    overflow: "hidden",
-    boxShadow: GLASS_SHADOW,
-  }}
->
-  <div
-    onClick={() => setFiltersOpen((o) => !o)}
-    style={{
-      padding: "10px 12px",
-      cursor: "pointer",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      fontWeight: 900,
-    }}
-  >
-    <span>Rodzaje urządzeń</span>
-    <span style={{ fontSize: 12, color: MUTED }}>
-      {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
-    </span>
-  </div>
-
-  {filtersOpen ? (
-    <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        {DEVICE_TYPES.map((t) => (
-          <label
-            key={t.value}
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+          <button
+            onClick={() => setAddMode("none")}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              opacity: visibleTypes[t.value] ? 1 : 0.55,
-              userSelect: "none",
-              padding: "8px 10px",
+              padding: "9px 10px",
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.04)",
+              background: "rgba(255,255,255,0.06)",
+              color: TEXT_LIGHT,
+              cursor: "pointer",
+              fontWeight: 900,
+              fontSize: 12,
             }}
+            title="Wyjdź z trybu dodawania"
           >
-            <input
-              type="checkbox"
-              checked={visibleTypes[t.value]}
-              onChange={() =>
-                setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))
-              }
-              style={{ transform: "scale(0.95)" }}
-            />
-            <span
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 999,
-                background: typeColor(t.value),
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ fontWeight: 800, fontSize: 12 }}>
-              {t.label}
-            </span>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>
-              {counts[t.value]}
-            </span>
-          </label>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <button
-          onClick={showAllTypes}
-          style={{
-            padding: "8px 10px",
-            borderRadius: 10,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.08)",
-            color: TEXT_LIGHT,
-            cursor: "pointer",
-            fontWeight: 800,
-            fontSize: 12,
-          }}
-        >
-          Pokaż wszystko
-        </button>
-
-        <button
-          onClick={hideAllTypes}
-          style={{
-            padding: "8px 10px",
-            borderRadius: 10,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.05)",
-            color: TEXT_LIGHT,
-            cursor: "pointer",
-            fontWeight: 800,
-            fontSize: 12,
-          }}
-        >
-          Ukryj wszystko
-        </button>
+            Zakończ
+          </button>
+        </div>
       </div>
     </div>
   ) : null}
-</div>
 
-          {/* DZIENNIK */}
-          <JournalPanel
-            visible={!!selectedPoint}
-            kind={"points"}
-            entity={selectedPoint}
-            user={user}
-            authFetch={authFetch}
-            API={API}
-            BORDER={BORDER}
-            MUTED={MUTED}
-            TEXT_LIGHT={TEXT_LIGHT}
-            GLASS_BG={GLASS_BG}
-            GLASS_SHADOW={GLASS_SHADOW}
-            onCountsChange={handleCountsChange}
-            onUnauthorized={() => logout("expired")}
-            onGlobalUpdatesChange={bumpUpdates}
-          />
+  <RecentUpdatesPanel
+    user={user}
+    authFetch={authFetch}
+    API={API}
+    BORDER={BORDER}
+    MUTED={MUTED}
+    TEXT_LIGHT={TEXT_LIGHT}
+    GLASS_BG={GLASS_BG}
+    GLASS_SHADOW={GLASS_SHADOW}
+    onUnauthorized={() => logout("expired")}
+    onJumpToProject={jumpToProject}
+    updatesTick={updatesTick}
+  />
+
+  {/* PRAWA STRONA: Statusy + Dziennik */}
+  <div
+    style={{
+      position: "absolute",
+      zIndex: 1600,
+      top: 12,
+      right: 12,
+      width: 360,
+      display: "grid",
+      gap: 10,
+    }}
+  >
+    {/* STATUSY */}
+    <div
+      style={{
+        borderRadius: 16,
+        border: `1px solid ${BORDER}`,
+        background: GLASS_BG,
+        backgroundImage: "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+        backdropFilter: "blur(8px)",
+        color: TEXT_LIGHT,
+        overflow: "hidden",
+        boxShadow: GLASS_SHADOW,
+      }}
+    >
+      <div
+        onClick={() => setFiltersOpen((o) => !o)}
+        style={{
+          padding: "10px 12px",
+          cursor: "pointer",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontWeight: 900,
+        }}
+      >
+        <span>Rodzaje urządzeń</span>
+        <span style={{ fontSize: 12, color: MUTED }}>
+          {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
+        </span>
+      </div>
+
+      {filtersOpen ? (
+        <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {DEVICE_TYPES.map((t) => (
+              <label
+                key={t.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  opacity: visibleTypes[t.value] ? 1 : 0.55,
+                  userSelect: "none",
+                  padding: "8px 10px",
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  background: "rgba(255,255,255,0.04)",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={visibleTypes[t.value]}
+                  onChange={() => setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))}
+                  style={{ transform: "scale(0.95)" }}
+                />
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 999,
+                    background: typeColor(t.value),
+                    flexShrink: 0,
+                  }}
+                />
+                <span style={{ fontWeight: 800, fontSize: 12 }}>{t.label}</span>
+                <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>{counts[t.value]}</span>
+              </label>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={showAllTypes}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 10,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.08)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              Pokaż wszystko
+            </button>
+
+            <button
+              onClick={hideAllTypes}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 10,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.05)",
+                color: TEXT_LIGHT,
+                cursor: "pointer",
+                fontWeight: 800,
+                fontSize: 12,
+              }}
+            >
+              Ukryj wszystko
+            </button>
+          </div>
         </div>
+      ) : null}
+    </div>
+
+    {/* DZIENNIK */}
+    <JournalPanel
+      visible={!!selectedPoint}
+      kind={"points"}
+      entity={selectedPoint}
+      user={user}
+      authFetch={authFetch}
+      API={API}
+      BORDER={BORDER}
+      MUTED={MUTED}
+      TEXT_LIGHT={TEXT_LIGHT}
+      GLASS_BG={GLASS_BG}
+      GLASS_SHADOW={GLASS_SHADOW}
+      onCountsChange={handleCountsChange}
+      onUnauthorized={() => logout("expired")}
+      onGlobalUpdatesChange={bumpUpdates}
+    />
+  </div>
 
         <MapContainer
           bounds={POLAND_BOUNDS}
