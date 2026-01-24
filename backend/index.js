@@ -275,99 +275,88 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
 // CREATE point -> INSERT asset (BEZ director/winner)
 app.post("/api/points", authRequired, async (req, res) => {
   try {
-    const name = String(req.body.title || req.body.name || "Nowe urządzenie");
-    const notes = String(req.body.note || req.body.notes || "");
-    const status = String(req.body.status || "planowany");
-    const lat = Number(req.body.lat);
-    const lng = Number(req.body.lng);
+    const body = req.body || {};
 
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      return res.status(400).json({ error: "Brak poprawnych współrzędnych" });
+    const title = String(body.title || body.name || "Nowe urządzenie");
+    const status = String(body.status || "tachimetr");
+    const note = String(body.note || body.notes || "");
+
+    const in_storage =
+      body.in_storage === true ||
+      body.in_storage === "true" ||
+      body.in_storage === 1;
+
+    const warehouse = in_storage
+      ? String(body.warehouse || "GEO_BB")
+      : null;
+
+    let lat = null;
+    let lng = null;
+
+    if (!in_storage) {
+      lat = Number(body.lat);
+      lng = Number(body.lng);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return res.status(400).json({
+          error: "Brak poprawnych współrzędnych",
+        });
+      }
     }
 
     const q = await pool.query(
-      `INSERT INTO assets (name, type, status, lat, lng, notes, priority)
-       VALUES ($1, 'equipment', $2, $3, $4, $5, false)
-       RETURNING id, name, status, lat, lng, notes, COALESCE(priority,false) AS priority`,
-      [name, status, lat, lng, notes]
+      `
+      INSERT INTO assets (
+        name,
+        type,
+        status,
+        lat,
+        lng,
+        notes,
+        in_storage,
+        warehouse,
+        priority
+      )
+      VALUES ($1, 'equipment', $2, $3, $4, $5, $6, $7, false)
+      RETURNING
+        id,
+        name,
+        status,
+        lat,
+        lng,
+        notes,
+        in_storage,
+        warehouse,
+        COALESCE(priority,false) AS priority
+      `,
+      [
+        title,
+        status,
+        lat,
+        lng,
+        note,
+        in_storage,
+        warehouse,
+      ]
     );
 
     const a = q.rows[0];
-    res.json({
-      id: a.id,
-      title: a.name,
-      name: a.name,
-      director: "",
-      winner: "",
-      note: a.notes ?? "",
-      notes: a.notes ?? "",
-      status: a.status,
-      lat: a.lat,
-      lng: a.lng,
-      priority: !!a.priority,
-    });
-  } catch (e) {
-    console.error("CREATE POINT (assets) ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-// UPDATE point -> UPDATE asset (BEZ director/winner)
-app.put("/api/points/:id", authRequired, async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
-
-    const name = String(req.body.title || req.body.name || "");
-    const notes = String(req.body.note || req.body.notes || "");
-    const status = String(req.body.status || "planowany");
-
-    const q = await pool.query(
-      `UPDATE assets
-       SET name=$1, notes=$2, status=$3, updated_at=NOW()
-       WHERE id=$4
-       RETURNING id, name, status, lat, lng, notes, COALESCE(priority,false) AS priority`,
-      [name, notes, status, id]
-    );
-
-    const a = q.rows[0];
-    if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     res.json({
       id: a.id,
       title: a.name,
       name: a.name,
-      director: "",
-      winner: "",
-      note: a.notes ?? "",
-      notes: a.notes ?? "",
       status: a.status,
       lat: a.lat,
       lng: a.lng,
+      note: a.notes ?? "",
+      notes: a.notes ?? "",
+      in_storage: a.in_storage,
+      warehouse: a.warehouse,
       priority: !!a.priority,
     });
   } catch (e) {
-    console.error("UPDATE POINT (assets) ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-// DELETE point -> DELETE asset
-app.delete("/api/points/:id", authRequired, async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
-
-    const q = await pool.query(`DELETE FROM assets WHERE id=$1 RETURNING id`, [
-      id,
-    ]);
-
-    const row = q.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
-
-    res.json({ ok: true, id: row.id });
-  } catch (e) {
-    console.error("DELETE POINT (assets) ERROR:", e);
+    console.error("CREATE POINT ERROR:", e);
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });

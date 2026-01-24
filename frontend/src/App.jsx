@@ -2485,7 +2485,7 @@ async function createDeviceFromForm() {
   const note = String(createForm.note || "");
 
   const in_storage = createForm.in_storage === true;
-const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
+  const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
 
 const lat = in_storage ? null : Number(createForm.lat);
 const lng = in_storage ? null : Number(createForm.lng);
