@@ -3185,6 +3185,7 @@ export default function App() {
           TEXT_LIGHT={TEXT_LIGHT}
           GLASS_BG={GLASS_BG_DARK}
           GLASS_SHADOW={GLASS_SHADOW}
+          DEVICE_TYPES={DEVICE_TYPES}
         />
 
         <EditDeviceModal
