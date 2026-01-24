@@ -2018,6 +2018,25 @@ export default function App() {
   function bumpUpdates() {
     setUpdatesTick((x) => x + 1);
   }
+  useEffect(() => {
+  if (mode !== "app") return;
+  const map = mapRef.current;
+  if (!map) return;
+
+  const t1 = setTimeout(() => {
+    try { map.invalidateSize({ pan: false }); } catch {}
+  }, 220);
+
+  const t2 = setTimeout(() => {
+    try { map.invalidateSize({ pan: false }); } catch {}
+  }, 420);
+
+  return () => {
+    clearTimeout(t1);
+    clearTimeout(t2);
+  };
+}, [sidebarOpen, mode]);
+
 
   /** ===== JOURNAL COUNTS + ACQUIRED (localStorage) ===== */
   const [journalCounts, setJournalCounts] = useState(() => {
@@ -3200,6 +3219,7 @@ async function togglePointPriority(pt) {
         overflow: "hidden",
       }}
     >
+      
      {/* SIDEBAR */}
 <aside
   style={{
@@ -3214,8 +3234,11 @@ async function togglePointPriority(pt) {
     boxShadow: GLASS_SHADOW,
   }}
 >
+  
   {sidebarOpen ? (
+  
     <>
+    
       {/* HEADER */}
       <div
         style={{
@@ -3748,7 +3771,9 @@ async function togglePointPriority(pt) {
       </div>
     </>
   ) : null}
+  
 </aside>
+
 
 {/* MAP */}
 <main
