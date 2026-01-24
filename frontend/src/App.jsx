@@ -2078,39 +2078,109 @@ export default function App() {
   setWarehouseModalOpen(true);
 }
 
-  function WarehouseModal({
+ function WarehouseModal({
   open,
   warehouseKey,
   devices,
   onClose,
-  onSelectDevice,   // (device) => void  (np. edycja)
-  onShowOnMap,      // (device) => void  (flyTo)
+  onSelectDevice, // (device) => void (edytuj)
+  onShowOnMap,    // (device) => void (flyTo)
   BORDER,
   TEXT_LIGHT,
   MUTED,
   GLASS_BG,
   GLASS_SHADOW,
 }) {
-  const [q, setQ] = useState("");
+  const [sort, setSort] = useState({ key: "title", dir: "asc" }); // key: title|status|id|note
+  const [filters, setFilters] = useState({
+    title: "",
+    status: "all",
+    note: "",
+    id: "",
+  });
 
   useEffect(() => {
-    if (open) setQ("");
+    if (!open) return;
+    // reset tylko filtrów, sort zostawiamy (użyteczne)
+    setFilters({ title: "", status: "all", note: "", id: "" });
   }, [open, warehouseKey]);
 
   if (!open) return null;
 
   const list = Array.isArray(devices) ? devices : [];
 
-  const filtered = useMemo(() => {
-    const s = String(q || "").trim().toLowerCase();
-    if (!s) return list;
+  const statusOptions = useMemo(() => {
+    const set = new Set();
+    for (const d of list) set.add(String(d?.status || ""));
+    return ["all", ...Array.from(set).filter(Boolean)];
+  }, [list]);
 
-    return list.filter((p) => {
-      const title = String(p?.title || p?.name || "").toLowerCase();
-      const note = String(p?.note || p?.notes || "").toLowerCase();
-      return title.includes(s) || note.includes(s);
+  function toggleSort(key) {
+    setSort((prev) => {
+      if (prev.key !== key) return { key, dir: "asc" };
+      return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
     });
-  }, [q, list]);
+  }
+
+  function sortIcon(key) {
+    if (sort.key !== key) return "⇅";
+    return sort.dir === "asc" ? "↑" : "↓";
+  }
+
+  const filteredSorted = useMemo(() => {
+    const fTitle = String(filters.title || "").trim().toLowerCase();
+    const fNote = String(filters.note || "").trim().toLowerCase();
+    const fId = String(filters.id || "").trim();
+    const fStatus = String(filters.status || "all");
+
+    let arr = list.slice();
+
+    // filtr ID
+    if (fId) {
+      arr = arr.filter((d) => String(d?.id || "").includes(fId));
+    }
+    // filtr status
+    if (fStatus !== "all") {
+      arr = arr.filter((d) => String(d?.status || "") === fStatus);
+    }
+    // filtr tytuł
+    if (fTitle) {
+      arr = arr.filter((d) =>
+        String(d?.title || d?.name || "").toLowerCase().includes(fTitle)
+      );
+    }
+    // filtr notatka
+    if (fNote) {
+      arr = arr.filter((d) =>
+        String(d?.note || d?.notes || "").toLowerCase().includes(fNote)
+      );
+    }
+
+    // sortowanie
+    const dir = sort.dir === "asc" ? 1 : -1;
+    const key = sort.key;
+
+    arr.sort((a, b) => {
+      if (key === "id") return (Number(a?.id) - Number(b?.id)) * dir;
+
+      const av =
+        key === "title"
+          ? String(a?.title || a?.name || "")
+          : key === "status"
+          ? String(a?.status || "")
+          : String(a?.note || a?.notes || "");
+      const bv =
+        key === "title"
+          ? String(b?.title || b?.name || "")
+          : key === "status"
+          ? String(b?.status || "")
+          : String(b?.note || b?.notes || "");
+
+      return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dir;
+    });
+
+    return arr;
+  }, [list, filters, sort]);
 
   const overlayStyle = {
     position: "fixed",
@@ -2123,8 +2193,8 @@ export default function App() {
   };
 
   const modalStyle = {
-    width: "min(820px, 100%)",
-    maxHeight: "min(720px, calc(100vh - 32px))",
+    width: "min(980px, 100%)",
+    maxHeight: "min(760px, calc(100vh - 32px))",
     borderRadius: 16,
     border: `1px solid ${BORDER}`,
     background: GLASS_BG,
@@ -2135,7 +2205,7 @@ export default function App() {
     overflow: "hidden",
     backdropFilter: "blur(10px)",
     display: "grid",
-    gridTemplateRows: "auto auto 1fr",
+    gridTemplateRows: "auto 1fr",
   };
 
   const headerStyle = {
@@ -2160,7 +2230,72 @@ export default function App() {
     fontSize: 12,
   };
 
-  const rowBtn = {
+  const tableWrapStyle = {
+    padding: 12,
+    overflow: "auto",
+  };
+
+  const tableStyle = {
+    width: "100%",
+    borderCollapse: "separate",
+    borderSpacing: 0,
+    overflow: "hidden",
+    borderRadius: 14,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.04)",
+  };
+
+  const thStyle = {
+    position: "sticky",
+    top: 0,
+    zIndex: 2,
+    textAlign: "left",
+    padding: "10px 10px",
+    fontSize: 12,
+    fontWeight: 900,
+    background: "rgba(0,0,0,0.16)",
+    borderBottom: `1px solid ${BORDER}`,
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    userSelect: "none",
+  };
+
+  const filterCellStyle = {
+    position: "sticky",
+    top: 38, // wysokość headera tabeli
+    zIndex: 2,
+    padding: "8px 10px",
+    background: "rgba(0,0,0,0.10)",
+    borderBottom: `1px solid ${BORDER}`,
+  };
+
+  const tdStyle = {
+    padding: "10px 10px",
+    fontSize: 12,
+    borderBottom: `1px solid ${BORDER}`,
+    verticalAlign: "top",
+  };
+
+  const inputStyle = {
+    width: "100%",
+    boxSizing: "border-box",
+    height: 34,
+    padding: "0 10px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.07)",
+    color: TEXT_LIGHT,
+    outline: "none",
+    fontSize: 12,
+    fontWeight: 700,
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    height: 34,
+  };
+
+  const actionBtn = {
     padding: "7px 9px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
@@ -2183,133 +2318,214 @@ export default function App() {
         {/* HEADER */}
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
               Magazyn: <b>{warehouseKey}</b>
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              Liczba urządzeń: <b style={{ color: "rgba(255,255,255,0.88)" }}>{list.length}</b>
+              Rekordy:{" "}
+              <b style={{ color: "rgba(255,255,255,0.88)" }}>
+                {filteredSorted.length}/{list.length}
+              </b>{" "}
+              • Sort: <b style={{ color: "rgba(255,255,255,0.88)" }}>{sort.key}</b> ({sort.dir})
             </div>
           </div>
 
-          <button onClick={onClose} style={btnStyle}>
-            Zamknij
-          </button>
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <button
+              onClick={() => setFilters({ title: "", status: "all", note: "", id: "" })}
+              style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}
+              title="Wyczyść filtry"
+            >
+              Wyczyść filtry
+            </button>
+            <button onClick={onClose} style={btnStyle}>
+              Zamknij
+            </button>
+          </div>
         </div>
 
-        {/* SEARCH */}
-        <div style={{ padding: 12, borderBottom: `1px solid ${BORDER}`, display: "grid", gap: 8 }}>
-          <div style={{ fontSize: 12, color: MUTED, fontWeight: 800 }}>Szukaj w magazynie</div>
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Wpisz nazwę lub słowo z opisu…"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              height: 38,
-              padding: "0 12px",
-              borderRadius: 12,
-              border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.08)",
-              color: TEXT_LIGHT,
-              outline: "none",
-              fontSize: 12,
-              fontWeight: 700,
-            }}
-          />
-        </div>
+        {/* TABLE */}
+        <div style={tableWrapStyle}>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={{ ...thStyle, width: 90 }} onClick={() => toggleSort("id")}>
+                  ID <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("id")}</span>
+                </th>
+                <th style={thStyle} onClick={() => toggleSort("title")}>
+                  Nazwa <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("title")}</span>
+                </th>
+                <th style={{ ...thStyle, width: 160 }} onClick={() => toggleSort("status")}>
+                  Rodzaj <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("status")}</span>
+                </th>
+                <th style={thStyle} onClick={() => toggleSort("note")}>
+                  Opis <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("note")}</span>
+                </th>
+                <th style={{ ...thStyle, width: 210, cursor: "default" }}>
+                  Akcje
+                </th>
+              </tr>
 
-        {/* LIST */}
-        <div style={{ padding: 12, overflow: "auto" }}>
-          {filtered.length === 0 ? (
-            <div style={{ fontSize: 12, color: MUTED }}>
-              Brak urządzeń dla tego filtra.
-            </div>
-          ) : (
-            <div style={{ display: "grid", gap: 10 }}>
-              {filtered.map((d) => {
-                const title = d.title || `Urządzenie #${d.id}`;
-                const kind = statusLabel(d.status);
-                const hasCoords =
-                  Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
+              {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
+              <tr>
+                <th style={filterCellStyle}>
+                  <input
+                    value={filters.id}
+                    onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
+                    placeholder="np. 12"
+                    style={inputStyle}
+                  />
+                </th>
 
-                return (
-                  <div
-                    key={`wh-${warehouseKey}-${d.id}`}
-                    style={{
-                      borderRadius: 14,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.05)",
-                      padding: 10,
-                      display: "grid",
-                      gap: 8,
-                    }}
+                <th style={filterCellStyle}>
+                  <input
+                    value={filters.title}
+                    onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
+                    placeholder="Szukaj nazwy…"
+                    style={inputStyle}
+                  />
+                </th>
+
+                <th style={filterCellStyle}>
+                  <select
+                    value={filters.status}
+                    onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+                    style={selectStyle}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ width: 14, display: "flex", justifyContent: "center" }}>📦</span>
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s === "all" ? "Wszystkie" : statusLabel(s)}
+                      </option>
+                    ))}
+                  </select>
+                </th>
 
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontWeight: 900, fontSize: 13, lineHeight: 1.15 }}>
-                          {title}
-                        </div>
-                        <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
-                          Rodzaj: <b style={{ color: "rgba(255,255,255,0.88)" }}>{kind}</b>
-                          {" "}• Magazyn: <b style={{ color: "rgba(255,255,255,0.88)" }}>{warehouseKey}</b>
-                        </div>
-                      </div>
+                <th style={filterCellStyle}>
+                  <input
+                    value={filters.note}
+                    onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
+                    placeholder="Szukaj w opisie…"
+                    style={inputStyle}
+                  />
+                </th>
 
-                      <span
-                        style={{
-                          fontSize: 11,
-                          padding: "2px 8px",
-                          borderRadius: 999,
-                          background: "rgba(255,255,255,0.10)",
-                          border: `1px solid ${BORDER}`,
-                          color: "rgba(255,255,255,0.9)",
-                          whiteSpace: "nowrap",
-                          fontWeight: 800,
-                        }}
-                      >
-                        {kind}
-                      </span>
-                    </div>
-
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.86)", opacity: 0.92 }}>
-                      {d.note ? d.note : <span style={{ color: MUTED }}>Brak opisu</span>}
-                    </div>
-
-                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                      <button
-                        onClick={() => onSelectDevice?.(d)}
-                        style={rowBtn}
-                        title="Otwórz edycję urządzenia"
-                      >
-                        Edytuj
-                      </button>
-
-                      <button
-                        onClick={() => onShowOnMap?.(d)}
-                        style={{
-                          ...rowBtn,
-                          opacity: hasCoords ? 1 : 0.45,
-                          cursor: hasCoords ? "pointer" : "default",
-                        }}
-                        disabled={!hasCoords}
-                        title={hasCoords ? "Pokaż na mapie" : "Brak współrzędnych"}
-                      >
-                        Pokaż na mapie
-                      </button>
-                    </div>
+                <th style={filterCellStyle}>
+                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
+                    Kliknij nagłówek, aby sortować.
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {filteredSorted.length === 0 ? (
+                <tr>
+                  <td style={{ ...tdStyle, color: MUTED }} colSpan={5}>
+                    Brak wyników dla aktywnych filtrów.
+                  </td>
+                </tr>
+              ) : (
+                filteredSorted.map((d) => {
+                  const title = d.title || `Urządzenie #${d.id}`;
+                  const note = d.note || "";
+                  const hasCoords =
+                    Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
+
+                  return (
+                    <tr key={`wh-row-${warehouseKey}-${d.id}`}>
+                      <td style={tdStyle}>
+                        <b style={{ color: "rgba(255,255,255,0.92)" }}>{d.id}</b>
+                      </td>
+
+                      <td style={tdStyle}>
+                        <div style={{ fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+                        <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
+                          📦 {warehouseKey}
+                        </div>
+                      </td>
+
+                      <td style={tdStyle}>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "4px 8px",
+                            borderRadius: 999,
+                            border: `1px solid ${BORDER}`,
+                            background: "rgba(255,255,255,0.06)",
+                            fontWeight: 900,
+                            fontSize: 11,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 10,
+                              height: 10,
+                              borderRadius: 999,
+                              background: typeColor(d.status),
+                              display: "inline-block",
+                            }}
+                          />
+                          {statusLabel(d.status)}
+                        </span>
+                      </td>
+
+                      <td style={tdStyle}>
+                        {note ? (
+                          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.35 }}>
+                            {note}
+                          </div>
+                        ) : (
+                          <span style={{ color: MUTED }}>Brak</span>
+                        )}
+                      </td>
+
+                      <td style={tdStyle}>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                          <button
+                            onClick={() => onSelectDevice?.(d)}
+                            style={actionBtn}
+                            title="Edytuj urządzenie"
+                          >
+                            Edytuj
+                          </button>
+
+                          <button
+                            onClick={() => onShowOnMap?.(d)}
+                            style={{
+                              ...actionBtn,
+                              opacity: hasCoords ? 1 : 0.45,
+                              cursor: hasCoords ? "pointer" : "default",
+                            }}
+                            disabled={!hasCoords}
+                            title={hasCoords ? "Pokaż na mapie" : "Brak współrzędnych"}
+                          >
+                            Pokaż
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
   );
 }
+
 
 
   /** ===== AUTH ===== */
