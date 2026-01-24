@@ -116,20 +116,15 @@ function authRequired(req, res, next) {
     return res.status(401).json({ error: "Niepoprawny token" });
   }
 }
-function normalizeStorage(body) {
-  function parseInStorage(body) {
-  return (
-    body?.in_storage === true ||
-    body?.in_storage === "true" ||
-    body?.in_storage === 1 ||
-    body?.in_storage === "1"
-  );
+function parseInStorage(v) {
+  return v === true || v === "true" || v === 1 || v === "1";
 }
 
 function normalizeStorage(body) {
-  const in_storage = parseInStorage(body);
+  const in_storage = parseInStorage(body?.in_storage);
   const warehouse = (body?.warehouse ?? "").toString().trim();
 
+  // MAGAZYN
   if (in_storage) {
     if (!WAREHOUSES.includes(warehouse)) {
       const err = new Error("Niepoprawny magazyn.");
@@ -139,8 +134,10 @@ function normalizeStorage(body) {
     return { in_storage: true, warehouse, lat: null, lng: null };
   }
 
+  // POZA MAGAZYNEM -> lat/lng obowiązkowe
   const lat = Number(body?.lat);
   const lng = Number(body?.lng);
+
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     const err = new Error("Podaj poprawne współrzędne lat/lng.");
     err.status = 400;
