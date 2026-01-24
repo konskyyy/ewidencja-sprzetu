@@ -2118,7 +2118,7 @@ export default function App() {
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
-  const [storageOpen, setStorageOpen] = useState(true);
+  const [storageOpen, setStorageOpen] = useState(false);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
   const [visibleTypes, setVisibleTypes] = useState(() => {
   const obj = {};
