@@ -399,36 +399,20 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
 
 // DELETE point -> DELETE asset (+ cleanup comments/read) [wersja transakcyjna]
 app.delete("/api/points/:id", authRequired, async (req, res) => {
-  const client = await pool.connect();
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
 
-    await client.query("BEGIN");
+    await pool.query(`DELETE FROM point_comments WHERE point_id=$1`, [id]);
+    await pool.query(`DELETE FROM updates_read WHERE kind='points' AND entity_id=$1`, [id]);
 
-    const exists = await client.query("SELECT id FROM assets WHERE id=$1", [id]);
-    if (!exists.rows[0]) {
-      await client.query("ROLLBACK");
-      return res.status(404).json({ error: "Nie znaleziono urządzenia" });
-    }
+    const q = await pool.query(`DELETE FROM assets WHERE id=$1 RETURNING id`, [id]);
+    if (!q.rows[0]) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
-    await client.query("DELETE FROM point_comments WHERE point_id=$1", [id]);
-    await client.query(
-      "DELETE FROM updates_read WHERE kind='points' AND entity_id=$1",
-      [id]
-    );
-    await client.query("DELETE FROM assets WHERE id=$1", [id]);
-
-    await client.query("COMMIT");
     res.json({ ok: true, id });
   } catch (e) {
-    try {
-      await client.query("ROLLBACK");
-    } catch {}
     console.error("DELETE /api/points/:id ERROR:", e);
     res.status(500).json({ error: "DB error", details: String(e) });
-  } finally {
-    client.release();
   }
 });
 
