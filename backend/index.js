@@ -338,6 +338,108 @@ app.post("/api/points", authRequired, async (req, res) => {
   }
 });
 
+// UPDATE point -> UPDATE asset (BEZ director/winner)
+app.put("/api/points/:id", authRequired, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
+
+    const body = req.body || {};
+
+    const title = String(body.title || body.name || "").trim();
+    const status = String(body.status || "tachimetr").trim();
+    const note = String(body.note || body.notes || "").trim();
+
+    if (!title) return res.status(400).json({ error: "Nazwa urządzenia jest wymagana" });
+
+    // ✅ normalizacja magazyn / współrzędne
+    const st = normalizeStorage(body);
+
+    // (opcjonalnie) jeśli chcesz pilnować dozwolonych typów:
+    // const ALLOWED = new Set(["tachimetr", "pochylomierz", "czujnik_drgan", "inklinometr"]);
+    // if (!ALLOWED.has(status)) return res.status(400).json({ error: "Niepoprawny rodzaj urządzenia" });
+
+    const q = await pool.query(
+      `
+      UPDATE assets
+      SET name=$1,
+          status=$2,
+          notes=$3,
+          in_storage=$4,
+          warehouse=$5,
+          lat=$6,
+          lng=$7,
+          updated_at=NOW()
+      WHERE id=$8
+      RETURNING id, name, status, lat, lng, notes, in_storage, warehouse, COALESCE(priority,false) AS priority
+      `,
+      [title, status, note, st.in_storage, st.warehouse, st.lat, st.lng, id]
+    );
+
+    const a = q.rows[0];
+    if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
+
+    // adapter response jak w GET/POST
+    res.json({
+      id: a.id,
+      title: a.name,
+      name: a.name,
+      director: "",
+      winner: "",
+      note: a.notes ?? "",
+      notes: a.notes ?? "",
+      status: a.status,
+      lat: a.lat,
+      lng: a.lng,
+      in_storage: a.in_storage,
+      warehouse: a.warehouse,
+      priority: !!a.priority,
+    });
+  } catch (e) {
+    console.error("PUT /api/points/:id ERROR:", e);
+    res.status(e.status || 500).json({ error: String(e.message || e) });
+  }
+});
+
+// DELETE point -> DELETE asset (+ cleanup comments/read)
+app.delete("/api/points/:id", authRequired, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
+
+    await client.query("BEGIN");
+
+    // sprawdź istnienie
+    const exists = await client.query("SELECT id FROM assets WHERE id=$1", [id]);
+    if (!exists.rows[0]) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Nie znaleziono urządzenia" });
+    }
+
+    // usuń komentarze (żeby nie wisiały FK / feed)
+    await client.query("DELETE FROM point_comments WHERE point_id=$1", [id]);
+
+    // usuń oznaczenia przeczytania updates dla tego punktu (opcjonalnie, ale czyści)
+    await client.query("DELETE FROM updates_read WHERE kind='points' AND entity_id=$1", [id]);
+
+    // usuń asset
+    await client.query("DELETE FROM assets WHERE id=$1", [id]);
+
+    await client.query("COMMIT");
+    res.json({ ok: true, id });
+  } catch (e) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {}
+    console.error("DELETE /api/points/:id ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  } finally {
+    client.release();
+  }
+});
+
+
 /**
  * ===== COMMENTS API =====
  * point_comments: point_id traktujemy jako asset_id i sprawdzamy istnienie w assets.
