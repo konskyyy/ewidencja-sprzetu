@@ -2900,38 +2900,7 @@ async function togglePointPriority(pt) {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  {/* RĘCZNIE (lat/lng) */}
-                  <button
-                    onClick={() => {
-                      setAddMode("manual");
-                      setCreateOpen(true);
-                      setCreateForm({
-                        title: "",
-                        status: "tachimetr",
-                        note: "",
-                        lat: "",
-                        lng: "",
-                        in_storage: false,
-                        warehouse: "GEO_BB",
-                      });
-                    }}
-                    style={{
-                      padding: "9px 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background:
-                        addMode === "manual"
-                          ? "rgba(255,255,255,0.14)"
-                          : "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                    title="Dodaj urządzenie ręcznie (wpisz współrzędne)"
-                  >
-                    ➕ Ręcznie
-                  </button>
+                  
 
                   {/* MAGAZYN */}
                   <button
