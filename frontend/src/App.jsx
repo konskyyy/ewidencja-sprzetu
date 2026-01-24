@@ -2900,73 +2900,67 @@ async function togglePointPriority(pt) {
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                  
+  {/* MAGAZYN */}
+  <button
+    onClick={() => {
+      setAddMode("manual");
+      setCreateOpen(true);
+      setCreateForm({
+        title: "",
+        status: "tachimetr",
+        note: "",
+        lat: "",
+        lng: "",
+        in_storage: true,
+        warehouse: "GEO_BB",
+      });
+    }}
+    style={{
+      padding: "9px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: "rgba(255,255,255,0.08)",
+      color: TEXT_LIGHT,
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 12,
+    }}
+  >
+    📦 Magazyn
+  </button>
 
-                  {/* MAGAZYN */}
-                  <button
-                    onClick={() => {
-                      setAddMode("manual"); // modal otwieramy od razu (bez trybu mapy)
-                      setCreateOpen(true);
-                      setCreateForm({
-                        title: "",
-                        status: "tachimetr",
-                        note: "",
-                        lat: "",
-                        lng: "",
-                        in_storage: true,
-                        warehouse: "GEO_BB",
-                      });
-                    }}
-                    style={{
-                      padding: "9px 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                    title="Dodaj urządzenie do magazynu (bez współrzędnych)"
-                  >
-                    📦 Magazyn
-                  </button>
-
-                  {/* WSKAŻ NA MAPIE */}
-                  <button
-                    onClick={() => {
-                      setCreateOpen(false);
-                      setAddMode((m) => (m === "point" ? "none" : "point"));
-
-                      setCreateForm({
-                        title: "",
-                        status: "tachimetr",
-                        note: "",
-                        lat: "",
-                        lng: "",
-                        in_storage: false,
-                        warehouse: "GEO_BB",
-                      });
-                    }}
-                    style={{
-                      gridColumn: "1 / -1",
-                      padding: "9px 10px",
-                      borderRadius: 12,
-                      border: `1px solid ${BORDER}`,
-                      background:
-                        addMode === "point"
-                          ? "rgba(255,255,255,0.14)"
-                          : "rgba(255,255,255,0.08)",
-                      color: TEXT_LIGHT,
-                      cursor: "pointer",
-                      fontWeight: 800,
-                      fontSize: 12,
-                    }}
-                    title="Kliknij mapę, aby wskazać lokalizację urządzenia"
-                  >
-                    📍 Wskaż na mapie
-                  </button>
-                </div>
+  {/* WSKAŻ NA MAPIE */}
+  <button
+    onClick={() => {
+      setCreateOpen(false);
+      setAddMode((m) => (m === "point" ? "none" : "point"));
+      setCreateForm({
+        title: "",
+        status: "tachimetr",
+        note: "",
+        lat: "",
+        lng: "",
+        in_storage: false,
+        warehouse: "GEO_BB",
+      });
+    }}
+    style={{
+      padding: "9px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background:
+        addMode === "point"
+          ? "rgba(255,255,255,0.14)"
+          : "rgba(255,255,255,0.08)",
+      color: TEXT_LIGHT,
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 12,
+    }}
+  >
+    📍 Wskaż na mapie
+  </button>
+</div>
 
                 <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
                   {addMode === "manual"
