@@ -1494,7 +1494,17 @@ async function handleSave() {
   if (!payload.title.trim()) {
     setErr("Nazwa urządzenia nie może być pusta.");
     return;
+
   }
+  if (!payload.in_storage) {
+  // urządzenie musi mieć współrzędne, ale modal ich nie zbiera
+  // więc co najmniej wymuś, że device już je ma
+  if (!Number.isFinite(Number(device?.lat)) || !Number.isFinite(Number(device?.lng))) {
+    setErr("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
+    return;
+  }
+}
+
 
   const allowed = new Set(DEVICE_TYPES.map((x) => x.value));
   if (!allowed.has(payload.status)) {
