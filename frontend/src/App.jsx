@@ -75,6 +75,7 @@ function StorageOverlay({
   selectedPointId,
   setSelectedPointId,
   setEditOpen,
+  onOpenWarehouse,
   BORDER,
   MUTED,
   GLASS_BG,
@@ -123,24 +124,32 @@ function StorageOverlay({
           {/* kafelki magazynów */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {Object.entries(storageByWarehouse).map(([key, list]) => (
-              <div
-                key={key}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.05)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
-                <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
-                  {list.length}
-                </span>
-              </div>
-            ))}
+            <button
+              key={key}
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenWarehouse?.(key);
+              }}
+              style={{
+                all: "unset",
+                padding: "8px 10px",
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.05)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                cursor: "pointer",
+                transition: "transform 120ms ease, background 120ms ease",
+              }}
+              title={`Otwórz magazyn ${key}`}
+            >
+              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
+                {list.length}
+              </span>
+            </button>
+          ))}
           </div>
 
           {filteredStorageSearch.length === 0 && (
@@ -2064,6 +2073,244 @@ export default function App() {
       [`${kind}:${id}`]: !!value,
     }));
   }
+  function openWarehouse(key) {
+  setActiveWarehouse(key);
+  setWarehouseModalOpen(true);
+}
+
+  function WarehouseModal({
+  open,
+  warehouseKey,
+  devices,
+  onClose,
+  onSelectDevice,   // (device) => void  (np. edycja)
+  onShowOnMap,      // (device) => void  (flyTo)
+  BORDER,
+  TEXT_LIGHT,
+  MUTED,
+  GLASS_BG,
+  GLASS_SHADOW,
+}) {
+  const [q, setQ] = useState("");
+
+  useEffect(() => {
+    if (open) setQ("");
+  }, [open, warehouseKey]);
+
+  if (!open) return null;
+
+  const list = Array.isArray(devices) ? devices : [];
+
+  const filtered = useMemo(() => {
+    const s = String(q || "").trim().toLowerCase();
+    if (!s) return list;
+
+    return list.filter((p) => {
+      const title = String(p?.title || p?.name || "").toLowerCase();
+      const note = String(p?.note || p?.notes || "").toLowerCase();
+      return title.includes(s) || note.includes(s);
+    });
+  }, [q, list]);
+
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    background: "rgba(0,0,0,0.55)",
+    display: "grid",
+    placeItems: "center",
+    padding: 16,
+  };
+
+  const modalStyle = {
+    width: "min(820px, 100%)",
+    maxHeight: "min(720px, calc(100vh - 32px))",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    background: GLASS_BG,
+    backgroundImage:
+      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+    color: TEXT_LIGHT,
+    boxShadow: GLASS_SHADOW,
+    overflow: "hidden",
+    backdropFilter: "blur(10px)",
+    display: "grid",
+    gridTemplateRows: "auto auto 1fr",
+  };
+
+  const headerStyle = {
+    padding: "10px 12px",
+    borderBottom: `1px solid ${BORDER}`,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    fontWeight: 900,
+    background: "rgba(0,0,0,0.10)",
+  };
+
+  const btnStyle = {
+    padding: "9px 10px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.06)",
+    color: TEXT_LIGHT,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+
+  const rowBtn = {
+    padding: "7px 9px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.06)",
+    color: TEXT_LIGHT,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontSize: 12,
+    whiteSpace: "nowrap",
+  };
+
+  return (
+    <div
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+    >
+      <div style={modalStyle}>
+        {/* HEADER */}
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.15, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              Magazyn: <b>{warehouseKey}</b>
+            </div>
+            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+              Liczba urządzeń: <b style={{ color: "rgba(255,255,255,0.88)" }}>{list.length}</b>
+            </div>
+          </div>
+
+          <button onClick={onClose} style={btnStyle}>
+            Zamknij
+          </button>
+        </div>
+
+        {/* SEARCH */}
+        <div style={{ padding: 12, borderBottom: `1px solid ${BORDER}`, display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 12, color: MUTED, fontWeight: 800 }}>Szukaj w magazynie</div>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Wpisz nazwę lub słowo z opisu…"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              height: 38,
+              padding: "0 12px",
+              borderRadius: 12,
+              border: `1px solid ${BORDER}`,
+              background: "rgba(255,255,255,0.08)",
+              color: TEXT_LIGHT,
+              outline: "none",
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          />
+        </div>
+
+        {/* LIST */}
+        <div style={{ padding: 12, overflow: "auto" }}>
+          {filtered.length === 0 ? (
+            <div style={{ fontSize: 12, color: MUTED }}>
+              Brak urządzeń dla tego filtra.
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 10 }}>
+              {filtered.map((d) => {
+                const title = d.title || `Urządzenie #${d.id}`;
+                const kind = statusLabel(d.status);
+                const hasCoords =
+                  Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
+
+                return (
+                  <div
+                    key={`wh-${warehouseKey}-${d.id}`}
+                    style={{
+                      borderRadius: 14,
+                      border: `1px solid ${BORDER}`,
+                      background: "rgba(255,255,255,0.05)",
+                      padding: 10,
+                      display: "grid",
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ width: 14, display: "flex", justifyContent: "center" }}>📦</span>
+
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontWeight: 900, fontSize: 13, lineHeight: 1.15 }}>
+                          {title}
+                        </div>
+                        <div style={{ fontSize: 12, color: MUTED, marginTop: 3 }}>
+                          Rodzaj: <b style={{ color: "rgba(255,255,255,0.88)" }}>{kind}</b>
+                          {" "}• Magazyn: <b style={{ color: "rgba(255,255,255,0.88)" }}>{warehouseKey}</b>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: 11,
+                          padding: "2px 8px",
+                          borderRadius: 999,
+                          background: "rgba(255,255,255,0.10)",
+                          border: `1px solid ${BORDER}`,
+                          color: "rgba(255,255,255,0.9)",
+                          whiteSpace: "nowrap",
+                          fontWeight: 800,
+                        }}
+                      >
+                        {kind}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.86)", opacity: 0.92 }}>
+                      {d.note ? d.note : <span style={{ color: MUTED }}>Brak opisu</span>}
+                    </div>
+
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                      <button
+                        onClick={() => onSelectDevice?.(d)}
+                        style={rowBtn}
+                        title="Otwórz edycję urządzenia"
+                      >
+                        Edytuj
+                      </button>
+
+                      <button
+                        onClick={() => onShowOnMap?.(d)}
+                        style={{
+                          ...rowBtn,
+                          opacity: hasCoords ? 1 : 0.45,
+                          cursor: hasCoords ? "pointer" : "default",
+                        }}
+                        disabled={!hasCoords}
+                        title={hasCoords ? "Pokaż na mapie" : "Brak współrzędnych"}
+                      >
+                        Pokaż na mapie
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -2163,6 +2410,8 @@ const pinIcons = useMemo(() => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [storageOpen, setStorageOpen] = useState(false);
+  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
+  const [activeWarehouse, setActiveWarehouse] = useState(null);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
   const [visibleTypes, setVisibleTypes] = useState(() => {
   const obj = {};
@@ -3307,6 +3556,7 @@ async function togglePointPriority(pt) {
     selectedPointId={selectedPointId}
     setSelectedPointId={setSelectedPointId}
     setEditOpen={setEditOpen}
+    onOpenWarehouse={openWarehouse} 
     BORDER={BORDER}
     MUTED={MUTED}
     GLASS_BG={GLASS_BG}
@@ -3789,6 +4039,29 @@ async function togglePointPriority(pt) {
   DEVICE_TYPES={DEVICE_TYPES}
   WAREHOUSES={WAREHOUSES}
 />
+<WarehouseModal
+  open={warehouseModalOpen}
+  warehouseKey={activeWarehouse || ""}
+  devices={(activeWarehouse && storageByWarehouse?.[activeWarehouse]) ? storageByWarehouse[activeWarehouse] : []}
+  onClose={() => setWarehouseModalOpen(false)}
+  onSelectDevice={(d) => {
+    setSelectedPointId(d.id);
+    setWarehouseModalOpen(false);
+    setEditOpen(true);
+  }}
+  onShowOnMap={(d) => {
+    // jeśli kiedyś urządzenia magazynowe dostaną współrzędne, to zadziała:
+    setSelectedPointId(d.id);
+    setWarehouseModalOpen(false);
+    focusPoint(d);
+  }}
+  BORDER={BORDER}
+  TEXT_LIGHT={TEXT_LIGHT}
+  MUTED={MUTED}
+  GLASS_BG={GLASS_BG_DARK}
+  GLASS_SHADOW={GLASS_SHADOW}
+/>
+
 
       </main>
     </div>
