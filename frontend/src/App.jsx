@@ -2616,6 +2616,24 @@ const pinIcons = useMemo(() => {
   return icons;
 }, []);
 
+useEffect(() => {
+  if (mode !== "app") return;
+  const map = mapRef.current;
+  if (!map) return;
+
+  const t1 = setTimeout(() => {
+    try { map.invalidateSize({ pan: false }); } catch {}
+  }, 220);
+
+  const t2 = setTimeout(() => {
+    try { map.invalidateSize({ pan: false }); } catch {}
+  }, 420);
+
+  return () => {
+    clearTimeout(t1);
+    clearTimeout(t2);
+  };
+}, [sidebarOpen, mode]);
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
