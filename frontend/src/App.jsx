@@ -1480,47 +1480,38 @@ function EditDeviceModal({
 
   const title = `Edycja urządzenia: ${device.title || `#${device.id}`}`;
 
-  async function handleSave() {
-    setErr("");
+async function handleSave() {
+  setErr("");
 
-    const payload = {
-  title: form.title,
-  status: form.status,
-  note: form.note,
-  in_storage: !!form.in_storage,
-  warehouse: form.in_storage ? form.warehouse : null,
-  lat: form.in_storage ? null : Number(form.lat),
-  lng: form.in_storage ? null : Number(form.lng),
-};
+  const payload = {
+    title: form.title,
+    status: form.status,
+    note: form.note,
+    in_storage: !!form.in_storage,
+    warehouse: form.in_storage ? (form.warehouse || "GEO_BB") : null,
+  };
 
-await authFetch(`${API}/api/points`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(payload),
-});
-
-
-    if (!payload.title.trim()) {
-      setErr("Nazwa urządzenia nie może być pusta.");
-      return;
-    }
-
-    const allowed = new Set(DEVICE_TYPES.map((x) => x.value));
-    if (!allowed.has(payload.status)) {
-      setErr("Wybierz poprawny rodzaj urządzenia.");
-      return;
-    }
-
-    setSaving(true);
-    try {
-      await onSave(payload);
-      onClose();
-    } catch (e) {
-      setErr(String(e?.message || e));
-    } finally {
-      setSaving(false);
-    }
+  if (!payload.title.trim()) {
+    setErr("Nazwa urządzenia nie może być pusta.");
+    return;
   }
+
+  const allowed = new Set(DEVICE_TYPES.map((x) => x.value));
+  if (!allowed.has(payload.status)) {
+    setErr("Wybierz poprawny rodzaj urządzenia.");
+    return;
+  }
+
+  setSaving(true);
+  try {
+    await onSave(payload);
+    onClose();
+  } catch (e) {
+    setErr(String(e?.message || e));
+  } finally {
+    setSaving(false);
+  }
+}
 
   const overlayStyle = {
     position: "fixed",
@@ -2496,43 +2487,20 @@ async function createDeviceFromForm() {
   const in_storage = createForm.in_storage === true;
   const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
 
-const lat = in_storage ? null : Number(createForm.lat);
-const lng = in_storage ? null : Number(createForm.lng);
-
-if (!title) { ... }
-
-if (in_storage) {
-  if (!warehouse) {
-    setApiError("Wybierz magazyn.");
-    return;
-  }
-} else {
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-    setApiError("Podaj poprawne współrzędne (lat/lng).");
-    return;
-  }
-}
-
-const res = await authFetch(`${API}/points`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    title,
-    status,
-    note,
-    in_storage,
-    warehouse,
-    lat, // null jeśli magazyn
-    lng, // null jeśli magazyn
-  }),
-});
+  const lat = in_storage ? null : Number(createForm.lat);
+  const lng = in_storage ? null : Number(createForm.lng);
 
   if (!title) {
     setApiError("Podaj nazwę urządzenia.");
     return;
   }
 
-  if (!in_storage) {
+  if (in_storage) {
+    if (!warehouse) {
+      setApiError("Wybierz magazyn.");
+      return;
+    }
+  } else {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       setApiError("Podaj poprawne współrzędne (lat/lng).");
       return;
@@ -2543,19 +2511,16 @@ const res = await authFetch(`${API}/points`, {
     const res = await authFetch(`${API}/points`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        status,
-        note,
-        in_storage,
-        warehouse,
-        lat: in_storage ? null : lat,
-        lng: in_storage ? null : lng,
-      }),
+      body: JSON.stringify({ title, status, note, in_storage, warehouse, lat, lng }),
     });
 
     const data = await readJsonOrThrow(res);
-    const normalized = { ...data, priority: data?.priority === true, in_storage: toBool(data?.in_storage), warehouse: data?.warehouse || null };
+    const normalized = {
+      ...data,
+      priority: data?.priority === true,
+      in_storage: toBool(data?.in_storage),
+      warehouse: data?.warehouse || null,
+    };
 
     setPoints((p) => [normalized, ...p]);
     setSelectedPointId(normalized.id);
@@ -2565,15 +2530,14 @@ const res = await authFetch(`${API}/points`, {
     setCreateOpen(false);
     setAddMode("none");
 
-    // wyczyść formularz
     setCreateForm({
       title: "",
       status: "tachimetr",
       note: "",
       lat: "",
       lng: "",
-      in_storage: true,
-      warehouse: "",
+      in_storage: false,
+      warehouse: "GEO_BB",
     });
   } catch (e) {
     if (e?.status === 401) return logout("expired");

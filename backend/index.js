@@ -120,7 +120,10 @@ function normalizeStorage(body) {
   function parseInStorage(body) {
   return body?.in_storage === true || body?.in_storage === "true" || body?.in_storage === 1;
 }
-  const warehouse = (body.warehouse ?? "").toString().trim();
+
+function normalizeStorage(body) {
+  const in_storage = parseInStorage(body);
+  const warehouse = (body?.warehouse ?? "").toString().trim();
 
   if (in_storage) {
     if (!WAREHOUSES.includes(warehouse)) {
@@ -128,13 +131,20 @@ function normalizeStorage(body) {
       err.status = 400;
       throw err;
     }
-    return {
-      in_storage: true,
-      warehouse,
-      lat: null,
-      lng: null,
-    };
+    return { in_storage: true, warehouse, lat: null, lng: null };
   }
+
+  const lat = Number(body?.lat);
+  const lng = Number(body?.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    const err = new Error("Podaj poprawne współrzędne lat/lng.");
+    err.status = 400;
+    throw err;
+  }
+
+  return { in_storage: false, warehouse: null, lat, lng };
+}
+
 
   // nie magazyn -> lat/lng obowiązkowe
   const lat = Number(body.lat);
@@ -291,59 +301,23 @@ app.post("/api/points", authRequired, async (req, res) => {
   try {
     const body = req.body || {};
 
-    const title = String(body.title || body.name || "Nowe urządzenie").trim();
-    const status = String(body.status || "tachimetr").trim();
+    const title = String(body.title || body.name || "Nowe urządzenie");
+    const status = String(body.status || "tachimetr");
     const note = String(body.note || body.notes || "");
 
-    if (!title) return res.status(400).json({ error: "Podaj nazwę urządzenia." });
-
-    // kluczowa logika magazynu / mapa
-    let storage;
-    try {
-      storage = normalizeStorage(body);
-    } catch (e) {
-      return res.status(e.status || 400).json({ error: e.message || "Błąd danych magazynu" });
-    }
+    const st = normalizeStorage(body); // ✅ tu jest in_storage/warehouse/lat/lng
 
     const q = await pool.query(
       `
-      INSERT INTO assets (
-        name,
-        type,
-        status,
-        lat,
-        lng,
-        notes,
-        in_storage,
-        warehouse,
-        priority
-      )
+      INSERT INTO assets (name, type, status, lat, lng, notes, in_storage, warehouse, priority)
       VALUES ($1, 'equipment', $2, $3, $4, $5, $6, $7, false)
-      RETURNING
-        id,
-        name,
-        status,
-        lat,
-        lng,
-        notes,
-        in_storage,
-        warehouse,
-        COALESCE(priority,false) AS priority
+      RETURNING id, name, status, lat, lng, notes, in_storage, warehouse, COALESCE(priority,false) AS priority
       `,
-      [
-        title,
-        status,
-        storage.lat,
-        storage.lng,
-        note,
-        storage.in_storage,
-        storage.warehouse,
-      ]
+      [title, status, st.lat, st.lng, note, st.in_storage, st.warehouse]
     );
 
     const a = q.rows[0];
-
-    return res.json({
+    res.json({
       id: a.id,
       title: a.name,
       name: a.name,
@@ -352,13 +326,13 @@ app.post("/api/points", authRequired, async (req, res) => {
       lng: a.lng,
       note: a.notes ?? "",
       notes: a.notes ?? "",
-      in_storage: a.in_storage === true,
-      warehouse: a.warehouse ?? null,
+      in_storage: a.in_storage,
+      warehouse: a.warehouse,
       priority: !!a.priority,
     });
   } catch (e) {
     console.error("CREATE POINT ERROR:", e);
-    return res.status(500).json({ error: "DB error", details: String(e?.message || e) });
+    res.status(e.status || 500).json({ error: String(e.message || e) });
   }
 });
 
