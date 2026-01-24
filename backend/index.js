@@ -118,7 +118,12 @@ function authRequired(req, res, next) {
 }
 function normalizeStorage(body) {
   function parseInStorage(body) {
-  return body?.in_storage === true || body?.in_storage === "true" || body?.in_storage === 1;
+  return (
+    body?.in_storage === true ||
+    body?.in_storage === "true" ||
+    body?.in_storage === 1 ||
+    body?.in_storage === "1"
+  );
 }
 
 function normalizeStorage(body) {
@@ -232,19 +237,19 @@ ORDER BY COALESCE(priority,false) DESC, id DESC
     `);
 
     const points = q.rows.map((a) => ({
-      id: a.id,
-      title: a.name,
-      name: a.name,
-      // ⬇️ legacy pola zostawiamy, ale NIE zapisujemy ich do DB
-      director: "",
-      winner: "",
-      note: a.notes ?? "",
-      notes: a.notes ?? "",
-      status: a.status,
-      lat: a.lat,
-      lng: a.lng,
-      priority: !!a.priority,
-    }));
+  id: a.id,
+  title: a.name,
+  name: a.name,
+  note: a.notes ?? "",
+  notes: a.notes ?? "",
+  status: a.status,
+  lat: a.lat,
+  lng: a.lng,
+  in_storage: a.in_storage === true,
+  warehouse: a.warehouse ?? null,
+  priority: !!a.priority,
+}));
+
 
     res.json(points);
   } catch (e) {
@@ -448,6 +453,79 @@ app.put("/api/points/:id/comments/:commentId", authRequired, async (req, res) =>
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+// UPDATE point -> UPDATE asset
+app.put("/api/points/:id", authRequired, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
+
+    const body = req.body || {};
+    const title = String(body.title || body.name || "").trim();
+    const status = String(body.status || "tachimetr").trim();
+    const note = String(body.note || body.notes || "");
+
+    if (!title) return res.status(400).json({ error: "Nazwa jest wymagana" });
+
+    const st = normalizeStorage(body);
+
+    const q = await pool.query(
+      `
+      UPDATE assets
+      SET name=$1,
+          status=$2,
+          notes=$3,
+          in_storage=$4,
+          warehouse=$5,
+          lat=$6,
+          lng=$7,
+          updated_at=NOW()
+      WHERE id=$8
+      RETURNING id, name, status, lat, lng, notes, in_storage, warehouse, COALESCE(priority,false) AS priority
+      `,
+      [title, status, note, st.in_storage, st.warehouse, st.lat, st.lng, id]
+    );
+
+    const a = q.rows[0];
+    if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
+
+    res.json({
+      id: a.id,
+      title: a.name,
+      name: a.name,
+      note: a.notes ?? "",
+      notes: a.notes ?? "",
+      status: a.status,
+      lat: a.lat,
+      lng: a.lng,
+      in_storage: a.in_storage,
+      warehouse: a.warehouse,
+      priority: !!a.priority,
+    });
+  } catch (e) {
+    console.error("PUT /api/points/:id ERROR:", e);
+    res.status(e.status || 500).json({ error: String(e.message || e) });
+  }
+});
+
+// DELETE point -> DELETE asset (opcjonalnie też kasowanie komentarzy)
+app.delete("/api/points/:id", authRequired, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
+
+    // jeśli masz FK bez ON DELETE CASCADE, usuń komentarze przed assetem:
+    await pool.query(`DELETE FROM point_comments WHERE point_id=$1`, [id]);
+
+    const q = await pool.query(`DELETE FROM assets WHERE id=$1 RETURNING id`, [id]);
+    if (!q.rows[0]) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
+
+    res.json({ ok: true, id });
+  } catch (e) {
+    console.error("DELETE /api/points/:id ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
+
 
 // DELETE point comment
 app.delete("/api/points/:id/comments/:commentId", authRequired, async (req, res) => {
