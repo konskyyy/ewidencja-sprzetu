@@ -80,8 +80,6 @@ function StorageOverlay({
   GLASS_BG,
   GLASS_SHADOW,
 }) {
-  if (!open) return null;
-
   return (
     <div
       style={{
@@ -95,14 +93,12 @@ function StorageOverlay({
         borderRadius: 16,
         border: `1px solid ${BORDER}`,
         background: GLASS_BG,
-        backgroundImage:
-          "radial-gradient(600px 360px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
         boxShadow: GLASS_SHADOW,
         backdropFilter: "blur(8px)",
         overflow: "hidden",
       }}
     >
-      {/* HEADER */}
+      {/* HEADER — ZAWSZE WIDOCZNY */}
       <div
         onClick={onToggle}
         style={{
@@ -112,88 +108,52 @@ function StorageOverlay({
           alignItems: "center",
           cursor: "pointer",
           fontWeight: 900,
-          background: "rgba(0,0,0,0.10)",
+          background: "rgba(0,0,0,0.12)",
         }}
       >
         <span>Magazyny</span>
         <span style={{ fontSize: 12, color: MUTED }}>
-          {storageDevices.length} ▾
+          {storageDevices.length} {open ? "▾" : "▸"}
         </span>
       </div>
 
-      {/* BODY */}
-      <div style={{ padding: 12, display: "grid", gap: 10 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-          {Object.entries(storageByWarehouse).map(([key, list]) => (
-            <div
-              key={key}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
-              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
-                {list.length}
-              </span>
+      {/* BODY — TYLKO TO JEST ZWIJANE */}
+      {open && (
+        <div style={{ padding: 12, display: "grid", gap: 10 }}>
+          {/* kafelki magazynów */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {Object.entries(storageByWarehouse).map(([key, list]) => (
+              <div
+                key={key}
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  background: "rgba(255,255,255,0.05)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
+                <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
+                  {list.length}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {filteredStorageSearch.length === 0 && (
+            <div style={{ fontSize: 11, color: MUTED }}>
+              Brak urządzeń w magazynie (lub brak wyników).
             </div>
-          ))}
+          )}
         </div>
-
-        {filteredStorageSearch.length === 0 ? (
-          <div style={{ fontSize: 11, color: MUTED }}>
-            Brak urządzeń w magazynie (lub brak wyników).
-          </div>
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gap: 8,
-              maxHeight: 220,
-              overflow: "auto",
-              paddingRight: 4,
-            }}
-          >
-            {filteredStorageSearch.map((x) => {
-              const selected = x.id === selectedPointId;
-
-              return (
-                <div
-                  key={`storage-top-${x.id}`}
-                  onClick={() => {
-                    setSelectedPointId(x.id);
-                    setEditOpen(true);
-                  }}
-                  style={{
-                    padding: 9,
-                    borderRadius: 14,
-                    border: selected
-                      ? "2px solid rgba(255,255,255,0.35)"
-                      : `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.05)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <div style={{ fontWeight: 800, fontSize: 12 }}>
-                    📦 {x.title || `Urządzenie #${x.id}`}
-                  </div>
-                  <div style={{ fontSize: 11, color: MUTED }}>
-                    {x.warehouse}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
+
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
