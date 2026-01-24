@@ -37,8 +37,6 @@ app.options("*", cors());
 const PORT = process.env.PORT || 3001;
 const DATABASE_URL = process.env.DATABASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const in_storage = body.in_storage === true || body.in_storage === "true";
-const warehouse = (body.warehouse ?? "").toString().trim();
 
 if (!DATABASE_URL) {
   console.error("❌ DATABASE_URL is missing");
@@ -108,7 +106,9 @@ function authRequired(req, res, next) {
   }
 }
 function normalizeStorage(body) {
-  const in_storage = body.in_storage === true || body.in_storage === "true";
+  function parseInStorage(body) {
+  return body?.in_storage === true || body?.in_storage === "true" || body?.in_storage === 1;
+}
   const warehouse = (body.warehouse ?? "").toString().trim();
 
   if (in_storage) {
@@ -273,7 +273,9 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
 });
 
 // CREATE point -> INSERT asset (BEZ director/winner)
-app.post("/api/points", authRequired, async (req, res) => {
+app.post("/api/points", (req,res)=> {
+  const in_storage = parseInStorage(req.body);
+});
   try {
     const body = req.body || {};
 
