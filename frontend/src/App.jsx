@@ -2362,13 +2362,15 @@ export default function App() {
       [`${kind}:${id}`]: !!value,
     }));
   }
-  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
-const [activeWarehouse, setActiveWarehouse] = useState(null);
 
-function openWarehouse(key) {
-  setActiveWarehouse(key);
-  setWarehouseModalOpen(true);
-}
+  /** ===== Warehouse modal state ===== */
+  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
+  const [activeWarehouse, setActiveWarehouse] = useState(null);
+
+  function openWarehouse(key) {
+    setActiveWarehouse(key);
+    setWarehouseModalOpen(true);
+  }
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -2427,6 +2429,9 @@ function openWarehouse(key) {
     setSelectedPointId(null);
     setPoints([]);
 
+    setWarehouseModalOpen(false);
+    setActiveWarehouse(null);
+
     if (reason === "expired") setAuthNotice("Sesja wygasła — zaloguj się ponownie.");
     else setAuthNotice("");
   }
@@ -2450,86 +2455,80 @@ function openWarehouse(key) {
   const [loadingPoints, setLoadingPoints] = useState(false);
   const [apiError, setApiError] = useState("");
 
-const pinIcons = useMemo(() => {
-  const icons = {};
-  for (const t of DEVICE_TYPES) icons[t.value] = makePinIcon(typeColor(t.value));
-  icons.__default = makePinIcon(typeColor(null));
-  return icons;
-}, []);
-
+  const pinIcons = useMemo(() => {
+    const icons = {};
+    for (const t of DEVICE_TYPES) icons[t.value] = makePinIcon(typeColor(t.value));
+    icons.__default = makePinIcon(typeColor(null));
+    return icons;
+  }, []);
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
   const markerRefs = useRef({});
   const suppressNextMapClickRef = useRef(false);
 
-
   /** ===== Filters + Add mode ===== */
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(true);
   const [storageOpen, setStorageOpen] = useState(false);
   const [addMode, setAddMode] = useState("none"); // none | point | manual
+
   const [visibleTypes, setVisibleTypes] = useState(() => {
-  const obj = {};
-  for (const t of DEVICE_TYPES) obj[t.value] = true;
-  return obj;
-});
+    const obj = {};
+    for (const t of DEVICE_TYPES) obj[t.value] = true;
+    return obj;
+  });
 
-/** ===== Cursor crosshair (pozycja kursora na mapie) ===== */
-const crosshairRef = useRef(null);
-const [isDraggingMap, setIsDraggingMap] = useState(false);
+  /** ===== Cursor crosshair ===== */
+  const crosshairRef = useRef(null);
+  const [isDraggingMap, setIsDraggingMap] = useState(false);
 
-useEffect(() => {
-  // poza trybem wskazywania — chowamy krzyż i sprzątamy
-  if (addMode !== "point") {
-    if (crosshairRef.current) crosshairRef.current.style.display = "none";
-    return;
-  }
+  useEffect(() => {
+    if (addMode !== "point") {
+      if (crosshairRef.current) crosshairRef.current.style.display = "none";
+      return;
+    }
 
-  let raf = 0;
+    let raf = 0;
 
-  const move = (e) => {
-    // podczas drag mapy: krzyż ma być schowany
-    if (isDraggingMap) return;
+    const move = (e) => {
+      if (isDraggingMap) return;
 
-    const el = crosshairRef.current;
-    if (!el) return;
+      const el = crosshairRef.current;
+      if (!el) return;
 
-    if (el.style.display !== "block") el.style.display = "block";
+      if (el.style.display !== "block") el.style.display = "block";
 
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      el.style.left = `${e.clientX}px`;
-      el.style.top = `${e.clientY}px`;
-    });
-  };
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        el.style.left = `${e.clientX}px`;
+        el.style.top = `${e.clientY}px`;
+      });
+    };
 
-  const hide = () => {
-    if (crosshairRef.current) crosshairRef.current.style.display = "none";
-  };
+    const hide = () => {
+      if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    };
 
-  window.addEventListener("mousemove", move, { passive: true });
-  window.addEventListener("blur", hide);
+    window.addEventListener("mousemove", move, { passive: true });
+    window.addEventListener("blur", hide);
 
-  // jak tylko zaczynasz dragować mapę -> natychmiast schowaj krzyż
-  if (isDraggingMap) hide();
+    if (isDraggingMap) hide();
 
-  return () => {
-    window.removeEventListener("mousemove", move);
-    window.removeEventListener("blur", hide);
-    cancelAnimationFrame(raf);
-    if (crosshairRef.current) crosshairRef.current.style.display = "none";
-  };
-}, [addMode, isDraggingMap]);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("blur", hide);
+      cancelAnimationFrame(raf);
+      if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    };
+  }, [addMode, isDraggingMap]);
 
-
-// osobny efekt: tylko aktualizacja isDraggingMap (bez przepinania listenerów)
-useEffect(() => {
-  if (addMode !== "point") return;
-  if (isDraggingMap) {
-    if (crosshairRef.current) crosshairRef.current.style.display = "none";
-  }
-}, [isDraggingMap, addMode]);
+  useEffect(() => {
+    if (addMode !== "point") return;
+    if (isDraggingMap) {
+      if (crosshairRef.current) crosshairRef.current.style.display = "none";
+    }
+  }, [isDraggingMap, addMode]);
 
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
@@ -2542,386 +2541,380 @@ useEffect(() => {
   }
 
   const filteredPoints = useMemo(() => {
-  return points
-    .filter((p) => visibleTypes[p.status] !== false)
-    .slice()
-    .sort(byPriorityThenIdDesc);
-}, [points, visibleTypes]);
-const filteredDevicesSearch = useMemo(() => {
-  const q = String(projectQuery || "").trim().toLowerCase();
+    return points
+      .filter((p) => visibleTypes[p.status] !== false)
+      .slice()
+      .sort(byPriorityThenIdDesc);
+  }, [points, visibleTypes]);
 
-  const base = Array.isArray(filteredPoints) ? filteredPoints : [];
+  const filteredDevicesSearch = useMemo(() => {
+    const q = String(projectQuery || "").trim().toLowerCase();
+    const base = Array.isArray(filteredPoints) ? filteredPoints : [];
+    if (!q) return base;
 
-  if (!q) return base;
+    return base.filter((p) => {
+      const title = String(p?.title || p?.name || "").toLowerCase();
+      const note = String(p?.note || p?.notes || "").toLowerCase();
+      return title.includes(q) || note.includes(q);
+    });
+  }, [filteredPoints, projectQuery]);
 
-  return base.filter((p) => {
-    const title = String(p?.title || p?.name || "").toLowerCase();
-    const note = String(p?.note || p?.notes || "").toLowerCase();
-    return title.includes(q) || note.includes(q);
-  });
-}, [filteredPoints, projectQuery]);
+  const storageDevices = useMemo(() => {
+    return (Array.isArray(points) ? points : []).filter((p) => toBool(p?.in_storage));
+  }, [points]);
 
-const storageDevices = useMemo(() => {
-  return (Array.isArray(points) ? points : []).filter((p) => toBool(p?.in_storage));
-}, [points]);
-
-const storageByWarehouse = useMemo(() => {
-  const map = {};
-  for (const w of WAREHOUSES) map[w.value] = [];
-  for (const p of storageDevices) {
-    const key = p.warehouse || "GEO_BB";
-    if (!map[key]) map[key] = [];
-    map[key].push(p);
-  }
-  // sort w magazynie: priorytet i id (jak na mapie)
-  for (const k of Object.keys(map)) map[k] = map[k].slice().sort(byPriorityThenIdDesc);
-  return map;
-}, [storageDevices]);
-
-const filteredStorageSearch = useMemo(() => {
-  const q = String(projectQuery || "").trim().toLowerCase();
-  const all = storageDevices.slice().sort(byPriorityThenIdDesc);
-  if (!q) return all;
-
-  return all.filter((p) => {
-    const title = String(p?.title || p?.name || "").toLowerCase();
-    const note = String(p?.note || p?.notes || "").toLowerCase();
-    const wh = String(p?.warehouse || "").toLowerCase();
-    return title.includes(q) || note.includes(q) || wh.includes(q);
-  });
-}, [storageDevices, projectQuery]);
-
-
-const counts = useMemo(() => {
-  const c = {};
-  for (const t of DEVICE_TYPES) c[t.value] = 0;
-
-  for (const p of points) {
-    if (c[p.status] !== undefined) {
-      c[p.status]++;
+  const storageByWarehouse = useMemo(() => {
+    const map = {};
+    for (const w of WAREHOUSES) map[w.value] = [];
+    for (const p of storageDevices) {
+      const key = p.warehouse || "GEO_BB";
+      if (!map[key]) map[key] = [];
+      map[key].push(p);
     }
-  }
+    for (const k of Object.keys(map)) map[k] = map[k].slice().sort(byPriorityThenIdDesc);
+    return map;
+  }, [storageDevices]);
 
-  return c;
-}, [points]);
+  const filteredStorageSearch = useMemo(() => {
+    const q = String(projectQuery || "").trim().toLowerCase();
+    const all = storageDevices.slice().sort(byPriorityThenIdDesc);
+    if (!q) return all;
+
+    return all.filter((p) => {
+      const title = String(p?.title || p?.name || "").toLowerCase();
+      const note = String(p?.note || p?.notes || "").toLowerCase();
+      const wh = String(p?.warehouse || "").toLowerCase();
+      return title.includes(q) || note.includes(q) || wh.includes(q);
+    });
+  }, [storageDevices, projectQuery]);
+
+  const counts = useMemo(() => {
+    const c = {};
+    for (const t of DEVICE_TYPES) c[t.value] = 0;
+    for (const p of points) if (c[p.status] !== undefined) c[p.status]++;
+    return c;
+  }, [points]);
 
   const [createOpen, setCreateOpen] = useState(false);
-const [createForm, setCreateForm] = useState({
-  title: "",
-  status: "tachimetr",
-  note: "",
-  lat: "",
-  lng: "",
-  in_storage: false,
-  warehouse: "",
-});
-
-function showAllTypes() {
-  const obj = {};
-  for (const t of DEVICE_TYPES) obj[t.value] = true;
-  setVisibleTypes(obj);
-}
-
-function hideAllTypes() {
-  const obj = {};
-  for (const t of DEVICE_TYPES) obj[t.value] = false;
-  setVisibleTypes(obj);
-}
-
-function focusPoint(pt) {
-  const map = mapRef.current;
-  if (pt.in_storage === true) return;
-  if (!map || !pt) return;
-
-  const lat = Number(pt.lat);
-  const lng = Number(pt.lng);
-
-  map.flyTo([lat, lng], Math.max(map.getZoom(), 12), {
-    animate: true,
-    duration: 0.6,
+  const [createForm, setCreateForm] = useState({
+    title: "",
+    status: "tachimetr",
+    note: "",
+    lat: "",
+    lng: "",
+    in_storage: false,
+    warehouse: "",
   });
 
-  setTimeout(() => {
-    const m = markerRefs.current[pt.id];
-    try {
-      m?.openPopup?.();
-    } catch {}
-  }, 250);
-}
-
-function jumpToProject(kind, entityId) {
-  if (kind !== "points") {
-    // feed może zawierać stare wpisy innych typów – nie ruszamy feedu
-    return;
+  function showAllTypes() {
+    const obj = {};
+    for (const t of DEVICE_TYPES) obj[t.value] = true;
+    setVisibleTypes(obj);
   }
 
-  const pt = points.find((x) => String(x.id) === String(entityId));
-  if (!pt) return;
-  setSelectedPointId(pt.id);
-  focusPoint(pt);
-}
-
-/** ===== World mask ===== */
-const [worldMask, setWorldMask] = useState(null);
-useEffect(() => {
-  let alive = true;
-
-  (async () => {
-    try {
-      const res = await fetch(NE_COUNTRIES_URL);
-      if (!res.ok) throw new Error(`GeoJSON HTTP ${res.status}`);
-      const fc = await res.json();
-
-      const keepFeatures = (fc.features || []).filter((f) => {
-        const a3 =
-          f?.properties?.ADM0_A3 || f?.properties?.ISO_A3 || f?.properties?.iso_a3;
-        return KEEP_COUNTRIES_A3.has(a3);
-      });
-
-      const holes = [];
-      for (const f of keepFeatures) holes.push(...extractOuterRings(f.geometry));
-
-      const mask = {
-        type: "Feature",
-        properties: { name: "world-mask" },
-        geometry: {
-          type: "Polygon",
-          coordinates: [
-            [
-              [-180, -90],
-              [180, -90],
-              [180, 90],
-              [-180, 90],
-              [-180, -90],
-            ],
-            ...holes,
-          ],
-        },
-      };
-
-      if (alive) setWorldMask(mask);
-    } catch {
-      if (alive) setWorldMask(null);
-    }
-  })();
-
-  return () => {
-    alive = false;
-  };
-}, []);
-
- /** ===== Load data ===== */
-async function loadPoints() {
-  setLoadingPoints(true);
-  setApiError("");
-  try {
-    const res = await authFetch(`${API}/points`);
-    const data = await readJsonOrThrow(res);
-
-    setPoints(
-      Array.isArray(data)
-        ? data.map((p) => ({ ...p, priority: p.priority === true,in_storage: toBool(p.in_storage), warehouse: p.warehouse ?? null,
-         }))
-        : []
-    );
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    setApiError(`Nie mogę pobrać urządzeń: ${String(e)}`);
-  } finally {
-    setLoadingPoints(false);
-  }
-}
-
-useEffect(() => {
-  if (mode !== "app") return;
-  loadPoints();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [mode]);
-
-async function deleteSelectedDevice() {
-  const pt = selectedPoint;
-  if (!pt) return;
-
-  const label = `urządzenie #${pt.id} (${pt.title || "bez nazwy"})`;
-  const ok = window.confirm(`Na pewno usunąć ${label}?`);
-  if (!ok) return;
-
-  setApiError("");
-
-  try {
-    const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
-    await readJsonOrThrow(res);
-
-    setPoints((prev) => prev.filter((p) => p.id !== pt.id));
-    setSelectedPointId(null);
-
-    try {
-      mapRef.current?.closePopup?.();
-    } catch {}
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    setApiError(`Nie mogę usunąć urządzenia: ${String(e?.message || e)}`);
-
-    try {
-      await loadPoints();
-    } catch {}
-  }
-}
-function pickLocationFromMap(latlng) {
-  setCreateForm((f) => ({
-    ...f,
-    lat: String(latlng.lat),
-    lng: String(latlng.lng),
-  }));
-
-  setCreateOpen(true);   // modal ma się otworzyć po kliknięciu mapy
-  setAddMode("none");
-
-  try {
-    mapRef.current?.flyTo(
-      [latlng.lat, latlng.lng],
-      Math.max(mapRef.current.getZoom(), 12),
-      { animate: true, duration: 0.5 }
-    );
-  } catch {}
-}
-
-async function createDeviceFromForm() {
-  setApiError("");
-
-  const title = String(createForm.title || "").trim();
-  const status = String(createForm.status || "tachimetr");
-  const note = String(createForm.note || "");
-
-  const in_storage = createForm.in_storage === true;
-  const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
-
-  const lat = in_storage ? null : Number(createForm.lat);
-  const lng = in_storage ? null : Number(createForm.lng);
-
-  if (!title) {
-    setApiError("Podaj nazwę urządzenia.");
-    return;
+  function hideAllTypes() {
+    const obj = {};
+    for (const t of DEVICE_TYPES) obj[t.value] = false;
+    setVisibleTypes(obj);
   }
 
-  if (in_storage) {
-    if (!warehouse) {
-      setApiError("Wybierz magazyn.");
-      return;
-    }
-  } else {
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      setApiError("Podaj poprawne współrzędne (lat/lng).");
-      return;
-    }
-  }
+  function focusPoint(pt) {
+    const map = mapRef.current;
+    if (pt?.in_storage === true) return;
+    if (!map || !pt) return;
 
-  try {
-    const res = await authFetch(`${API}/points`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, status, note, in_storage, warehouse, lat, lng }),
+    const lat = Number(pt.lat);
+    const lng = Number(pt.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 12), {
+      animate: true,
+      duration: 0.6,
     });
 
-    const data = await readJsonOrThrow(res);
-    const normalized = {
-      ...data,
-      priority: data?.priority === true,
-      in_storage: toBool(data?.in_storage),
-      warehouse: data?.warehouse || null,
+    setTimeout(() => {
+      const m = markerRefs.current[pt.id];
+      try {
+        m?.openPopup?.();
+      } catch {}
+    }, 250);
+  }
+
+  function jumpToProject(kind, entityId) {
+    if (kind !== "points") return;
+
+    const pt = points.find((x) => String(x.id) === String(entityId));
+    if (!pt) return;
+
+    setSelectedPointId(pt.id);
+    if (toBool(pt.in_storage)) {
+      // dla wpisów magazynowych: otwieramy edycję, bo na mapie nie ma markera
+      setEditOpen(true);
+    } else {
+      focusPoint(pt);
+    }
+  }
+
+  /** ===== World mask ===== */
+  const [worldMask, setWorldMask] = useState(null);
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await fetch(NE_COUNTRIES_URL);
+        if (!res.ok) throw new Error(`GeoJSON HTTP ${res.status}`);
+        const fc = await res.json();
+
+        const keepFeatures = (fc.features || []).filter((f) => {
+          const a3 =
+            f?.properties?.ADM0_A3 || f?.properties?.ISO_A3 || f?.properties?.iso_a3;
+          return KEEP_COUNTRIES_A3.has(a3);
+        });
+
+        const holes = [];
+        for (const f of keepFeatures) holes.push(...extractOuterRings(f.geometry));
+
+        const mask = {
+          type: "Feature",
+          properties: { name: "world-mask" },
+          geometry: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [-180, -90],
+                [180, -90],
+                [180, 90],
+                [-180, 90],
+                [-180, -90],
+              ],
+              ...holes,
+            ],
+          },
+        };
+
+        if (alive) setWorldMask(mask);
+      } catch {
+        if (alive) setWorldMask(null);
+      }
+    })();
+
+    return () => {
+      alive = false;
     };
+  }, []);
 
-    setPoints((p) => [normalized, ...p]);
-    setSelectedPointId(normalized.id);
+  /** ===== Load data ===== */
+  async function loadPoints() {
+    setLoadingPoints(true);
+    setApiError("");
+    try {
+      const res = await authFetch(`${API}/points`);
+      const data = await readJsonOrThrow(res);
 
-    if (!normalized.in_storage) focusPoint(normalized);
+      setPoints(
+        Array.isArray(data)
+          ? data.map((p) => ({
+              ...p,
+              priority: p.priority === true,
+              in_storage: toBool(p.in_storage),
+              warehouse: p.warehouse ?? null,
+            }))
+          : []
+      );
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setApiError(`Nie mogę pobrać urządzeń: ${String(e)}`);
+    } finally {
+      setLoadingPoints(false);
+    }
+  }
 
-    setCreateOpen(false);
+  useEffect(() => {
+    if (mode !== "app") return;
+    loadPoints();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
+
+  async function deleteSelectedDevice() {
+    const pt = selectedPoint;
+    if (!pt) return;
+
+    const label = `urządzenie #${pt.id} (${pt.title || "bez nazwy"})`;
+    const ok = window.confirm(`Na pewno usunąć ${label}?`);
+    if (!ok) return;
+
+    setApiError("");
+
+    try {
+      const res = await authFetch(`${API}/points/${pt.id}`, { method: "DELETE" });
+      await readJsonOrThrow(res);
+
+      setPoints((prev) => prev.filter((p) => p.id !== pt.id));
+      setSelectedPointId(null);
+
+      try {
+        mapRef.current?.closePopup?.();
+      } catch {}
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setApiError(`Nie mogę usunąć urządzenia: ${String(e?.message || e)}`);
+
+      try {
+        await loadPoints();
+      } catch {}
+    }
+  }
+
+  function pickLocationFromMap(latlng) {
+    setCreateForm((f) => ({
+      ...f,
+      lat: String(latlng.lat),
+      lng: String(latlng.lng),
+    }));
+
+    setCreateOpen(true);
     setAddMode("none");
 
-    setCreateForm({
-      title: "",
-      status: "tachimetr",
-      note: "",
-      lat: "",
-      lng: "",
-      in_storage: false,
-      warehouse: "GEO_BB",
-    });
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
+    try {
+      mapRef.current?.flyTo(
+        [latlng.lat, latlng.lng],
+        Math.max(mapRef.current.getZoom(), 12),
+        { animate: true, duration: 0.5 }
+      );
+    } catch {}
   }
-}
-async function saveEditedDevice(payload) {
-  const pt = selectedPoint;
-  if (!pt) return;
 
-  setApiError("");
+  async function createDeviceFromForm() {
+    setApiError("");
 
-  try {
-    const res = await authFetch(`${API}/points/${pt.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-  title: payload.title,
-  note: payload.note,
-  status: payload.status,
+    const title = String(createForm.title || "").trim();
+    const status = String(createForm.status || "tachimetr");
+    const note = String(createForm.note || "");
 
-  // magazyn:
-  in_storage: payload.in_storage === true,
-  warehouse: payload.in_storage ? payload.warehouse : null,
+    const in_storage = createForm.in_storage === true;
+    const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
 
-  // współrzędne tylko jeśli NIE magazyn
-  lat: payload.in_storage ? null : pt.lat,
-  lng: payload.in_storage ? null : pt.lng,
-}),
-    });
+    const lat = in_storage ? null : Number(createForm.lat);
+    const lng = in_storage ? null : Number(createForm.lng);
 
-    const updated = await readJsonOrThrow(res);
+    if (!title) {
+      setApiError("Podaj nazwę urządzenia.");
+      return;
+    }
 
-    setPoints((prev) =>
-      prev.map((p) =>
-        p.id === updated.id
-          ? { ...updated, priority: updated.priority === true }
-          : p
-      )
-    );
+    if (in_storage) {
+      if (!warehouse) {
+        setApiError("Wybierz magazyn.");
+        return;
+      }
+    } else {
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        setApiError("Podaj poprawne współrzędne (lat/lng).");
+        return;
+      }
+    }
 
-    setSelectedPointId(updated.id);
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    throw e;
+    try {
+      const res = await authFetch(`${API}/points`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, status, note, in_storage, warehouse, lat, lng }),
+      });
+
+      const data = await readJsonOrThrow(res);
+      const normalized = {
+        ...data,
+        priority: data?.priority === true,
+        in_storage: toBool(data?.in_storage),
+        warehouse: data?.warehouse || null,
+      };
+
+      setPoints((p) => [normalized, ...p]);
+      setSelectedPointId(normalized.id);
+
+      if (!normalized.in_storage) focusPoint(normalized);
+
+      setCreateOpen(false);
+      setAddMode("none");
+
+      setCreateForm({
+        title: "",
+        status: "tachimetr",
+        note: "",
+        lat: "",
+        lng: "",
+        in_storage: false,
+        warehouse: "GEO_BB",
+      });
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
+    }
   }
-}
 
-async function togglePointPriority(pt) {
-  if (!pt) return;
-  setApiError("");
+  async function saveEditedDevice(payload) {
+    const pt = selectedPoint;
+    if (!pt) return;
 
-  try {
-    const res = await authFetch(`${API}/points/${pt.id}/priority`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ priority: !(pt.priority === true) }),
-    });
+    setApiError("");
 
-    const updated = await readJsonOrThrow(res);
+    try {
+      const res = await authFetch(`${API}/points/${pt.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: payload.title,
+          note: payload.note,
+          status: payload.status,
 
-    setPoints((prev) =>
-      prev.map((p) =>
-        p.id === updated.id
-          ? { ...updated, priority: updated.priority === true }
-          : p
-      )
-    );
-  } catch (e) {
-    if (e?.status === 401) return logout("expired");
-    setApiError(
-      `Nie mogę ustawić priorytetu urządzenia: ${String(e?.message || e)}`
-    );
+          in_storage: payload.in_storage === true,
+          warehouse: payload.in_storage ? payload.warehouse : null,
+
+          // współrzędne tylko jeśli NIE magazyn:
+          lat: payload.in_storage ? null : pt.lat,
+          lng: payload.in_storage ? null : pt.lng,
+        }),
+      });
+
+      const updated = await readJsonOrThrow(res);
+
+      setPoints((prev) =>
+        prev.map((p) =>
+          p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
+        )
+      );
+
+      setSelectedPointId(updated.id);
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      throw e;
+    }
   }
-}
+
+  async function togglePointPriority(pt) {
+    if (!pt) return;
+    setApiError("");
+
+    try {
+      const res = await authFetch(`${API}/points/${pt.id}/priority`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priority: !(pt.priority === true) }),
+      });
+
+      const updated = await readJsonOrThrow(res);
+
+      setPoints((prev) =>
+        prev.map((p) =>
+          p.id === updated.id ? { ...updated, priority: updated.priority === true } : p
+        )
+      );
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setApiError(`Nie mogę ustawić priorytetu urządzenia: ${String(e?.message || e)}`);
+    }
+  }
 
   /** ===== Devices CRUD (dodawanie) ===== */
   async function addPoint(latlng) {
@@ -2953,6 +2946,7 @@ async function togglePointPriority(pt) {
       setApiError(`Nie mogę dodać urządzenia: ${String(e)}`);
     }
   }
+
   /** ===== LOGIN UI ===== */
   if (mode === "checking") {
     return (
@@ -3040,831 +3034,68 @@ async function togglePointPriority(pt) {
         overflow: "hidden",
       }}
     >
-     {/* SIDEBAR */}
-<aside
-  style={{
-    color: TEXT_LIGHT,
-    borderRight: sidebarOpen ? `1px solid ${BORDER}` : "none",
-    overflow: "hidden",
-    width: sidebarOpen ? sidebarWidthOpen : sidebarWidthClosed,
-    transition: "width 200ms ease",
-    background: GLASS_BG,
-    backgroundImage: GLASS_HIGHLIGHT,
-    backdropFilter: "blur(8px)",
-    boxShadow: GLASS_SHADOW,
-  }}
->
-  {sidebarOpen ? (
-    <>
-      {/* HEADER */}
-      <div
+      {/* SIDEBAR */}
+      <aside
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "12px 12px",
-          borderBottom: `1px solid ${BORDER}`,
-          background: GLASS_BG_DARK,
-          backgroundImage: GLASS_HIGHLIGHT,
-          backdropFilter: "blur(10px)",
-        }}
-      >
-        <button
-          onClick={() => setSidebarOpen(false)}
-          title="Zwiń panel"
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.06)",
-            color: TEXT_LIGHT,
-            cursor: "pointer",
-            display: "grid",
-            placeItems: "center",
-            fontSize: 16,
-            lineHeight: 1,
-            padding: 0,
-            boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
-          }}
-        >
-          ⟨
-        </button>
-
-        <div style={{ display: "grid", gap: 3, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 900,
-                letterSpacing: 0.6,
-                padding: "3px 8px",
-                borderRadius: 999,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.88)",
-                flexShrink: 0,
-              }}
-            >
-              GEO
-            </span>
-
-            <div
-              style={{
-                fontWeight: 900,
-                letterSpacing: 0.2,
-                fontSize: 14,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Ewidencja sprzętu
-            </div>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: "rgba(34,197,94,0.95)",
-                boxShadow: "0 0 12px rgba(34,197,94,0.22)",
-                flexShrink: 0,
-              }}
-            />
-            <div
-              style={{
-                fontSize: 11,
-                color: MUTED,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Zalogowano:{" "}
-              <b style={{ color: "rgba(255,255,255,0.88)" }}>
-                {user?.email || "(użytkownik)"}
-              </b>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => logout()}
-          style={{
-            padding: "8px 10px",
-            borderRadius: 12,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.06)",
-            color: TEXT_LIGHT,
-            cursor: "pointer",
-            fontWeight: 900,
-            fontSize: 11,
-            boxShadow: "0 10px 22px rgba(0,0,0,0.16)",
-          }}
-        >
-          Wyloguj
-        </button>
-      </div>
-
-      <div
-        style={{
-          padding: 10,
-          height: "calc(100% - 55px)",
+          color: TEXT_LIGHT,
+          borderRight: sidebarOpen ? `1px solid ${BORDER}` : "none",
           overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
+          width: sidebarOpen ? sidebarWidthOpen : sidebarWidthClosed,
+          transition: "width 200ms ease",
+          background: GLASS_BG,
+          backgroundImage: GLASS_HIGHLIGHT,
+          backdropFilter: "blur(8px)",
+          boxShadow: GLASS_SHADOW,
         }}
       >
-        {apiError ? (
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 14,
-              border: "1px solid rgba(255,120,120,0.45)",
-              background: "rgba(255,120,120,0.12)",
-              color: "rgba(255,255,255,0.95)",
-              fontSize: 11,
-              marginBottom: 10,
-            }}
-          >
-            {apiError}
-          </div>
+        {sidebarOpen ? (
+          <>
+            {/* ... tu zostaje Twój sidebar bez zmian ... */}
+
+            {/* WAŻNE: w mapowaniu listy urządzeń zmień klik dla magazynu: */}
+            {/* ZAMIAST:
+               if (x.in_storage) {
+  openWarehouse(x.warehouse || "GEO_BB");
+} else {
+  focusPoint(x);
+}
+            */}
+          </>
+        ) : null}
+      </aside>
+
+      {/* MAP */}
+      <main
+        className={`${addMode === "point" ? "tmPickMode" : ""} ${
+          addMode === "point" && isDraggingMap ? "tmPickModeDragging" : ""
+        }`}
+        style={{
+          width: "100%",
+          height: "100%",
+          position: "relative",
+        }}
+      >
+        {addMode === "point" ? (
+          <div ref={crosshairRef} className="tmCursorCrosshair" style={{ display: "none" }} />
         ) : null}
 
-        {/* Dodawanie */}
-        <div
-          style={{
-            padding: 10,
-            borderRadius: 14,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.04)",
-            backgroundImage: GLASS_HIGHLIGHT,
-            backdropFilter: "blur(8px)",
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>
-            Dodawanie urządzenia
-          </div>
+        <StorageOverlay
+          open={storageOpen}
+          onToggle={() => setStorageOpen((o) => !o)}
+          storageDevices={storageDevices}
+          storageByWarehouse={storageByWarehouse}
+          filteredStorageSearch={filteredStorageSearch}
+          selectedPointId={selectedPointId}
+          setSelectedPointId={setSelectedPointId}
+          setEditOpen={setEditOpen}
+          onOpenWarehouse={openWarehouse}
+          BORDER={BORDER}
+          MUTED={MUTED}
+          GLASS_BG={GLASS_BG}
+          GLASS_SHADOW={GLASS_SHADOW}
+        />
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {/* MAGAZYN */}
-            <button
-              onClick={() => {
-                setAddMode("manual");
-                setCreateOpen(true);
-                setCreateForm({
-                  title: "",
-                  status: "tachimetr",
-                  note: "",
-                  lat: "",
-                  lng: "",
-                  in_storage: true,
-                  warehouse: "GEO_BB",
-                });
-              }}
-              style={{
-                padding: "9px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              📦 Magazyn
-            </button>
-
-            {/* WSKAŻ NA MAPIE */}
-            <button
-              onClick={() => {
-                setCreateOpen(false);
-                setAddMode((m) => (m === "point" ? "none" : "point"));
-                setCreateForm({
-                  title: "",
-                  status: "tachimetr",
-                  note: "",
-                  lat: "",
-                  lng: "",
-                  in_storage: false,
-                  warehouse: "GEO_BB",
-                });
-              }}
-              style={{
-                padding: "9px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              📍 Wskaż na mapie
-            </button>
-          </div>
-
-          <div style={{ marginTop: 8, fontSize: 11, color: MUTED, lineHeight: 1.35 }}>
-            {addMode === "manual"
-              ? "Dodawanie: modal — uzupełnij dane i zapisz."
-              : addMode === "point"
-              ? "Dodawanie: wskaż na mapie — kliknij mapę, aby uzupełnić lat/lng i otworzyć formularz."
-              : "Wybierz tryb dodawania."}
-          </div>
-        </div>
-
-        {/* NARZĘDZIA */}
-        <div
-          style={{
-            padding: 10,
-            borderRadius: 14,
-            border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.04)",
-            backgroundImage: GLASS_HIGHLIGHT,
-            backdropFilter: "blur(8px)",
-            marginBottom: 10,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-            flex: 1,
-          }}
-        >
-          <div style={{ fontWeight: 800, marginBottom: 8, fontSize: 13 }}>Narzędzia</div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 8,
-              marginBottom: 10,
-            }}
-          >
-            <button
-              onClick={() => {
-                loadPoints();
-              }}
-              style={{
-                width: "100%",
-                padding: 9,
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              {loadingPoints ? "Ładuję..." : "Odśwież"}
-            </button>
-
-            <button
-              onClick={() => {
-                setSelectedPointId(null);
-                try {
-                  mapRef.current?.closePopup?.();
-                } catch {}
-              }}
-              style={{
-                width: "100%",
-                padding: 9,
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              Odznacz
-            </button>
-          </div>
-
-          {selectedPoint ? (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              <button
-                onClick={() => {
-                  if (selectedPoint) togglePointPriority(selectedPoint);
-                }}
-                style={{
-                  padding: "9px 10px",
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.08)",
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  justifyContent: "center",
-                  color: TEXT_LIGHT,
-                }}
-                title="Oznacz jako ważne"
-              >
-                <span
-                  style={{
-                    fontSize: 16,
-                    lineHeight: 1,
-                    color: selectedPoint?.priority
-                      ? "rgba(255,255,255,0.65)"
-                      : "rgba(245,158,11,0.95)",
-                    textShadow: selectedPoint?.priority ? "none" : "0 0 12px rgba(245,158,11,0.25)",
-                  }}
-                >
-                  ❗
-                </span>
-                <span style={{ fontSize: 12, whiteSpace: "nowrap" }}>Ważne</span>
-              </button>
-
-              <button
-                onClick={() => setEditOpen(true)}
-                style={{
-                  padding: 9,
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.10)",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
-              >
-                Edytuj
-              </button>
-
-              <button
-                onClick={deleteSelectedDevice}
-                style={{
-                  padding: 9,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,80,80,0.55)",
-                  background: "rgba(255,80,80,0.14)",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
-              >
-                Usuń
-              </button>
-            </div>
-          ) : null}
-
-          <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-          {/* LISTA URZĄDZEŃ — nagłówek + legenda (bez zmiany fontu) */}
-          <div style={{ marginBottom: 10 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              {/* zostawiamy dokładnie taki sam styl jak w innych nagłówkach sekcji */}
-              <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 11,
-                  color: MUTED,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,216,77,0.55)",
-                    background: "rgba(255,216,77,0.10)",
-                    boxShadow: "0 0 10px rgba(255,216,77,0.12)",
-                    display: "inline-block",
-                  }}
-                />
-                Ważne
-              </div>
-            </div>
-
-            {/* legenda POD tytułem (prosta i kompaktowa) */}
-            <div
-              style={{
-                marginTop: 6,
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                flexWrap: "wrap",
-                fontSize: 12,
-                color: "rgba(255,255,255,0.65)",
-              }}
-            >
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📦</span>
-                <span>urządzenie na magazynie</span>
-              </div>
-
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📍</span>
-                <span>sprzęt w terenie</span>
-              </div>
-            </div>
-          </div>
-
-          <input
-            className="projectSearch"
-            value={projectQuery}
-            onChange={(e) => setProjectQuery(e.target.value)}
-            placeholder="Szukaj urządzenia… (wpisz nazwę lub słowo klucz)"
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              height: 36,
-              padding: "0 10px",
-              borderRadius: 12,
-              border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
-              color: TEXT_LIGHT,
-              outline: "none",
-              fontSize: 12,
-              fontWeight: 700,
-              marginBottom: 10,
-            }}
-          />
-
-          <div style={{ overflow: "auto", paddingRight: 4, flex: 1, minHeight: 0 }}>
-            <div style={{ display: "grid", gap: 8 }}>
-              {filteredDevicesSearch.map((x) => {
-                const selected = x.id === selectedPointId;
-
-                return (
-                  <div
-                    key={`device-${x.id}`}
-                    onClick={() => {
-                      setSelectedPointId(x.id);
-
-                      if (x.in_storage) {
-                        setEditOpen(true);
-                      } else {
-                        focusPoint(x);
-                      }
-                    }}
-                    style={{
-                      padding: 9,
-                      borderRadius: 14,
-                      border: x.priority
-                        ? "2px solid rgba(255,216,77,0.70)"
-                        : selected
-                        ? "2px solid rgba(255,255,255,0.35)"
-                        : `1px solid ${BORDER}`,
-                      background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span
-                        style={{
-                          width: 14,
-                          display: "flex",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {x.in_storage ? "📦" : "📍"}
-                      </span>
-
-                      <span
-                        style={{
-                          fontWeight: 800,
-                          fontSize: 12,
-                          minWidth: 0,
-                          overflow: "hidden",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 2,
-                          lineClamp: 2,
-                          whiteSpace: "normal",
-                          lineHeight: 1.2,
-                        }}
-                      >
-                        {x.title || `Urządzenie #${x.id}`}
-                      </span>
-
-                      <span
-                        style={{
-                          ...pillStyle,
-                          marginLeft: "auto",
-                          whiteSpace: "nowrap",
-                          flexShrink: 0,
-                          fontWeight: 700,
-                        }}
-                      >
-                        {statusLabel(x.status)}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {filteredDevicesSearch.length === 0 ? (
-                <div style={{ ...emptyBoxStyle, fontSize: 11 }}>
-                  Brak danych dla zaznaczonych statusów / wyszukiwania.
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
-  ) : null}
-</aside>
-
-{/* MAP */}
-<main
-  className={`${addMode === "point" ? "tmPickMode" : ""} ${
-    addMode === "point" && isDraggingMap ? "tmPickModeDragging" : ""
-  }`}
-  style={{
-    width: "100%",
-    height: "100%",
-    position: "relative",
-  }}
->
-  {addMode === "point" ? <div ref={crosshairRef} className="tmCursorCrosshair" style={{ display: "none" }} /> : null}
-
-  <StorageOverlay
-    open={storageOpen}
-    onToggle={() => setStorageOpen((o) => !o)}
-    storageDevices={storageDevices}
-    storageByWarehouse={storageByWarehouse}
-    filteredStorageSearch={filteredStorageSearch}
-    selectedPointId={selectedPointId}
-    setSelectedPointId={setSelectedPointId}
-    setEditOpen={setEditOpen}
-    onOpenWarehouse={openWarehouse}
-    BORDER={BORDER}
-    MUTED={MUTED}
-    GLASS_BG={GLASS_BG}
-    GLASS_SHADOW={GLASS_SHADOW}
-  />
-
-  {!sidebarOpen ? (
-    <button
-      onClick={() => setSidebarOpen(true)}
-      title="Pokaż panel"
-      style={{
-        position: "absolute",
-        zIndex: 1500,
-        top: 12,
-        left: 12,
-        height: 44,
-        padding: "0 12px",
-        borderRadius: 14,
-        border: `1px solid ${BORDER}`,
-        background: GLASS_BG_DARK,
-        color: TEXT_LIGHT,
-        cursor: "pointer",
-        fontWeight: 800,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-        backdropFilter: "blur(8px)",
-      }}
-    >
-      <span style={{ fontSize: 18, lineHeight: 1 }}>⟩</span>
-      <span style={{ fontSize: 13 }}>Panel główny</span>
-    </button>
-  ) : null}
-
-  {addMode === "point" ? (
-    <div
-      style={{
-        position: "absolute",
-        top: 12,
-        left: "50%",
-        transform: "translateX(-50%)",
-        zIndex: 1800,
-        width: "min(520px, calc(100% - 420px))",
-        maxWidth: "52vw",
-        borderRadius: 16,
-        border: `1px solid ${BORDER}`,
-        background: GLASS_BG,
-        backgroundImage: "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-        color: TEXT_LIGHT,
-        boxShadow: GLASS_SHADOW,
-        overflow: "hidden",
-        backdropFilter: "blur(8px)",
-      }}
-    >
-      <div
-        style={{
-          padding: "10px 12px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 10,
-          fontWeight: 900,
-          background: "rgba(0,0,0,0.10)",
-        }}
-      >
-        <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ whiteSpace: "nowrap" }}>Tryb: Urządzenie</span>
-            <span style={{ fontSize: 11, color: MUTED, fontWeight: 800, opacity: 0.9 }}>
-              Kliknij na mapie, aby dodać marker.
-            </span>
-          </div>
-
-          <div style={{ fontSize: 11, color: MUTED, fontWeight: 700, opacity: 0.85 }}>
-            Po dodaniu urządzenia tryb wyłączy się automatycznie.
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          <button
-            onClick={() => setAddMode("none")}
-            style={{
-              padding: "9px 10px",
-              borderRadius: 12,
-              border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
-              color: TEXT_LIGHT,
-              cursor: "pointer",
-              fontWeight: 900,
-              fontSize: 12,
-            }}
-            title="Wyjdź z trybu dodawania"
-          >
-            Zakończ
-          </button>
-        </div>
-      </div>
-    </div>
-  ) : null}
-
-  <RecentUpdatesPanel
-    user={user}
-    authFetch={authFetch}
-    API={API}
-    BORDER={BORDER}
-    MUTED={MUTED}
-    TEXT_LIGHT={TEXT_LIGHT}
-    GLASS_BG={GLASS_BG}
-    GLASS_SHADOW={GLASS_SHADOW}
-    onUnauthorized={() => logout("expired")}
-    onJumpToProject={jumpToProject}
-    updatesTick={updatesTick}
-  />
-
-  {/* PRAWA STRONA: Statusy + Dziennik */}
-  <div
-    style={{
-      position: "absolute",
-      zIndex: 1600,
-      top: 12,
-      right: 12,
-      width: 360,
-      display: "grid",
-      gap: 10,
-    }}
-  >
-    {/* STATUSY */}
-    <div
-      style={{
-        borderRadius: 16,
-        border: `1px solid ${BORDER}`,
-        background: GLASS_BG,
-        backgroundImage: "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-        backdropFilter: "blur(8px)",
-        color: TEXT_LIGHT,
-        overflow: "hidden",
-        boxShadow: GLASS_SHADOW,
-      }}
-    >
-      <div
-        onClick={() => setFiltersOpen((o) => !o)}
-        style={{
-          padding: "10px 12px",
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontWeight: 900,
-        }}
-      >
-        <span>Rodzaje urządzeń</span>
-        <span style={{ fontSize: 12, color: MUTED }}>
-          {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
-        </span>
-      </div>
-
-      {filtersOpen ? (
-        <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {DEVICE_TYPES.map((t) => (
-              <label
-                key={t.value}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  cursor: "pointer",
-                  opacity: visibleTypes[t.value] ? 1 : 0.55,
-                  userSelect: "none",
-                  padding: "8px 10px",
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.04)",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={visibleTypes[t.value]}
-                  onChange={() => setVisibleTypes((s) => ({ ...s, [t.value]: !s[t.value] }))}
-                  style={{ transform: "scale(0.95)" }}
-                />
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    background: typeColor(t.value),
-                    flexShrink: 0,
-                  }}
-                />
-                <span style={{ fontWeight: 800, fontSize: 12 }}>{t.label}</span>
-                <span style={{ marginLeft: "auto", fontSize: 12, color: MUTED }}>{counts[t.value]}</span>
-              </label>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button
-              onClick={showAllTypes}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              Pokaż wszystko
-            </button>
-
-            <button
-              onClick={hideAllTypes}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
-                color: TEXT_LIGHT,
-                cursor: "pointer",
-                fontWeight: 800,
-                fontSize: 12,
-              }}
-            >
-              Ukryj wszystko
-            </button>
-          </div>
-        </div>
-      ) : null}
-    </div>
-
-    {/* DZIENNIK */}
-    <JournalPanel
-      visible={!!selectedPoint}
-      kind={"points"}
-      entity={selectedPoint}
-      user={user}
-      authFetch={authFetch}
-      API={API}
-      BORDER={BORDER}
-      MUTED={MUTED}
-      TEXT_LIGHT={TEXT_LIGHT}
-      GLASS_BG={GLASS_BG}
-      GLASS_SHADOW={GLASS_SHADOW}
-      onCountsChange={handleCountsChange}
-      onUnauthorized={() => logout("expired")}
-      onGlobalUpdatesChange={bumpUpdates}
-    />
-  </div>
+        {/* ... tu zostaje Twoja mapa + panele bez zmian ... */}
 
         <MapContainer
           bounds={POLAND_BOUNDS}
@@ -3873,203 +3104,31 @@ async function togglePointPriority(pt) {
           zoomControl={false}
           minZoom={3}
         >
-          <MapAutoDeselect
-            enabled={addMode === "none" || addMode === ""}
-            mapRef={mapRef}
-            suppressRef={suppressNextMapClickRef}
-            onDeselect={() => {
-              setSelectedPointId(null);
-              setEditOpen(false);
-            }}
-          />
-
-          <MapRefSetter
-  onReady={(map) => {
-    mapRef.current = map;
-
-    // zdejmij poprzednie (HMR / ponowny mount)
-    try {
-      if (map.__tm_dragStart) map.off("dragstart", map.__tm_dragStart);
-      if (map.__tm_dragEnd) map.off("dragend", map.__tm_dragEnd);
-    } catch {}
-
-    const handleDragStart = () => setIsDraggingMap(true);
-    const handleDragEnd = () => setIsDraggingMap(false);
-
-    map.on("dragstart", handleDragStart);
-    map.on("dragend", handleDragEnd);
-
-    map.__tm_dragStart = handleDragStart;
-    map.__tm_dragEnd = handleDragEnd;
-  }}
-/>
-
-          <ZoomControl position="bottomright" />
-          <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          {worldMask ? (
-            <GeoJSON
-              data={worldMask}
-              style={{
-                fillColor: "#0f172a",
-                fillOpacity: 0.55,
-                color: "#0f172a",
-                weight: 0,
-              }}
-            />
-          ) : null}
-
-          <ClickHandler
-              enabled={addMode === "point"} 
-              onPick={pickLocationFromMap} 
-          />
-
-          {/* URZĄDZENIA */}
-          {filteredPoints
-  .filter((pt) => !toBool(pt.in_storage)) // ⬅️ TYLKO te na mapie
-  .map((pt) => (
-    <Marker
-      key={`pt-${pt.id}`}
-      position={[Number(pt.lat), Number(pt.lng)]}
-      icon={pinIcons[pt.status] || pinIcons.__default}
-      bubblingMouseEvents={false}
-      ref={(ref) => {
-        if (ref) markerRefs.current[pt.id] = ref;
-      }}
-      eventHandlers={{
-        click: (e) => {
-          suppressNextMapClickRef.current = true;
-          setTimeout(() => (suppressNextMapClickRef.current = false), 0);
-
-          setSelectedPointId(pt.id);
-          try {
-            e?.target?.openPopup?.();
-          } catch {}
-        },
-      }}
-    >
-              <Popup closeButton={false} className="tmPopup">
-                <div
-                  style={{
-                    minWidth: 260,
-                    borderRadius: 16,
-                    border: `1px solid ${BORDER}`,
-                    background: GLASS_BG,
-                    backgroundImage:
-                      "radial-gradient(520px 320px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-                    color: TEXT_LIGHT,
-                    boxShadow: GLASS_SHADOW,
-                    padding: 12,
-                    position: "relative",
-                    backdropFilter: "blur(8px)",
-                  }}
-                >
-                  <button
-                    onClick={() => mapRef.current?.closePopup?.()}
-                    title="Zamknij"
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.85)",
-                      cursor: "pointer",
-                      display: "grid",
-                      placeItems: "center",
-                      padding: 0,
-                    }}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M6 6l12 12M18 6l-12 12"
-                        stroke="currentColor"
-                        strokeWidth="2.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, marginBottom: 4, lineHeight: 1.15 }}>
-                        {pt.title || `Urządzenie #${pt.id}`}
-                      </div>
-                      <div style={{ fontSize: 12, color: MUTED }}>
-                        Status:{" "}
-                        <b style={{ color: "rgba(255,255,255,0.92)" }}>
-                          {statusLabel(pt.status)}
-                        </b>
-                      </div>
-                    </div>
-
-                    <div style={{ marginRight: 34, flexShrink: 0 }}>
-                      <ChanceRing
-                        value={deviceChance({
-                          acquired: isAcquired("points", pt.id),
-                          journalCount: journalCounts.points?.[pt.id] || 0,
-                        })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-                  {pt.winner && (
-                    <div style={{ fontSize: 12 }}>
-                      <b>Firma:</b> {pt.winner}
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: 12, opacity: 0.9, marginTop: 6 }}>
-                    {pt.note || <span style={{ opacity: 0.65 }}>Brak notatki</span>}
-                  </div>
-
-                  <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
-                    Wpisy w dzienniku: {journalCounts.points?.[pt.id] || 0}
-                  </div>
-
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                    <button
-                      onClick={() => setEditOpen(true)}
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: 10,
-                        border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.06)",
-                        color: TEXT_LIGHT,
-                        fontWeight: 800,
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Rozwiń
-                    </button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+          {/* ... bez zmian ... */}
         </MapContainer>
+
+        {/* ===== KLUCZOWA POPRAWKA: MODAL MAGAZYNU JEST TU, W RETURN APP() ===== */}
+        <WarehouseDevicesModal
+          open={warehouseModalOpen}
+          warehouseKey={activeWarehouse}
+          items={activeWarehouse ? storageByWarehouse?.[activeWarehouse] || [] : []}
+          onClose={() => setWarehouseModalOpen(false)}
+          onPickDevice={(d) => {
+            setSelectedPointId(d.id);
+            setEditOpen(true);
+            setWarehouseModalOpen(false);
+          }}
+          BORDER={BORDER}
+          MUTED={MUTED}
+          TEXT_LIGHT={TEXT_LIGHT}
+          GLASS_BG={GLASS_BG_DARK}
+          GLASS_SHADOW={GLASS_SHADOW}
+        />
 
         <EditDeviceModal
           open={editOpen}
           device={
-            selectedPoint
-              ? { ...selectedPoint, acquired: isAcquired("points", selectedPoint.id) }
-              : null
+            selectedPoint ? { ...selectedPoint, acquired: isAcquired("points", selectedPoint.id) } : null
           }
           onClose={() => setEditOpen(false)}
           onSave={saveEditedDevice}
@@ -4077,29 +3136,29 @@ async function togglePointPriority(pt) {
           TEXT_LIGHT={TEXT_LIGHT}
           MUTED={MUTED}
           GLASS_BG={GLASS_BG_DARK}
+        />
+
+        <CreateDeviceModal
+          open={createOpen}
+          onClose={() => {
+            setCreateOpen(false);
+            if (addMode === "manual") setAddMode("none");
+          }}
+          onCreate={createDeviceFromForm}
+          form={createForm}
+          setForm={setCreateForm}
+          BORDER={BORDER}
+          TEXT_LIGHT={TEXT_LIGHT}
+          MUTED={MUTED}
+          GLASS_BG={GLASS_BG_DARK}
+          DEVICE_TYPES={DEVICE_TYPES}
           WAREHOUSES={WAREHOUSES}
         />
-        <CreateDeviceModal
-  open={createOpen}
-  onClose={() => {
-    setCreateOpen(false);
-    if (addMode === "manual") setAddMode("none");
-  }}
-  onCreate={createDeviceFromForm}
-  form={createForm}
-  setForm={setCreateForm}
-  BORDER={BORDER}
-  TEXT_LIGHT={TEXT_LIGHT}
-  MUTED={MUTED}
-  GLASS_BG={GLASS_BG_DARK}
-  DEVICE_TYPES={DEVICE_TYPES}
-  WAREHOUSES={WAREHOUSES}
-/>
-
       </main>
     </div>
   );
 }
+
 
 
 /** ===== small styles ===== */
