@@ -66,6 +66,134 @@ function typeColor(v) {
   return DEVICE_COLORS[v] || "#9ca3af"; // fallback szary
 }
 
+function StorageOverlay({
+  open,
+  onToggle,
+  storageDevices,
+  storageByWarehouse,
+  filteredStorageSearch,
+  selectedPointId,
+  setSelectedPointId,
+  setEditOpen,
+  BORDER,
+  MUTED,
+  GLASS_BG,
+  GLASS_SHADOW,
+}) {
+  if (!open) return null;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 12,
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1700,
+        width: "min(560px, calc(100% - 420px))",
+        maxWidth: "52vw",
+        borderRadius: 16,
+        border: `1px solid ${BORDER}`,
+        background: GLASS_BG,
+        backgroundImage:
+          "radial-gradient(600px 360px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+        boxShadow: GLASS_SHADOW,
+        backdropFilter: "blur(8px)",
+        overflow: "hidden",
+      }}
+    >
+      {/* HEADER */}
+      <div
+        onClick={onToggle}
+        style={{
+          padding: "10px 12px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: "pointer",
+          fontWeight: 900,
+          background: "rgba(0,0,0,0.10)",
+        }}
+      >
+        <span>Magazyny</span>
+        <span style={{ fontSize: 12, color: MUTED }}>
+          {storageDevices.length} ▾
+        </span>
+      </div>
+
+      {/* BODY */}
+      <div style={{ padding: 12, display: "grid", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+          {Object.entries(storageByWarehouse).map(([key, list]) => (
+            <div
+              key={key}
+              style={{
+                padding: "8px 10px",
+                borderRadius: 12,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.05)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
+                {list.length}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {filteredStorageSearch.length === 0 ? (
+          <div style={{ fontSize: 11, color: MUTED }}>
+            Brak urządzeń w magazynie (lub brak wyników).
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gap: 8,
+              maxHeight: 220,
+              overflow: "auto",
+              paddingRight: 4,
+            }}
+          >
+            {filteredStorageSearch.map((x) => {
+              const selected = x.id === selectedPointId;
+
+              return (
+                <div
+                  key={`storage-top-${x.id}`}
+                  onClick={() => {
+                    setSelectedPointId(x.id);
+                    setEditOpen(true);
+                  }}
+                  style={{
+                    padding: 9,
+                    borderRadius: 14,
+                    border: selected
+                      ? "2px solid rgba(255,255,255,0.35)"
+                      : `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.05)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: 12 }}>
+                    📦 {x.title || `Urządzenie #${x.id}`}
+                  </div>
+                  <div style={{ fontSize: 11, color: MUTED }}>
+                    {x.warehouse}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
@@ -3035,33 +3163,7 @@ async function togglePointPriority(pt) {
 
                                 <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
 
-                {/* MAGAZYN */}
-                <div
-                  style={{
-                    borderRadius: 14,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.04)",
-                    backgroundImage: GLASS_HIGHLIGHT,
-                    padding: 10,
-                    marginBottom: 10,
-                  }}
-                >
-                  <div
-                    onClick={() => setStorageOpen((o) => !o)}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      fontWeight: 900,
-                      fontSize: 13,
-                    }}
-                  >
-                    <span>Magazyny</span>
-                    <span style={{ fontSize: 12, color: MUTED }}>
-                      {storageDevices.length} {storageOpen ? "▾" : "▸"}
-                    </span>
-                  </div>
+               
 
                   {storageOpen ? (
                     <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
@@ -3344,6 +3446,21 @@ async function togglePointPriority(pt) {
     />
   ) : null}
 
+<StorageOverlay
+  open={storageOpen}
+  onToggle={() => setStorageOpen((o) => !o)}
+  storageDevices={storageDevices}
+  storageByWarehouse={storageByWarehouse}
+  filteredStorageSearch={filteredStorageSearch}
+  selectedPointId={selectedPointId}
+  setSelectedPointId={setSelectedPointId}
+  setEditOpen={setEditOpen}
+  BORDER={BORDER}
+  MUTED={MUTED}
+  GLASS_BG={GLASS_BG}
+  GLASS_SHADOW={GLASS_SHADOW}
+/>
+
 
         {!sidebarOpen ? (
           <button
@@ -3440,6 +3557,34 @@ async function togglePointPriority(pt) {
             </div>
           </div>
         ) : null}
+        
+ {/* MAGAZYN */}
+                <div
+                  style={{
+                    borderRadius: 14,
+                    border: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.04)",
+                    backgroundImage: GLASS_HIGHLIGHT,
+                    padding: 10,
+                    marginBottom: 10,
+                  }}
+                >
+                  <div
+                    onClick={() => setStorageOpen((o) => !o)}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      fontWeight: 900,
+                      fontSize: 13,
+                    }}
+                  >
+                    <span>Magazyny</span>
+                    <span style={{ fontSize: 12, color: MUTED }}>
+                      {storageDevices.length} {storageOpen ? "▾" : "▸"}
+                    </span>
+                  </div>
 
         <RecentUpdatesPanel
           user={user}
