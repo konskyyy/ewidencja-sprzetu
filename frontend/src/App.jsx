@@ -1428,7 +1428,6 @@ async function markRead(u) {
 }
 
 /** ===== EDIT MODAL ===== */
-/** ===== EDIT MODAL ===== */
 function EditDeviceModal({
   open,
   device,
@@ -1757,230 +1756,6 @@ async function handleSave() {
     </div>
   );
 }
-
-function CreateDeviceModal({
-  open,
-  onClose,
-  onCreate,
-  form,
-  setForm,
-  BORDER,
-  TEXT_LIGHT,
-  MUTED,
-  GLASS_BG,
-  DEVICE_TYPES,
-  WAREHOUSES
-}) {
-  if (!open) return null;
-
-  const overlayStyle = {
-    position: "fixed",
-    inset: 0,
-    zIndex: 9999,
-    background: "rgba(0,0,0,0.55)",
-    display: "grid",
-    placeItems: "center",
-    padding: 16,
-  };
-
-  const modalStyle = {
-    width: "min(640px, 100%)",
-    borderRadius: 16,
-    border: `1px solid ${BORDER}`,
-    background: GLASS_BG,
-    backgroundImage:
-      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-    color: TEXT_LIGHT,
-    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
-    overflow: "hidden",
-    backdropFilter: "blur(10px)",
-  };
-
-  const headerStyle = {
-    padding: "10px 12px",
-    borderBottom: `1px solid ${BORDER}`,
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 10,
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.10)",
-  };
-
-  const bodyStyle = { padding: 12, display: "grid", gap: 10 };
-
-  const labelStyleLocal = {
-    fontSize: 12,
-    color: MUTED,
-    fontWeight: 800,
-    marginTop: 2,
-  };
-
-  const inputStyleLocal = {
-    boxSizing: "border-box",
-    width: "100%",
-    height: 38,
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
-    color: TEXT_LIGHT,
-    padding: "0 12px",
-    outline: "none",
-    fontSize: 12,
-    fontWeight: 700,
-  };
-
-  const textareaStyleLocal = {
-    ...inputStyleLocal,
-    height: 92,
-    padding: 10,
-    resize: "vertical",
-    lineHeight: 1.35,
-  };
-
-  const btnStyle = {
-    padding: "9px 10px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 12,
-  };
-
-  return (
-    <div
-      style={overlayStyle}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div style={modalStyle}>
-        <div style={headerStyle}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
-              Dodaj urządzenie (ręcznie)
-            </div>
-            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
-              Wpisz współrzędne i zapisz.
-            </div>
-          </div>
-
-          <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}>
-            Zamknij
-          </button>
-        </div>
-
-        <div style={bodyStyle}>
-          <label style={labelStyleLocal}>Nazwa</label>
-          <input
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            style={inputStyleLocal}
-            placeholder="np. Laptop Dell 5420"
-          />
-
-          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
-          <select
-            value={form.status}
-            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-            style={inputStyleLocal}
-          >
-            {(DEVICE_TYPES || []).map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
-          {/* MAGAZYN */}
-<label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
-  <input
-    type="checkbox"
-    checked={!!form.in_storage}
-    onChange={(e) => {
-      const checked = e.target.checked;
-      setForm((f) => ({
-        ...f,
-        in_storage: checked,
-        // gdy magazyn = true -> czyść współrzędne i ustaw domyślny warehouse
-        lat: checked ? "" : f.lat,
-        lng: checked ? "" : f.lng,
-        warehouse: checked ? (f.warehouse || "GEO_BB") : f.warehouse,
-      }));
-    }}
-  />
-  Urządzenie na magazynie (bez współrzędnych)
-</label>
-
-{form.in_storage ? (
-  <>
-    <label style={labelStyleLocal}>Wybierz magazyn</label>
-    <select
-      value={form.warehouse || "GEO_BB"}
-      onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
-      style={inputStyleLocal}
-    >
-      {WAREHOUSES.map((w) => (
-        <option key={w.value} value={w.value}>
-          {w.label}
-        </option>
-      ))}
-    </select>
-  </>
-) : null}
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <div>
-              <label style={labelStyleLocal}>Lat</label>
-              <input
-                type="number"
-                step="any"
-                value={form.lat}
-                disabled={!!form.in_storage}
-                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
-                style={inputStyleLocal}
-                placeholder="np. 52.2297"
-              />
-            </div>
-
-            <div>
-              <label style={labelStyleLocal}>Lng</label>
-              <input
-                type="number"
-                step="any"
-                value={form.lng}
-                disabled={!!form.in_storage}
-                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
-                style={inputStyleLocal}
-                placeholder="np. 21.0122"
-              />
-            </div>
-          </div>
-
-          <label style={labelStyleLocal}>Opis</label>
-          <textarea
-            value={form.note}
-            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-            style={textareaStyleLocal}
-            placeholder="Notatka do urządzenia…"
-          />
-
-          <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
-              Anuluj
-            </button>
-            <button onClick={onCreate} style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}>
-              Zapisz i dodaj
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 function WarehouseDevicesModal({
   open,
   warehouseKey,
@@ -2257,6 +2032,231 @@ function WarehouseDevicesModal({
     </div>
   );
 }
+
+function CreateDeviceModal({
+  open,
+  onClose,
+  onCreate,
+  form,
+  setForm,
+  BORDER,
+  TEXT_LIGHT,
+  MUTED,
+  GLASS_BG,
+  DEVICE_TYPES,
+  WAREHOUSES
+}) {
+  if (!open) return null;
+
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    background: "rgba(0,0,0,0.55)",
+    display: "grid",
+    placeItems: "center",
+    padding: 16,
+  };
+
+  const modalStyle = {
+    width: "min(640px, 100%)",
+    borderRadius: 16,
+    border: `1px solid ${BORDER}`,
+    background: GLASS_BG,
+    backgroundImage:
+      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+    color: TEXT_LIGHT,
+    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
+    overflow: "hidden",
+    backdropFilter: "blur(10px)",
+  };
+
+  const headerStyle = {
+    padding: "10px 12px",
+    borderBottom: `1px solid ${BORDER}`,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    fontWeight: 900,
+    background: "rgba(0,0,0,0.10)",
+  };
+
+  const bodyStyle = { padding: 12, display: "grid", gap: 10 };
+
+  const labelStyleLocal = {
+    fontSize: 12,
+    color: MUTED,
+    fontWeight: 800,
+    marginTop: 2,
+  };
+
+  const inputStyleLocal = {
+    boxSizing: "border-box",
+    width: "100%",
+    height: 38,
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.08)",
+    color: TEXT_LIGHT,
+    padding: "0 12px",
+    outline: "none",
+    fontSize: 12,
+    fontWeight: 700,
+  };
+
+  const textareaStyleLocal = {
+    ...inputStyleLocal,
+    height: 92,
+    padding: 10,
+    resize: "vertical",
+    lineHeight: 1.35,
+  };
+
+  const btnStyle = {
+    padding: "9px 10px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.08)",
+    color: TEXT_LIGHT,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+
+  return (
+    <div
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div style={modalStyle}>
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
+              Dodaj urządzenie (ręcznie)
+            </div>
+            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+              Wpisz współrzędne i zapisz.
+            </div>
+          </div>
+
+          <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}>
+            Zamknij
+          </button>
+        </div>
+
+        <div style={bodyStyle}>
+          <label style={labelStyleLocal}>Nazwa</label>
+          <input
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            style={inputStyleLocal}
+            placeholder="np. Laptop Dell 5420"
+          />
+
+          <label style={labelStyleLocal}>Rodzaj urządzenia</label>
+          <select
+            value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+            style={inputStyleLocal}
+          >
+            {(DEVICE_TYPES || []).map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+          {/* MAGAZYN */}
+<label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
+  <input
+    type="checkbox"
+    checked={!!form.in_storage}
+    onChange={(e) => {
+      const checked = e.target.checked;
+      setForm((f) => ({
+        ...f,
+        in_storage: checked,
+        // gdy magazyn = true -> czyść współrzędne i ustaw domyślny warehouse
+        lat: checked ? "" : f.lat,
+        lng: checked ? "" : f.lng,
+        warehouse: checked ? (f.warehouse || "GEO_BB") : f.warehouse,
+      }));
+    }}
+  />
+  Urządzenie na magazynie (bez współrzędnych)
+</label>
+
+{form.in_storage ? (
+  <>
+    <label style={labelStyleLocal}>Wybierz magazyn</label>
+    <select
+      value={form.warehouse || "GEO_BB"}
+      onChange={(e) => setForm((f) => ({ ...f, warehouse: e.target.value }))}
+      style={inputStyleLocal}
+    >
+      {WAREHOUSES.map((w) => (
+        <option key={w.value} value={w.value}>
+          {w.label}
+        </option>
+      ))}
+    </select>
+  </>
+) : null}
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div>
+              <label style={labelStyleLocal}>Lat</label>
+              <input
+                type="number"
+                step="any"
+                value={form.lat}
+                disabled={!!form.in_storage}
+                onChange={(e) => setForm((f) => ({ ...f, lat: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 52.2297"
+              />
+            </div>
+
+            <div>
+              <label style={labelStyleLocal}>Lng</label>
+              <input
+                type="number"
+                step="any"
+                value={form.lng}
+                disabled={!!form.in_storage}
+                onChange={(e) => setForm((f) => ({ ...f, lng: e.target.value }))}
+                style={inputStyleLocal}
+                placeholder="np. 21.0122"
+              />
+            </div>
+          </div>
+
+          <label style={labelStyleLocal}>Opis</label>
+          <textarea
+            value={form.note}
+            onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
+            style={textareaStyleLocal}
+            placeholder="Notatka do urządzenia…"
+          />
+
+          <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
+              Anuluj
+            </button>
+            <button onClick={onCreate} style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}>
+              Zapisz i dodaj
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
   useMapEvents({
