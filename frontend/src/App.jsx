@@ -1756,22 +1756,7 @@ async function handleSave() {
     </div>
   );
 }
-<WarehouseDevicesModal
-  open={warehouseModalOpen}
-  warehouseKey={activeWarehouse}
-  items={activeWarehouse ? (storageByWarehouse?.[activeWarehouse] || []) : []}
-  onClose={() => setWarehouseModalOpen(false)}
-  onPickDevice={(d) => {
-    setSelectedPointId(d.id);
-    setEditOpen(true); // magazynowe -> otwieramy edycję
-    setWarehouseModalOpen(false);
-  }}
-  BORDER={BORDER}
-  MUTED={MUTED}
-  TEXT_LIGHT={TEXT_LIGHT}
-  GLASS_BG={GLASS_BG_DARK}
-  GLASS_SHADOW={GLASS_SHADOW}
-/>
+
 function useLockBodyScroll(locked) {
   useEffect(() => {
     if (!locked) return;
@@ -3221,8 +3206,6 @@ export default function App() {
     </div>
   );
 }
-
-
 
 /** ===== small styles ===== */
 const emptyBoxStyle = {
