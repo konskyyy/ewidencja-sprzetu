@@ -57,10 +57,21 @@ async function ensureSchema() {
       ALTER TABLE assets
       ADD COLUMN IF NOT EXISTS priority boolean DEFAULT false
     `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS in_storage boolean DEFAULT false
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS warehouse text
+    `);
   } catch (e) {
     console.error("ensureSchema error:", e);
   }
 }
+
 
 // ===== HEALTH / DEBUG =====
 app.get("/api/health", (req, res) => res.json({ ok: true }));
@@ -195,16 +206,19 @@ app.get("/api/assets", authRequired, async (req, res) => {
 app.get("/api/points", authRequired, async (req, res) => {
   try {
     const q = await pool.query(`
-      SELECT
-        id,
-        name,
-        status,
-        lat,
-        lng,
-        notes,
-        COALESCE(priority,false) AS priority
-      FROM assets
-      ORDER BY COALESCE(priority,false) DESC, id DESC
+    SELECT
+  id,
+  name,
+  status,
+  lat,
+  lng,
+  notes,
+  in_storage,
+  warehouse,
+  COALESCE(priority,false) AS priority
+FROM assets
+ORDER BY COALESCE(priority,false) DESC, id DESC
+
     `);
 
     const points = q.rows.map((a) => ({
@@ -273,37 +287,22 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
 });
 
 // CREATE point -> INSERT asset (BEZ director/winner)
-app.post("/api/points", (req,res)=> {
-  const in_storage = parseInStorage(req.body);
-});
+app.post("/api/points", authRequired, async (req, res) => {
   try {
     const body = req.body || {};
 
-    const title = String(body.title || body.name || "Nowe urządzenie");
-    const status = String(body.status || "tachimetr");
+    const title = String(body.title || body.name || "Nowe urządzenie").trim();
+    const status = String(body.status || "tachimetr").trim();
     const note = String(body.note || body.notes || "");
 
-    const in_storage =
-      body.in_storage === true ||
-      body.in_storage === "true" ||
-      body.in_storage === 1;
+    if (!title) return res.status(400).json({ error: "Podaj nazwę urządzenia." });
 
-    const warehouse = in_storage
-      ? String(body.warehouse || "GEO_BB")
-      : null;
-
-    let lat = null;
-    let lng = null;
-
-    if (!in_storage) {
-      lat = Number(body.lat);
-      lng = Number(body.lng);
-
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        return res.status(400).json({
-          error: "Brak poprawnych współrzędnych",
-        });
-      }
+    // kluczowa logika magazynu / mapa
+    let storage;
+    try {
+      storage = normalizeStorage(body);
+    } catch (e) {
+      return res.status(e.status || 400).json({ error: e.message || "Błąd danych magazynu" });
     }
 
     const q = await pool.query(
@@ -334,17 +333,17 @@ app.post("/api/points", (req,res)=> {
       [
         title,
         status,
-        lat,
-        lng,
+        storage.lat,
+        storage.lng,
         note,
-        in_storage,
-        warehouse,
+        storage.in_storage,
+        storage.warehouse,
       ]
     );
 
     const a = q.rows[0];
 
-    res.json({
+    return res.json({
       id: a.id,
       title: a.name,
       name: a.name,
@@ -353,13 +352,13 @@ app.post("/api/points", (req,res)=> {
       lng: a.lng,
       note: a.notes ?? "",
       notes: a.notes ?? "",
-      in_storage: a.in_storage,
-      warehouse: a.warehouse,
+      in_storage: a.in_storage === true,
+      warehouse: a.warehouse ?? null,
       priority: !!a.priority,
     });
   } catch (e) {
     console.error("CREATE POINT ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
+    return res.status(500).json({ error: "DB error", details: String(e?.message || e) });
   }
 });
 
@@ -620,71 +619,6 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
 
     if (kind !== "points") {
       return res.status(400).json({ error: "kind musi być points" });
-    }
-    if (!Number.isFinite(entityId) || !Number.isFinite(commentId)) {
-      return res.status(400).json({ error: "Złe entity_id/comment_id" });
-    }
-
-    const q = await pool.query(
-      `
-      insert into updates_read (user_id, kind, entity_id, comment_id)
-      values ($1,$2,$3,$4)
-      on conflict (user_id, kind, entity_id, comment_id)
-      do update set read_at = now()
-      returning user_id, kind, entity_id, comment_id, read_at
-      `,
-      [req.user.id, kind, entityId, commentId]
-    );
-
-    res.json({ ok: true, row: q.rows[0] });
-  } catch (e) {
-    console.error("POST UPDATES READ ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-
-app.post("/api/updates/read", authRequired, async (req, res) => {
-  try {
-    const kind = String(req.body?.kind || "");
-    const entityId = Number(req.body?.entity_id);
-    const commentId = Number(req.body?.comment_id);
-
-    if (kind !== "points") {
-  return res.status(400).json({ error: "kind musi być points" });
-}
-    if (!Number.isFinite(entityId) || !Number.isFinite(commentId)) {
-      return res.status(400).json({ error: "Złe entity_id/comment_id" });
-    }
-
-    const q = await pool.query(
-      `
-      insert into updates_read (user_id, kind, entity_id, comment_id)
-      values ($1,$2,$3,$4)
-      on conflict (user_id, kind, entity_id, comment_id)
-      do update set read_at = now()
-      returning user_id, kind, entity_id, comment_id, read_at
-      `,
-      [req.user.id, kind, entityId, commentId]
-    );
-
-    res.json({ ok: true, row: q.rows[0] });
-  } catch (e) {
-    console.error("POST UPDATES READ ERROR:", e);
-    res.status(500).json({ error: "DB error", details: String(e) });
-  }
-});
-
-
-
-app.post("/api/updates/read", authRequired, async (req, res) => {
-  try {
-    const kind = String(req.body?.kind || "");
-    const entityId = Number(req.body?.entity_id);
-    const commentId = Number(req.body?.comment_id);
-
-    if (kind !== "points" && kind !== "tunnels") {
-      return res.status(400).json({ error: "kind musi być points albo tunnels" });
     }
     if (!Number.isFinite(entityId) || !Number.isFinite(commentId)) {
       return res.status(400).json({ error: "Złe entity_id/comment_id" });
