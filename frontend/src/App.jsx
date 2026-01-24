@@ -75,6 +75,7 @@ function StorageOverlay({
   selectedPointId,
   setSelectedPointId,
   setEditOpen,
+  onOpenWarehouse,
   BORDER,
   MUTED,
   GLASS_BG,
@@ -122,25 +123,31 @@ function StorageOverlay({
         <div style={{ padding: 12, display: "grid", gap: 10 }}>
           {/* kafelki magazynów */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {Object.entries(storageByWarehouse).map(([key, list]) => (
-              <div
-                key={key}
-                style={{
-                  padding: "8px 10px",
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.05)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
-                <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
-                  {list.length}
-                </span>
-              </div>
-            ))}
+           {Object.entries(storageByWarehouse).map(([key, list]) => (
+  <button
+    type="button"
+    key={key}
+    onClick={(e) => {
+      e.stopPropagation();
+      onOpenWarehouse?.(key);
+    }}
+    style={{
+      all: "unset",
+      cursor: "pointer",
+      padding: "8px 10px",
+      borderRadius: 12,
+      border: `1px solid ${BORDER}`,
+      background: "rgba(255,255,255,0.05)",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+    title="Kliknij, aby otworzyć listę urządzeń"
+  >
+    <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
+    <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>{list.length}</span>
+  </button>
+))}
           </div>
 
           {filteredStorageSearch.length === 0 && (
@@ -150,6 +157,283 @@ function StorageOverlay({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function WarehouseDevicesModal({
+  open,
+  warehouseKey,
+  items,
+  onClose,
+  onPickDevice, // (device) => void
+  BORDER,
+  MUTED,
+  TEXT_LIGHT,
+  GLASS_BG,
+  GLASS_SHADOW,
+}) {
+  const [q, setQ] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  useEffect(() => {
+    if (!open) return;
+    setQ("");
+    setTypeFilter("all");
+  }, [open, warehouseKey]);
+
+  const filtered = useMemo(() => {
+    const query = String(q || "").trim().toLowerCase();
+
+    return (Array.isArray(items) ? items : []).filter((p) => {
+      if (typeFilter !== "all" && String(p.status) !== String(typeFilter)) return false;
+
+      if (!query) return true;
+
+      const title = String(p?.title || "").toLowerCase();
+      const note = String(p?.note || "").toLowerCase();
+      const id = String(p?.id || "");
+      return title.includes(query) || note.includes(query) || id.includes(query);
+    });
+  }, [items, q, typeFilter]);
+
+  if (!open) return null;
+
+  const overlayStyle = {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    background: "rgba(0,0,0,0.55)",
+    display: "grid",
+    placeItems: "center",
+    padding: 16,
+  };
+
+  const modalStyle = {
+    width: "min(980px, calc(100% - 24px))",
+    maxHeight: "min(78vh, 720px)",
+    borderRadius: 18,
+    border: `1px solid ${BORDER}`,
+    background: GLASS_BG,
+    backgroundImage:
+      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+    boxShadow: GLASS_SHADOW,
+    backdropFilter: "blur(10px)",
+    overflow: "hidden",
+    color: TEXT_LIGHT,
+    display: "grid",
+    gridTemplateRows: "auto auto 1fr",
+  };
+
+  const headerStyle = {
+    padding: "12px 12px",
+    borderBottom: `1px solid ${BORDER}`,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    fontWeight: 900,
+    background: "rgba(0,0,0,0.10)",
+  };
+
+  const controlsStyle = {
+    padding: 12,
+    borderBottom: `1px solid ${BORDER}`,
+    display: "grid",
+    gridTemplateColumns: "1fr 220px",
+    gap: 10,
+    alignItems: "center",
+  };
+
+  const inputStyleLocal = {
+    boxSizing: "border-box",
+    width: "100%",
+    height: 38,
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.08)",
+    color: TEXT_LIGHT,
+    padding: "0 12px",
+    outline: "none",
+    fontSize: 12,
+    fontWeight: 700,
+  };
+
+  const btnStyle = {
+    padding: "8px 10px",
+    borderRadius: 12,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.06)",
+    color: TEXT_LIGHT,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontSize: 12,
+  };
+
+  const tableWrapStyle = {
+    padding: 12,
+    overflow: "auto",
+  };
+
+  const thStyle = {
+    textAlign: "left",
+    fontSize: 11,
+    color: MUTED,
+    fontWeight: 900,
+    padding: "10px 10px",
+    borderBottom: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.03)",
+    position: "sticky",
+    top: 0,
+    zIndex: 2,
+  };
+
+  const tdStyle = {
+    padding: "10px 10px",
+    borderBottom: `1px solid ${BORDER}`,
+    fontSize: 12,
+    verticalAlign: "top",
+  };
+
+  return (
+    <div
+      style={overlayStyle}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose?.();
+      }}
+    >
+      <div style={modalStyle}>
+        <div style={headerStyle}>
+          <div style={{ minWidth: 0 }}>
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.15,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              Magazyn: {warehouseKey}
+            </div>
+            <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
+              {filtered.length} / {items?.length || 0} urządzeń
+            </div>
+          </div>
+
+          <button onClick={onClose} style={btnStyle}>
+            Zamknij
+          </button>
+        </div>
+
+        <div style={controlsStyle}>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Filtruj po nazwie, notatce lub ID…"
+            style={inputStyleLocal}
+          />
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            style={inputStyleLocal}
+          >
+            <option value="all">Wszystkie rodzaje</option>
+            {DEVICE_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={tableWrapStyle}>
+          <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: 0 }}>
+            <thead>
+              <tr>
+                <th style={{ ...thStyle, width: 90 }}>ID</th>
+                <th style={{ ...thStyle, width: 280 }}>Nazwa</th>
+                <th style={{ ...thStyle, width: 160 }}>Rodzaj</th>
+                <th style={thStyle}>Notatka</th>
+                <th style={{ ...thStyle, width: 140 }} />
+              </tr>
+            </thead>
+
+            <tbody>
+              {filtered.map((d) => (
+                <tr key={`wh-${warehouseKey}-${d.id}`}>
+                  <td style={tdStyle}>#{d.id}</td>
+
+                  <td style={tdStyle}>
+                    <div style={{ fontWeight: 900, marginBottom: 4 }}>
+                      {d.title || `Urządzenie #${d.id}`}
+                    </div>
+                    <div style={{ fontSize: 11, color: MUTED }}>
+                      📦 Magazyn • {d.warehouse || warehouseKey}
+                    </div>
+                  </td>
+
+                  <td style={tdStyle}>
+                    <span
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        border: `1px solid ${BORDER}`,
+                        background: "rgba(255,255,255,0.06)",
+                        fontWeight: 900,
+                        fontSize: 11,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: 999,
+                          background: typeColor(d.status),
+                        }}
+                      />
+                      {statusLabel(d.status)}
+                    </span>
+                  </td>
+
+                  <td style={tdStyle}>
+                    <div style={{ whiteSpace: "pre-wrap", color: "rgba(255,255,255,0.85)" }}>
+                      {d.note ? d.note : <span style={{ color: MUTED }}>Brak</span>}
+                    </div>
+                  </td>
+
+                  <td style={tdStyle}>
+                    <button
+                      onClick={() => onPickDevice?.(d)}
+                      style={{
+                        ...btnStyle,
+                        background: "rgba(255,255,255,0.10)",
+                        width: "100%",
+                      }}
+                      title="Otwórz urządzenie"
+                    >
+                      Otwórz
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={5} style={{ ...tdStyle, color: MUTED }}>
+                    Brak wyników dla wybranych filtrów.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2064,6 +2348,13 @@ export default function App() {
       [`${kind}:${id}`]: !!value,
     }));
   }
+  const [warehouseModalOpen, setWarehouseModalOpen] = useState(false);
+const [activeWarehouse, setActiveWarehouse] = useState(null);
+
+function openWarehouse(key) {
+  setActiveWarehouse(key);
+  setWarehouseModalOpen(true);
+}
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -3307,6 +3598,7 @@ async function togglePointPriority(pt) {
     selectedPointId={selectedPointId}
     setSelectedPointId={setSelectedPointId}
     setEditOpen={setEditOpen}
+    onOpenWarehouse={openWarehouse}
     BORDER={BORDER}
     MUTED={MUTED}
     GLASS_BG={GLASS_BG}
@@ -3794,6 +4086,23 @@ async function togglePointPriority(pt) {
     </div>
   );
 }
+<WarehouseDevicesModal
+  open={warehouseModalOpen}
+  warehouseKey={activeWarehouse}
+  items={activeWarehouse ? (storageByWarehouse?.[activeWarehouse] || []) : []}
+  onClose={() => setWarehouseModalOpen(false)}
+  onPickDevice={(d) => {
+    setSelectedPointId(d.id);
+    setEditOpen(true); // magazynowe -> otwieramy edycję
+    setWarehouseModalOpen(false);
+  }}
+  BORDER={BORDER}
+  MUTED={MUTED}
+  TEXT_LIGHT={TEXT_LIGHT}
+  GLASS_BG={GLASS_BG_DARK}
+  GLASS_SHADOW={GLASS_SHADOW}
+/>
+
 
 /** ===== small styles ===== */
 const emptyBoxStyle = {
