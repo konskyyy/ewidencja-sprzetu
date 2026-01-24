@@ -3557,34 +3557,7 @@ async function togglePointPriority(pt) {
             </div>
           </div>
         ) : null}
-        
- {/* MAGAZYN */}
-                <div
-                  style={{
-                    borderRadius: 14,
-                    border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.04)",
-                    backgroundImage: GLASS_HIGHLIGHT,
-                    padding: 10,
-                    marginBottom: 10,
-                  }}
-                >
-                  <div
-                    onClick={() => setStorageOpen((o) => !o)}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      cursor: "pointer",
-                      fontWeight: 900,
-                      fontSize: 13,
-                    }}
-                  >
-                    <span>Magazyny</span>
-                    <span style={{ fontSize: 12, color: MUTED }}>
-                      {storageDevices.length} {storageOpen ? "▾" : "▸"}
-                    </span>
-                  </div>
+      
 
         <RecentUpdatesPanel
           user={user}
