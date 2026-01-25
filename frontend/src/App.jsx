@@ -2904,7 +2904,14 @@ useEffect(() => {
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
 
-  byPriorityThenIdDesc(a,b)
+function byPriorityThenIdDesc(a, b) {
+  const ap = a?.priority === true ? 1 : 0;
+  const bp = b?.priority === true ? 1 : 0;
+
+  if (ap !== bp) return bp - ap; // priority=true na górze
+  return Number(b?.id || 0) - Number(a?.id || 0); // potem id DESC
+}
+
 
   const filteredPoints = useMemo(() => {
   return points
