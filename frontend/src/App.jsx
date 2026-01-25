@@ -307,57 +307,40 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
 }
 
 function calibrationMeta(device) {
-  const last = device?.last_calibration_at;
-  const interval = Number(device?.calibration_interval_years);
+  // 1) Najpierw bierzemy to, co policzył backend
+  let days = device?.calibration_days_left;
 
-  if (!last || !interval || !Number.isFinite(interval)) {
-    return {
-      tone: "none",
-      label: "brak danych",
-      daysLeft: null,
-    };
+  // 2) Jeśli backend nie przysłał, licz lokalnie
+  if (days === null || days === undefined) {
+    const last = device?.last_calibration_at;
+    const interval = Number(device?.calibration_interval_years);
+
+    if (!last || !interval || !Number.isFinite(interval)) {
+      return { tone: "none", label: "brak danych", daysLeft: null };
+    }
+
+    const lastDate = new Date(last);
+    if (Number.isNaN(lastDate.getTime())) {
+      return { tone: "none", label: "błędna data", daysLeft: null };
+    }
+
+    const next = new Date(lastDate);
+    next.setFullYear(next.getFullYear() + interval);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    next.setHours(0, 0, 0, 0);
+
+    const diffMs = next - today;
+    days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
   }
 
-  const lastDate = new Date(last);
-  if (Number.isNaN(lastDate.getTime())) {
-    return {
-      tone: "none",
-      label: "błędna data",
-      daysLeft: null,
-    };
-  }
+  const n = Number(days);
+  if (!Number.isFinite(n)) return { tone: "none", label: "brak danych", daysLeft: null };
 
-  const next = new Date(lastDate);
-  next.setFullYear(next.getFullYear() + interval);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  next.setHours(0, 0, 0, 0);
-
-  const diffMs = next - today;
-  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
-  if (daysLeft < 0) {
-    return {
-      tone: "overdue",
-      label: `po terminie (${Math.abs(daysLeft)} dni)`,
-      daysLeft,
-    };
-  }
-
-  if (daysLeft <= 30) {
-    return {
-      tone: "warn",
-      label: `${daysLeft} dni`,
-      daysLeft,
-    };
-  }
-
-  return {
-    tone: "ok",
-    label: `${daysLeft} dni`,
-    daysLeft,
-  };
+  if (n < 0) return { tone: "overdue", label: `po terminie (${Math.abs(n)} dni)`, daysLeft: n };
+  if (n <= 30) return { tone: "warn", label: `${n} dni`, daysLeft: n };
+  return { tone: "ok", label: `${n} dni`, daysLeft: n };
 }
 
 
@@ -3153,6 +3136,8 @@ async function deleteSelectedDevice() {
 function pickLocationFromMap(latlng) {
   setCreateForm((f) => ({
     ...f,
+    in_storage: false,        
+    warehouse: null, 
     lat: String(latlng.lat),
     lng: String(latlng.lng),
   }));
