@@ -3,8 +3,7 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
-const WAREHOUSES = ["GEO_BB", "GEO_OM", "GEO_LD"];
+const WAREHOUSES = new Set(["GEO_BB", "GEO_OM", "GEO_LD", "SERWIS"]);
 
 const app = express();
 app.use(express.json({ limit: "2mb" }));
