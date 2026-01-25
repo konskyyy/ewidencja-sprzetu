@@ -3115,22 +3115,25 @@ async function createDeviceFromForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-  title,
-  status,
-  note,
-  in_storage,
-  warehouse,
-  lat,
-  lng,
+  title: payload.title,
+  note: payload.note,
+  status: payload.status,
 
-  // ✅ kalibracja
-  last_calibration_at: createForm.last_calibration_at
-    ? createForm.last_calibration_at
-    : null,
-  calibration_interval_years: createForm.calibration_interval_years
-    ? Number(createForm.calibration_interval_years)
+  // magazyn:
+  in_storage: payload.in_storage === true,
+  warehouse: payload.in_storage ? payload.warehouse : null,
+
+  // współrzędne tylko jeśli NIE magazyn
+  lat: payload.in_storage ? null : pt.lat,
+  lng: payload.in_storage ? null : pt.lng,
+
+  // ✅ KALIBRACJA (SNAKE_CASE jak backend)
+  last_calibration_at: payload.last_calibration_at ? payload.last_calibration_at : null,
+  calibration_interval_years: payload.calibration_interval_years
+    ? Number(payload.calibration_interval_years)
     : null,
 }),
+
 
     });
 
@@ -3194,12 +3197,17 @@ async function saveEditedDevice(payload) {
     const updated = await readJsonOrThrow(res);
 
     setPoints((prev) =>
-      prev.map((p) =>
-        p.id === updated.id
-          ? { ...updated, priority: updated.priority === true }
-          : p
-      )
-    );
+  prev.map((p) =>
+    p.id === updated.id
+      ? {
+          ...updated,
+          priority: updated?.priority === true,
+          in_storage: toBool(updated?.in_storage),
+          warehouse: updated?.warehouse ?? null,
+        }
+      : p
+  )
+);
 
     setSelectedPointId(updated.id);
   } catch (e) {
@@ -3533,15 +3541,19 @@ async function togglePointPriority(pt) {
               onClick={() => {
                 setAddMode("manual");
                 setCreateOpen(true);
-                setCreateForm({
-                  title: "",
-                  status: "tachimetr",
-                  note: "",
-                  lat: "",
-                  lng: "",
-                  in_storage: true,
-                  warehouse: "GEO_BB",
-                });
+               setCreateForm({
+  title: "",
+  status: "tachimetr",
+  note: "",
+  lat: "",
+  lng: "",
+  in_storage: true,
+  warehouse: "GEO_BB",
+
+  // ✅ kalibracja
+  last_calibration_at: "",
+  calibration_interval_years: "",
+});
               }}
               style={{
                 padding: "9px 10px",
@@ -3562,14 +3574,18 @@ async function togglePointPriority(pt) {
                 setCreateOpen(false);
                 setAddMode((m) => (m === "point" ? "none" : "point"));
                 setCreateForm({
-                  title: "",
-                  status: "tachimetr",
-                  note: "",
-                  lat: "",
-                  lng: "",
-                  in_storage: false,
-                  warehouse: "GEO_BB",
-                });
+  title: "",
+  status: "tachimetr",
+  note: "",
+  lat: "",
+  lng: "",
+  in_storage: true,
+  warehouse: "GEO_BB",
+
+  // ✅ kalibracja
+  last_calibration_at: "",
+  calibration_interval_years: "",
+});
               }}
               style={{
                 padding: "9px 10px",
