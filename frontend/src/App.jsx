@@ -196,11 +196,7 @@ function statusLabel(v) {
 }
 
 function statusColor(status) {
-  if (status === "tachimetr") return "#3b82f6";
-  if (status === "pochylomierz") return "#22c55e";
-  if (status === "czujnik_drgan") return "#f59e0b";
-  if (status === "inklinometr") return "#a855f7";
-  return "#9ca3af";
+  return typeColor(status);
 }
 
 function pinSvg(color) {
@@ -311,31 +307,22 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
 }
 
 function calibrationMeta(pt) {
-  // Preferuj wartość z backendu, ale policz jeśli brak
-
+  const days =
+    pt?.calibration_days_left ??
+    calcCalibrationDaysLeft(pt?.last_calibration_at, pt?.calibration_interval_years);
 
   if (days === null || days === undefined) {
-    return {
-      days: null,
-      label: "brak danych",
-      tone: "none", // none | ok | warn | overdue
-    };
-  }
-
-  const n = Number(days);
-
-  if (!Number.isFinite(n)) {
     return { days: null, label: "brak danych", tone: "none" };
   }
 
-  if (n < 0) {
-    return { days: n, label: `po terminie (${Math.abs(n)} dni)`, tone: "overdue" };
-  }
-  if (n <= 30) {
-    return { days: n, label: `${n} dni`, tone: "warn" };
-  }
+  const n = Number(days);
+  if (!Number.isFinite(n)) return { days: null, label: "brak danych", tone: "none" };
+
+  if (n < 0) return { days: n, label: `po terminie (${Math.abs(n)} dni)`, tone: "overdue" };
+  if (n <= 30) return { days: n, label: `${n} dni`, tone: "warn" };
   return { days: n, label: `${n} dni`, tone: "ok" };
 }
+
 
 function calibrationPillStyle(tone, BORDER) {
   // bez narzucania palety w całej appce — tylko tu, w jednym miejscu
