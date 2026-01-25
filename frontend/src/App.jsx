@@ -306,22 +306,60 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
   return Math.ceil(msLeft / (1000 * 60 * 60 * 24));
 }
 
-function calibrationMeta(pt) {
-  const days =
-    pt?.calibration_days_left ??
-    calcCalibrationDaysLeft(pt?.last_calibration_at, pt?.calibration_interval_years);
+function calibrationMeta(device) {
+  const last = device?.last_calibration_at;
+  const interval = Number(device?.calibration_interval_years);
 
-  if (days === null || days === undefined) {
-    return { days: null, label: "brak danych", tone: "none" };
+  if (!last || !interval || !Number.isFinite(interval)) {
+    return {
+      tone: "none",
+      label: "brak danych",
+      daysLeft: null,
+    };
   }
 
-  const n = Number(days);
-  if (!Number.isFinite(n)) return { days: null, label: "brak danych", tone: "none" };
+  const lastDate = new Date(last);
+  if (Number.isNaN(lastDate.getTime())) {
+    return {
+      tone: "none",
+      label: "błędna data",
+      daysLeft: null,
+    };
+  }
 
-  if (n < 0) return { days: n, label: `po terminie (${Math.abs(n)} dni)`, tone: "overdue" };
-  if (n <= 30) return { days: n, label: `${n} dni`, tone: "warn" };
-  return { days: n, label: `${n} dni`, tone: "ok" };
+  const next = new Date(lastDate);
+  next.setFullYear(next.getFullYear() + interval);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  next.setHours(0, 0, 0, 0);
+
+  const diffMs = next - today;
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) {
+    return {
+      tone: "overdue",
+      label: `po terminie (${Math.abs(daysLeft)} dni)`,
+      daysLeft,
+    };
+  }
+
+  if (daysLeft <= 30) {
+    return {
+      tone: "warn",
+      label: `${daysLeft} dni`,
+      daysLeft,
+    };
+  }
+
+  return {
+    tone: "ok",
+    label: `${daysLeft} dni`,
+    daysLeft,
+  };
 }
+
 
 
 function calibrationPillStyle(tone, BORDER) {
@@ -3059,11 +3097,16 @@ async function loadPoints() {
     const data = await readJsonOrThrow(res);
 
     setPoints(
-      Array.isArray(data)
-        ? data.map((p) => ({ ...p, priority: p.priority === true,in_storage: toBool(p.in_storage), warehouse: p.warehouse ?? null,
-         }))
-        : []
-    );
+  Array.isArray(data)
+    ? data.map((p) => ({
+        ...p,
+        priority: p.priority === true,
+        in_storage: toBool(p.in_storage),
+        warehouse: p.warehouse ?? null,
+      }))
+    : []
+);
+
   } catch (e) {
     if (e?.status === 401) return logout("expired");
     setApiError(`Nie mogę pobrać urządzeń: ${String(e)}`);
