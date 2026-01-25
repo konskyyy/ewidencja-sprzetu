@@ -136,7 +136,7 @@ function normalizeStorage(body) {
 
   // MAGAZYN
   if (in_storage) {
-    if (!WAREHOUSES.includes(warehouse)) {
+    if (!WAREHOUSES.has(warehouse)) {
       const err = new Error("Niepoprawny magazyn.");
       err.status = 400;
       throw err;
