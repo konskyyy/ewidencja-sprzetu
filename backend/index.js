@@ -34,7 +34,6 @@ app.use(
   })
 );
 
-app.options("*", cors());
 
 const PORT = process.env.PORT || 3001;
 const DATABASE_URL = process.env.DATABASE_URL;
@@ -258,29 +257,6 @@ app.post("/api/auth/login", async (req, res) => {
       "SELECT id, email, password_hash FROM users WHERE email=$1",
       [email]
     );
-    const a = q.rows[0];
-
-res.json({
-  id: a.id,
-  title: a.name,
-  name: a.name,
-  note: a.notes ?? "",
-  notes: a.notes ?? "",
-  status: a.status,
-  lat: a.lat,
-  lng: a.lng,
-  in_storage: a.in_storage,
-  warehouse: a.warehouse,
-  priority: !!a.priority,
-  added_at: a.added_at,
-  last_calibration_at: a.last_calibration_at,
-  calibration_interval_years: a.calibration_interval_years,
-  calibration_days_left: calcCalibrationDaysLeft(
-    a.last_calibration_at,
-    a.calibration_interval_years
-  ),
-});
-
 
     const user = q.rows[0];
     if (!user) return res.status(401).json({ error: "Złe dane" });
@@ -289,12 +265,13 @@ res.json({
     if (!ok) return res.status(401).json({ error: "Złe dane" });
 
     const token = signToken(user);
-    res.json({ token, user: { id: user.id, email: user.email } });
+    return res.json({ token, user: { id: user.id, email: user.email } });
   } catch (e) {
     console.error("LOGIN DB ERROR:", e);
     return res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+
 
 app.get("/api/auth/me", authRequired, async (req, res) => {
   res.json({ user: { id: req.user.id, email: req.user.email } });
