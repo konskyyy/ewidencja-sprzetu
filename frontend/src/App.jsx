@@ -312,9 +312,7 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
 
 function calibrationMeta(pt) {
   // Preferuj wartość z backendu, ale policz jeśli brak
-  const days =
-    pt?.calibration_days_left ??
-    calcCalibrationDaysLeft(pt?.last_calibration_at, pt?.calibration_interval_years);
+
 
   if (days === null || days === undefined) {
     return {
@@ -3154,6 +3152,15 @@ async function createDeviceFromForm() {
   const lat = in_storage ? null : Number(createForm.lat);
   const lng = in_storage ? null : Number(createForm.lng);
 
+  // ✅ kalibracja
+  const last_calibration_at = createForm.last_calibration_at
+    ? String(createForm.last_calibration_at)
+    : null;
+
+  const calibration_interval_years = createForm.calibration_interval_years
+    ? Number(createForm.calibration_interval_years)
+    : null;
+
   if (!title) {
     setApiError("Podaj nazwę urządzenia.");
     return;
@@ -3176,22 +3183,16 @@ async function createDeviceFromForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-  title,
-  note,
-  status,
-
-  in_storage,
-  warehouse,
-
-  lat,
-  lng,
-
-  // ✅ kalibracja - weź z createForm
-  last_calibration_at: createForm.last_calibration_at ? createForm.last_calibration_at : null,
-  calibration_interval_years: createForm.calibration_interval_years
-    ? Number(createForm.calibration_interval_years)
-    : null,
-}),
+        title,
+        note,
+        status,
+        in_storage,
+        warehouse,
+        lat,
+        lng,
+        last_calibration_at,
+        calibration_interval_years,
+      }),
     });
 
     const data = await readJsonOrThrow(res);
@@ -3227,6 +3228,7 @@ async function createDeviceFromForm() {
     setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
   }
 }
+
 
 async function saveEditedDevice(payload) {
   const pt = selectedPoint;
