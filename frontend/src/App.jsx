@@ -58,6 +58,9 @@ const DEVICE_COLORS = {
   czujnik_drgan: "#f59e0b",  // pomarańczowy
   inklinometr: "#a855f7",    // fiolet
 };
+const daysLeft =
+  pt.calibration_days_left ??
+  calcCalibrationDaysLeft(pt.last_calibration_at, pt.calibration_interval_years);
 
 function typeLabel(v) {
   return DEVICE_TYPES.find((t) => t.value === v)?.label || "Inne";
