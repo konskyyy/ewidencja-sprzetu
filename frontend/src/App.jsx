@@ -48,6 +48,7 @@ const WAREHOUSES = [
   { value: "GEO_BB", label: "GEO BB" },
   { value: "GEO_OM", label: "GEO OM" },
   { value: "GEO_LD", label: "GEO LD" },
+  { value: "SERWIS", label: "SERWIS" },
 ];
 
 // jeden „source of truth” kolorów
@@ -81,6 +82,11 @@ function StorageOverlay({
   GLASS_BG,
   GLASS_SHADOW,
 }) {
+  const warehouseIcon = (key) => {
+  if (key === "SERWIS") return "🛠️";
+  return "📦";
+};
+
   return (
     <div
       style={{
@@ -144,7 +150,9 @@ function StorageOverlay({
               }}
               title={`Otwórz magazyn ${key}`}
             >
-              <span style={{ fontWeight: 800, fontSize: 12 }}>📦 {key}</span>
+              <span style={{ fontWeight: 800, fontSize: 12 }}>
+              {warehouseIcon(key)} {key}
+              </span>
               <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
                 {list.length}
               </span>
