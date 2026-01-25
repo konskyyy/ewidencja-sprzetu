@@ -3087,7 +3087,7 @@ async function createDeviceFromForm() {
   setApiError("");
 
   const title = String(createForm.title || "").trim();
-  const status = String(createForm.status || "tachimetr");
+  const status = String(createForm.status || "tachimetr").trim();
   const note = String(createForm.note || "");
 
   const in_storage = createForm.in_storage === true;
@@ -3118,34 +3118,31 @@ async function createDeviceFromForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-  title: payload.title,
-  note: payload.note,
-  status: payload.status,
+        title,
+        status,
+        note,
+        in_storage,
+        warehouse,
+        lat,
+        lng,
 
-  // magazyn:
-  in_storage: payload.in_storage === true,
-  warehouse: payload.in_storage ? payload.warehouse : null,
-
-  // współrzędne tylko jeśli NIE magazyn
-  lat: payload.in_storage ? null : pt.lat,
-  lng: payload.in_storage ? null : pt.lng,
-
-  // ✅ KALIBRACJA (SNAKE_CASE jak backend)
-  last_calibration_at: payload.last_calibration_at ? payload.last_calibration_at : null,
-  calibration_interval_years: payload.calibration_interval_years
-    ? Number(payload.calibration_interval_years)
-    : null,
-}),
-
-
+        // ✅ kalibracja
+        last_calibration_at: createForm.last_calibration_at
+          ? createForm.last_calibration_at
+          : null,
+        calibration_interval_years: createForm.calibration_interval_years
+          ? Number(createForm.calibration_interval_years)
+          : null,
+      }),
     });
 
     const data = await readJsonOrThrow(res);
+
     const normalized = {
       ...data,
       priority: data?.priority === true,
       in_storage: toBool(data?.in_storage),
-      warehouse: data?.warehouse || null,
+      warehouse: data?.warehouse ?? null,
     };
 
     setPoints((p) => [normalized, ...p]);
@@ -3172,6 +3169,7 @@ async function createDeviceFromForm() {
     setApiError(`Nie mogę dodać urządzenia: ${String(e?.message || e)}`);
   }
 }
+
 async function saveEditedDevice(payload) {
   const pt = selectedPoint;
   if (!pt) return;
