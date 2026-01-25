@@ -258,6 +258,29 @@ app.post("/api/auth/login", async (req, res) => {
       "SELECT id, email, password_hash FROM users WHERE email=$1",
       [email]
     );
+    const a = q.rows[0];
+
+res.json({
+  id: a.id,
+  title: a.name,
+  name: a.name,
+  note: a.notes ?? "",
+  notes: a.notes ?? "",
+  status: a.status,
+  lat: a.lat,
+  lng: a.lng,
+  in_storage: a.in_storage,
+  warehouse: a.warehouse,
+  priority: !!a.priority,
+  added_at: a.added_at,
+  last_calibration_at: a.last_calibration_at,
+  calibration_interval_years: a.calibration_interval_years,
+  calibration_days_left: calcCalibrationDaysLeft(
+    a.last_calibration_at,
+    a.calibration_interval_years
+  ),
+});
+
 
     const user = q.rows[0];
     if (!user) return res.status(401).json({ error: "Złe dane" });
@@ -366,9 +389,7 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
 
     const priority = req.body?.priority;
     if (typeof priority !== "boolean") {
-      return res
-        .status(400)
-        .json({ error: "priority musi być boolean (true/false)" });
+      return res.status(400).json({ error: "priority musi być boolean (true/false)" });
     }
 
     const q = await pool.query(
@@ -414,6 +435,7 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
     res.status(500).json({ error: "DB error", details: String(e) });
   }
 });
+
 
 // CREATE point -> INSERT asset
 app.post("/api/points", authRequired, async (req, res) => {

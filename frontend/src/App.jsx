@@ -3118,22 +3118,20 @@ async function createDeviceFromForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        status,
-        note,
-        in_storage,
-        warehouse,
-        lat,
-        lng,
+  title: payload.title,
+  note: payload.note,
+  status: payload.status,
 
-        // ✅ kalibracja
-        last_calibration_at: createForm.last_calibration_at
-          ? createForm.last_calibration_at
-          : null,
-        calibration_interval_years: createForm.calibration_interval_years
-          ? Number(createForm.calibration_interval_years)
-          : null,
-      }),
+  in_storage: payload.in_storage === true,
+  warehouse: payload.in_storage ? payload.warehouse : null,
+
+  lat: payload.in_storage ? null : pt.lat,
+  lng: payload.in_storage ? null : pt.lng,
+
+  // ✅ kalibracja 
+  last_calibration_at: payload.last_calibration_at ?? null,
+  calibration_interval_years: payload.calibration_interval_years ?? null,
+}),
     });
 
     const data = await readJsonOrThrow(res);
