@@ -69,6 +69,33 @@ async function ensureSchema() {
       ALTER TABLE assets
       ADD COLUMN IF NOT EXISTS warehouse text
     `);
+
+    // --- kalibracje ---
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS added_at timestamptz NOT NULL DEFAULT now()
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS last_calibration_at timestamptz
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS calibration_interval_years int
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      DROP CONSTRAINT IF EXISTS assets_calibration_interval_chk
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD CONSTRAINT assets_calibration_interval_chk
+      CHECK (calibration_interval_years IS NULL OR calibration_interval_years IN (1,2,3))
+    `);
   } catch (e) {
     console.error("ensureSchema error:", e);
   }
@@ -87,6 +114,7 @@ app.get("/assets", async (req, res) => {
       SELECT
         id, name, type, status, quantity, unit, serial_number,
         lat, lng, notes, created_at, updated_at,
+        added_at, last_calibration_at, calibration_interval_years,
         COALESCE(priority,false) AS priority,
         COALESCE(in_storage,false) AS in_storage,
         warehouse
@@ -120,6 +148,53 @@ function authRequired(req, res, next) {
     console.error("AUTH TOKEN ERROR:", e);
     return res.status(401).json({ error: "Niepoprawny token" });
   }
+}
+
+function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
+  if (!lastCalibrationAt || !intervalYears) return null;
+
+  const start = new Date(lastCalibrationAt);
+  if (!Number.isFinite(start.getTime())) return null;
+
+  const years = Number(intervalYears);
+  if (![1, 2, 3].includes(years)) return null;
+
+  const due = new Date(start);
+  due.setFullYear(due.getFullYear() + years);
+
+  const msLeft = due.getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+
+  return daysLeft;
+}
+
+function parseCalibration(body) {
+  const rawInterval = body?.calibration_interval_years;
+  const interval =
+    rawInterval === null ||
+    rawInterval === undefined ||
+    rawInterval === ""
+      ? null
+      : Number(rawInterval);
+
+  if (interval !== null && ![1, 2, 3].includes(interval)) {
+    const err = new Error("Niepoprawny interwał kalibracji (1/2/3 lata).");
+    err.status = 400;
+    throw err;
+  }
+
+  const rawDate = body?.last_calibration_at;
+  const last = rawDate ? new Date(rawDate) : null;
+  if (rawDate && !Number.isFinite(last.getTime())) {
+    const err = new Error("Niepoprawna data ostatniej kalibracji.");
+    err.status = 400;
+    throw err;
+  }
+
+  return {
+    calibration_interval_years: interval,
+    last_calibration_at: last ? last.toISOString() : null,
+  };
 }
 
 // --- magazyn / współrzędne ---
@@ -206,13 +281,25 @@ app.get("/api/assets", authRequired, async (req, res) => {
       SELECT
         id, name, type, status, quantity, unit, serial_number,
         lat, lng, notes, created_at, updated_at,
+        added_at,
+        last_calibration_at,
+        calibration_interval_years,
         COALESCE(priority,false) AS priority,
         COALESCE(in_storage,false) AS in_storage,
         warehouse
       FROM assets
       ORDER BY COALESCE(priority,false) DESC, id DESC
     `);
-    res.json(q.rows);
+
+    const rows = q.rows.map((a) => ({
+      ...a,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
+    }));
+
+    res.json(rows);
   } catch (e) {
     console.error("GET ASSETS ERROR:", e);
     res.status(500).json({ error: "DB error", details: String(e) });
@@ -230,6 +317,9 @@ app.get("/api/points", authRequired, async (req, res) => {
         lat,
         lng,
         notes,
+        added_at,
+        last_calibration_at,
+        calibration_interval_years,
         COALESCE(in_storage,false) AS in_storage,
         warehouse,
         COALESCE(priority,false) AS priority
@@ -243,6 +333,13 @@ app.get("/api/points", authRequired, async (req, res) => {
       name: a.name,
       note: a.notes ?? "",
       notes: a.notes ?? "",
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
       status: a.status,
       lat: a.lat,
       lng: a.lng,
@@ -276,6 +373,7 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
        SET priority=$1, updated_at=NOW()
        WHERE id=$2
        RETURNING id, name, status, lat, lng, notes,
+                 added_at, last_calibration_at, calibration_interval_years,
                  COALESCE(in_storage,false) AS in_storage,
                  warehouse,
                  COALESCE(priority,false) AS priority`,
@@ -297,6 +395,13 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
       in_storage: a.in_storage,
       warehouse: a.warehouse,
       priority: !!a.priority,
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
     });
   } catch (e) {
     console.error("PATCH POINT PRIORITY (assets) ERROR:", e);
@@ -314,17 +419,34 @@ app.post("/api/points", authRequired, async (req, res) => {
     const note = String(body.note || body.notes || "");
 
     const st = normalizeStorage(body);
+    const cal = parseCalibration(body);
 
     const q = await pool.query(
       `
-      INSERT INTO assets (name, type, status, lat, lng, notes, in_storage, warehouse, priority)
-      VALUES ($1, 'equipment', $2, $3, $4, $5, $6, $7, false)
-      RETURNING id, name, status, lat, lng, notes,
-                COALESCE(in_storage,false) AS in_storage,
-                warehouse,
-                COALESCE(priority,false) AS priority
+      INSERT INTO assets (
+        name, type, status, lat, lng, notes,
+        in_storage, warehouse, priority,
+        last_calibration_at, calibration_interval_years
+      )
+      VALUES ($1, 'equipment', $2, $3, $4, $5, $6, $7, false, $8, $9)
+      RETURNING
+        id, name, status, lat, lng, notes,
+        added_at, last_calibration_at, calibration_interval_years,
+        COALESCE(in_storage,false) AS in_storage,
+        warehouse,
+        COALESCE(priority,false) AS priority
       `,
-      [title, status, st.lat, st.lng, note, st.in_storage, st.warehouse]
+      [
+        title,
+        status,
+        st.lat,
+        st.lng,
+        note,
+        st.in_storage,
+        st.warehouse,
+        cal.last_calibration_at,
+        cal.calibration_interval_years,
+      ]
     );
 
     const a = q.rows[0];
@@ -340,6 +462,13 @@ app.post("/api/points", authRequired, async (req, res) => {
       in_storage: a.in_storage,
       warehouse: a.warehouse,
       priority: !!a.priority,
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
     });
   } catch (e) {
     console.error("CREATE POINT ERROR:", e);
@@ -363,6 +492,7 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
       return res.status(400).json({ error: "Nazwa urządzenia jest wymagana" });
 
     const st = normalizeStorage(body);
+    const cal = parseCalibration(body);
 
     const q = await pool.query(
       `
@@ -374,14 +504,29 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
           warehouse=$5,
           lat=$6,
           lng=$7,
+          last_calibration_at=$8,
+          calibration_interval_years=$9,
           updated_at=NOW()
-      WHERE id=$8
-      RETURNING id, name, status, lat, lng, notes,
-                COALESCE(in_storage,false) AS in_storage,
-                warehouse,
-                COALESCE(priority,false) AS priority
+      WHERE id=$10
+      RETURNING
+        id, name, status, lat, lng, notes,
+        added_at, last_calibration_at, calibration_interval_years,
+        COALESCE(in_storage,false) AS in_storage,
+        warehouse,
+        COALESCE(priority,false) AS priority
       `,
-      [title, status, note, st.in_storage, st.warehouse, st.lat, st.lng, id]
+      [
+        title,
+        status,
+        note,
+        st.in_storage,
+        st.warehouse,
+        st.lat,
+        st.lng,
+        cal.last_calibration_at,
+        cal.calibration_interval_years,
+        id,
+      ]
     );
 
     const a = q.rows[0];
@@ -399,6 +544,13 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
       in_storage: a.in_storage,
       warehouse: a.warehouse,
       priority: !!a.priority,
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
     });
   } catch (e) {
     console.error("PUT /api/points/:id ERROR:", e);
@@ -413,10 +565,16 @@ app.delete("/api/points/:id", authRequired, async (req, res) => {
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Złe ID" });
 
     await pool.query(`DELETE FROM point_comments WHERE point_id=$1`, [id]);
-    await pool.query(`DELETE FROM updates_read WHERE kind='points' AND entity_id=$1`, [id]);
+    await pool.query(
+      `DELETE FROM updates_read WHERE kind='points' AND entity_id=$1`,
+      [id]
+    );
 
-    const q = await pool.query(`DELETE FROM assets WHERE id=$1 RETURNING id`, [id]);
-    if (!q.rows[0]) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
+    const q = await pool.query(`DELETE FROM assets WHERE id=$1 RETURNING id`, [
+      id,
+    ]);
+    if (!q.rows[0])
+      return res.status(404).json({ error: "Nie znaleziono urządzenia" });
 
     res.json({ ok: true, id });
   } catch (e) {
@@ -516,7 +674,8 @@ app.put("/api/points/:id/comments/:commentId", authRequired, async (req, res) =>
     );
 
     const row = cur.rows[0];
-    if (!row) return res.status(404).json({ error: "Nie znaleziono komentarza" });
+    if (!row)
+      return res.status(404).json({ error: "Nie znaleziono komentarza" });
 
     if (Number(row.user_id) !== Number(req.user.id)) {
       return res
@@ -558,7 +717,8 @@ app.delete(
       );
 
       const row = cur.rows[0];
-      if (!row) return res.status(404).json({ error: "Nie znaleziono komentarza" });
+      if (!row)
+        return res.status(404).json({ error: "Nie znaleziono komentarza" });
 
       if (Number(row.user_id) !== Number(req.user.id)) {
         return res
@@ -713,7 +873,9 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
   await ensureSchema();
 
   app.use((req, res) => {
-    res.status(404).json({ error: "Not Found", path: req.path, method: req.method });
+    res
+      .status(404)
+      .json({ error: "Not Found", path: req.path, method: req.method });
   });
 
   app.listen(PORT, () => {
