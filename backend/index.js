@@ -101,7 +101,6 @@ async function ensureSchema() {
   }
 }
 
-
 // ===== HEALTH / DEBUG =====
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 app.get("/api/version", (req, res) =>
@@ -151,6 +150,7 @@ function authRequired(req, res, next) {
   }
 }
 
+// ===== KALIBRACJA =====
 function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
   if (!lastCalibrationAt || !intervalYears) return null;
 
@@ -169,33 +169,35 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
   return daysLeft;
 }
 
-function parseCalibration(body) {
-  const rawInterval = body?.calibration_interval_years;
-  const interval =
-    rawInterval === null ||
-    rawInterval === undefined ||
-    rawInterval === ""
-      ? null
-      : Number(rawInterval);
-
-  if (interval !== null && ![1, 2, 3].includes(interval)) {
-    const err = new Error("Niepoprawny interwał kalibracji (1/2/3 lata).");
-    err.status = 400;
-    throw err;
-  }
-
+function normalizeCalibration(body) {
+  // last_calibration_at może przyjść jako "YYYY-MM-DD" albo ISO albo null
   const rawDate = body?.last_calibration_at;
-  const last = rawDate ? new Date(rawDate) : null;
-  if (rawDate && !Number.isFinite(last.getTime())) {
-    const err = new Error("Niepoprawna data ostatniej kalibracji.");
-    err.status = 400;
-    throw err;
+  let last_calibration_at = null;
+
+  if (rawDate !== null && rawDate !== undefined && String(rawDate).trim() !== "") {
+    const d = new Date(rawDate);
+    if (!Number.isFinite(d.getTime())) {
+      const err = new Error("Niepoprawna data last_calibration_at.");
+      err.status = 400;
+      throw err;
+    }
+    last_calibration_at = d.toISOString(); // DB przyjmie timestamptz
   }
 
-  return {
-    calibration_interval_years: interval,
-    last_calibration_at: last ? last.toISOString() : null,
-  };
+  const rawInt = body?.calibration_interval_years;
+  let calibration_interval_years = null;
+
+  if (rawInt !== null && rawInt !== undefined && String(rawInt).trim() !== "") {
+    const n = Number(rawInt);
+    if (![1, 2, 3].includes(n)) {
+      const err = new Error("calibration_interval_years musi być 1, 2 albo 3 (lub null).");
+      err.status = 400;
+      throw err;
+    }
+    calibration_interval_years = n;
+  }
+
+  return { last_calibration_at, calibration_interval_years };
 }
 
 // --- magazyn / współrzędne ---
@@ -242,37 +244,6 @@ function normalizeStorage(body) {
 
   return { in_storage: false, warehouse: null, lat, lng };
 }
-function normalizeCalibration(body) {
-  // last_calibration_at może przyjść jako "YYYY-MM-DD" albo ISO albo null
-  const rawDate = body?.last_calibration_at;
-  let last_calibration_at = null;
-
-  if (rawDate !== null && rawDate !== undefined && String(rawDate).trim() !== "") {
-    const d = new Date(rawDate);
-    if (!Number.isFinite(d.getTime())) {
-      const err = new Error("Niepoprawna data last_calibration_at.");
-      err.status = 400;
-      throw err;
-    }
-    last_calibration_at = d.toISOString(); // DB przyjmie timestamptz
-  }
-
-  const rawInt = body?.calibration_interval_years;
-  let calibration_interval_years = null;
-
-  if (rawInt !== null && rawInt !== undefined && String(rawInt).trim() !== "") {
-    const n = Number(rawInt);
-    if (![1, 2, 3].includes(n)) {
-      const err = new Error("calibration_interval_years musi być 1, 2 albo 3 (lub null).");
-      err.status = 400;
-      throw err;
-    }
-    calibration_interval_years = n;
-  }
-
-  return { last_calibration_at, calibration_interval_years };
-}
-
 
 app.post("/api/auth/register", (req, res) => {
   return res.status(403).json({ error: "Rejestracja jest wyłączona" });
@@ -387,7 +358,7 @@ app.get("/api/points", authRequired, async (req, res) => {
   }
 });
 
-// SET point priority -> assets.priority
+// SET point priority -> assets.priority (TYLKO priority!)
 app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -401,42 +372,19 @@ app.patch("/api/points/:id/priority", authRequired, async (req, res) => {
     }
 
     const q = await pool.query(
-  `
-  UPDATE assets
-  SET name=$1,
-      status=$2,
-      notes=$3,
-      in_storage=$4,
-      warehouse=$5,
-      lat=$6,
-      lng=$7,
-
-      -- ✅ kalibracja
-      last_calibration_at=$8,
-      calibration_interval_years=$9,
-
-      updated_at=NOW()
-  WHERE id=$10
-  RETURNING
-    id, name, status, lat, lng, notes,
-    added_at, last_calibration_at, calibration_interval_years,
-    COALESCE(in_storage,false) AS in_storage,
-    warehouse,
-    COALESCE(priority,false) AS priority
-  `,
-  [
-    title,
-    status,
-    note,
-    st.in_storage,
-    st.warehouse,
-    st.lat,
-    st.lng,
-    cal.last_calibration_at,
-    cal.calibration_interval_years,
-    id,
-  ]
-);
+      `
+      UPDATE assets
+      SET priority=$1, updated_at=NOW()
+      WHERE id=$2
+      RETURNING
+        id, name, status, lat, lng, notes,
+        added_at, last_calibration_at, calibration_interval_years,
+        COALESCE(in_storage,false) AS in_storage,
+        warehouse,
+        COALESCE(priority,false) AS priority
+      `,
+      [priority, id]
+    );
 
     const a = q.rows[0];
     if (!a) return res.status(404).json({ error: "Nie znaleziono urządzenia" });
@@ -477,46 +425,68 @@ app.post("/api/points", authRequired, async (req, res) => {
     const note = String(body.note || body.notes || "");
 
     const st = normalizeStorage(body);
-const cal = normalizeCalibration(body);
+    const cal = normalizeCalibration(body);
 
-const q = await pool.query(
-  `
-  INSERT INTO assets (
-    name, type, status, lat, lng, notes,
-    in_storage, warehouse, priority,
-    last_calibration_at, calibration_interval_years
-  )
-  VALUES (
-    $1, 'equipment', $2, $3, $4, $5,
-    $6, $7, false,
-    $8, $9
-  )
-  RETURNING
-    id, name, status, lat, lng, notes,
-    added_at, last_calibration_at, calibration_interval_years,
-    COALESCE(in_storage,false) AS in_storage,
-    warehouse,
-    COALESCE(priority,false) AS priority
-  `,
-  [
-    title,
-    status,
-    st.lat,
-    st.lng,
-    note,
-    st.in_storage,
-    st.warehouse,
-    cal.last_calibration_at,
-    cal.calibration_interval_years,
-  ]
-);
+    const q = await pool.query(
+      `
+      INSERT INTO assets (
+        name, type, status, lat, lng, notes,
+        in_storage, warehouse, priority,
+        last_calibration_at, calibration_interval_years
+      )
+      VALUES (
+        $1, 'equipment', $2, $3, $4, $5,
+        $6, $7, false,
+        $8, $9
+      )
+      RETURNING
+        id, name, status, lat, lng, notes,
+        added_at, last_calibration_at, calibration_interval_years,
+        COALESCE(in_storage,false) AS in_storage,
+        warehouse,
+        COALESCE(priority,false) AS priority
+      `,
+      [
+        title,
+        status,
+        st.lat,
+        st.lng,
+        note,
+        st.in_storage,
+        st.warehouse,
+        cal.last_calibration_at,
+        cal.calibration_interval_years,
+      ]
+    );
+
+    const a = q.rows[0];
+    res.json({
+      id: a.id,
+      title: a.name,
+      name: a.name,
+      status: a.status,
+      lat: a.lat,
+      lng: a.lng,
+      note: a.notes ?? "",
+      notes: a.notes ?? "",
+      in_storage: a.in_storage,
+      warehouse: a.warehouse,
+      priority: !!a.priority,
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
+    });
   } catch (e) {
     console.error("CREATE POINT ERROR:", e);
     res.status(e.status || 500).json({ error: String(e.message || e) });
   }
 });
 
-// UPDATE point -> UPDATE asset (pojedyncza, docelowa wersja)
+// UPDATE point -> UPDATE asset
 app.put("/api/points/:id", authRequired, async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -532,7 +502,7 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
       return res.status(400).json({ error: "Nazwa urządzenia jest wymagana" });
 
     const st = normalizeStorage(body);
-    const cal = parseCalibration(body);
+    const cal = normalizeCalibration(body);
 
     const q = await pool.query(
       `
@@ -584,12 +554,14 @@ app.put("/api/points/:id", authRequired, async (req, res) => {
       in_storage: a.in_storage,
       warehouse: a.warehouse,
       priority: !!a.priority,
-      // ✅ kalibracja
-  added_at: a.added_at,
-  last_calibration_at: a.last_calibration_at,
-  calibration_interval_years: a.calibration_interval_years,
-  calibration_days_left: calcCalibrationDaysLeft(a.last_calibration_at, a.calibration_interval_years),
-});
+      added_at: a.added_at,
+      last_calibration_at: a.last_calibration_at,
+      calibration_interval_years: a.calibration_interval_years,
+      calibration_days_left: calcCalibrationDaysLeft(
+        a.last_calibration_at,
+        a.calibration_interval_years
+      ),
+    });
   } catch (e) {
     console.error("PUT /api/points/:id ERROR:", e);
     res.status(e.status || 500).json({ error: String(e.message || e) });
@@ -734,8 +706,6 @@ app.put("/api/points/:id/comments/:commentId", authRequired, async (req, res) =>
     console.error("EDIT POINT COMMENT ERROR:", e);
     res.status(500).json({ error: "DB error", details: String(e) });
   }
-  const st = normalizeStorage(body);
-  const cal = normalizeCalibration(body);
 });
 
 app.delete(
