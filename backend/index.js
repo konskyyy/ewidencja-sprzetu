@@ -70,7 +70,7 @@ async function ensureSchema() {
       ADD COLUMN IF NOT EXISTS warehouse text
     `);
 
-    // --- kalibracje ---
+    // ✅ kalibracja
     await pool.query(`
       ALTER TABLE assets
       ADD COLUMN IF NOT EXISTS added_at timestamptz NOT NULL DEFAULT now()
@@ -100,6 +100,7 @@ async function ensureSchema() {
     console.error("ensureSchema error:", e);
   }
 }
+
 
 // ===== HEALTH / DEBUG =====
 app.get("/api/health", (req, res) => res.json({ ok: true }));
