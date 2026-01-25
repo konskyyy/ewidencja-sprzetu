@@ -58,9 +58,6 @@ const DEVICE_COLORS = {
   czujnik_drgan: "#f59e0b",  // pomarańczowy
   inklinometr: "#a855f7",    // fiolet
 };
-const daysLeft =
-  pt.calibration_days_left ??
-  calcCalibrationDaysLeft(pt.last_calibration_at, pt.calibration_interval_years);
 
 function typeLabel(v) {
   return DEVICE_TYPES.find((t) => t.value === v)?.label || "Inne";
@@ -3118,19 +3115,21 @@ async function createDeviceFromForm() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-  title: payload.title,
-  note: payload.note,
-  status: payload.status,
+  title,
+  note,
+  status,
 
-  in_storage: payload.in_storage === true,
-  warehouse: payload.in_storage ? payload.warehouse : null,
+  in_storage,
+  warehouse,
 
-  lat: payload.in_storage ? null : pt.lat,
-  lng: payload.in_storage ? null : pt.lng,
+  lat,
+  lng,
 
-  // ✅ kalibracja 
-  last_calibration_at: payload.last_calibration_at ?? null,
-  calibration_interval_years: payload.calibration_interval_years ?? null,
+  // ✅ kalibracja - weź z createForm
+  last_calibration_at: createForm.last_calibration_at ? createForm.last_calibration_at : null,
+  calibration_interval_years: createForm.calibration_interval_years
+    ? Number(createForm.calibration_interval_years)
+    : null,
 }),
     });
 
@@ -3183,13 +3182,14 @@ async function saveEditedDevice(payload) {
   note: payload.note,
   status: payload.status,
 
-  // magazyn:
   in_storage: payload.in_storage === true,
   warehouse: payload.in_storage ? payload.warehouse : null,
 
-  // współrzędne tylko jeśli NIE magazyn
   lat: payload.in_storage ? null : pt.lat,
   lng: payload.in_storage ? null : pt.lng,
+
+  last_calibration_at: payload.last_calibration_at ?? null,
+  calibration_interval_years: payload.calibration_interval_years ?? null,
 }),
     });
 
