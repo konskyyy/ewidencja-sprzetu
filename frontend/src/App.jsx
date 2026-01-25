@@ -3427,8 +3427,7 @@ async function togglePointPriority(pt) {
                 fontWeight: 800,
                 fontSize: 12,
               }}
-            >
-              📦 Magazyn
+            >➕ Dodaj
             </button>
 
             {/* WSKAŻ NA MAPIE */}
@@ -3661,15 +3660,11 @@ async function togglePointPriority(pt) {
                 color: "rgba(255,255,255,0.65)",
               }}
             >
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📦</span>
-                <span>urządzenie na magazynie</span>
-              </div>
-
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, lineHeight: 1, opacity: 0.9 }}>📍</span>
-                <span>sprzęt w terenie</span>
-              </div>
+              <div style={{ fontSize: 11, color: MUTED, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <span>📦 Na magazynie</span>
+              <span>📍 W terenie</span>
+              <span>🛠️ W serwisie</span>
+            </div>
             </div>
           </div>
 
