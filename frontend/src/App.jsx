@@ -294,6 +294,23 @@ function formatDateTimePL(iso) {
   }
 }
 
+function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
+  if (!lastCalibrationAt || !intervalYears) return null;
+
+  const start = new Date(lastCalibrationAt);
+  if (!Number.isFinite(start.getTime())) return null;
+
+  const years = Number(intervalYears);
+  if (![1, 2, 3].includes(years)) return null;
+
+  const due = new Date(start);
+  due.setFullYear(due.getFullYear() + years);
+
+  const msLeft = due.getTime() - Date.now();
+  return Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+}
+
+
 /** ===== CHANCE RING ===== */
 function ringColor(pct) {
   const v = Math.max(0, Math.min(100, Number(pct) || 0));
@@ -1467,12 +1484,16 @@ function EditDeviceModal({
   }
 
   const [form, setForm] = useState({
-    title: "",
-    status: "tachimetr",
-    note: "",
-    in_storage: false,
-    warehouse: "GEO_BB",
-  });
+  title: "",
+  status: "tachimetr",
+  note: "",
+  in_storage: false,
+  warehouse: "GEO_BB",
+
+  // ✅ kalibracja
+  last_calibration_at: "",          // "YYYY-MM-DD"
+  calibration_interval_years: "",   // "1" | "2" | "3" | ""
+});
 
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState("");
@@ -1484,12 +1505,21 @@ function EditDeviceModal({
     setSaving(false);
 
     setForm({
-      title: device.title ?? "",
-      status: normalizeDeviceType(device.status),
-      note: device.note ?? "",
-      in_storage: device.in_storage === true,
-      warehouse: device.warehouse ?? "GEO_BB",
-    });
+  title: device.title ?? "",
+  status: normalizeDeviceType(device.status),
+  note: device.note ?? "",
+  in_storage: device.in_storage === true,
+  warehouse: device.warehouse ?? "GEO_BB",
+
+  // ✅ kalibracja: przyjmujemy YYYY-MM-DD (jeśli backend zwraca ISO)
+  last_calibration_at: device.last_calibration_at
+    ? String(device.last_calibration_at).slice(0, 10)
+    : "",
+  calibration_interval_years:
+    device.calibration_interval_years != null
+      ? String(device.calibration_interval_years)
+      : "",
+});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, device]);
 
@@ -1501,12 +1531,19 @@ async function handleSave() {
   setErr("");
 
   const payload = {
-    title: form.title,
-    status: form.status,
-    note: form.note,
-    in_storage: !!form.in_storage,
-    warehouse: form.in_storage ? (form.warehouse || "GEO_BB") : null,
-  };
+  title: form.title,
+  status: form.status,
+  note: form.note,
+  in_storage: !!form.in_storage,
+  warehouse: form.in_storage ? (form.warehouse || "GEO_BB") : null,
+
+  // ✅ kalibracja
+  last_calibration_at: form.last_calibration_at ? form.last_calibration_at : null,
+  calibration_interval_years: form.calibration_interval_years
+    ? Number(form.calibration_interval_years)
+    : null,
+};
+
 
   if (!payload.title.trim()) {
     setErr("Nazwa urządzenia nie może być pusta.");
@@ -1702,6 +1739,39 @@ async function handleSave() {
             onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
             style={textareaStyleLocal}
           />
+          {/* ✅ KALIBRACJA */}
+<div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+  Kalibracja
+</div>
+
+<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+  <div>
+    <label style={labelStyleLocal}>Data ostatniej kalibracji</label>
+    <input
+      type="date"
+      value={form.last_calibration_at || ""}
+      onChange={(e) => setForm((f) => ({ ...f, last_calibration_at: e.target.value }))}
+      style={inputStyleLocal}
+    />
+  </div>
+
+  <div>
+    <label style={labelStyleLocal}>Interwał kalibracji</label>
+    <select
+      value={form.calibration_interval_years || ""}
+      onChange={(e) => setForm((f) => ({ ...f, calibration_interval_years: e.target.value }))}
+      style={inputStyleLocal}
+    >
+      <option value="">— brak —</option>
+      <option value="1">Co 1 rok</option>
+      <option value="2">Co 2 lata</option>
+      <option value="3">Co 3 lata</option>
+    </select>
+  </div>
+</div>
+
 
           {/* MAGAZYN */}
           <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
@@ -1975,6 +2045,39 @@ function CreateDeviceModal({
             style={textareaStyleLocal}
             placeholder="Notatka do urządzenia…"
           />
+          {/* ✅ KALIBRACJA */}
+<div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+  Kalibracja
+</div>
+
+<div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+  <div>
+    <label style={labelStyleLocal}>Data ostatniej kalibracji</label>
+    <input
+      type="date"
+      value={form.last_calibration_at || ""}
+      onChange={(e) => setForm((f) => ({ ...f, last_calibration_at: e.target.value }))}
+      style={inputStyleLocal}
+    />
+  </div>
+
+  <div>
+    <label style={labelStyleLocal}>Interwał kalibracji</label>
+    <select
+      value={form.calibration_interval_years || ""}
+      onChange={(e) => setForm((f) => ({ ...f, calibration_interval_years: e.target.value }))}
+      style={inputStyleLocal}
+    >
+      <option value="">— brak —</option>
+      <option value="1">Co 1 rok</option>
+      <option value="2">Co 2 lata</option>
+      <option value="3">Co 3 lata</option>
+    </select>
+  </div>
+</div>
+
 
           <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
@@ -2801,6 +2904,10 @@ const [createForm, setCreateForm] = useState({
   lng: "",
   in_storage: false,
   warehouse: "",
+
+  // ✅ kalibracja
+  last_calibration_at: "",          // "YYYY-MM-DD" z input[type=date]
+  calibration_interval_years: "",   // "1" | "2" | "3" | "" (brak)
 });
 
 function showAllTypes() {
@@ -3007,7 +3114,24 @@ async function createDeviceFromForm() {
     const res = await authFetch(`${API}/points`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, status, note, in_storage, warehouse, lat, lng }),
+      body: JSON.stringify({
+  title,
+  status,
+  note,
+  in_storage,
+  warehouse,
+  lat,
+  lng,
+
+  // ✅ kalibracja
+  last_calibration_at: createForm.last_calibration_at
+    ? createForm.last_calibration_at
+    : null,
+  calibration_interval_years: createForm.calibration_interval_years
+    ? Number(createForm.calibration_interval_years)
+    : null,
+}),
+
     });
 
     const data = await readJsonOrThrow(res);
@@ -3034,6 +3158,8 @@ async function createDeviceFromForm() {
       lng: "",
       in_storage: false,
       warehouse: "GEO_BB",
+      last_calibration_at: "",
+      calibration_interval_years: "",
     });
   } catch (e) {
     if (e?.status === 401) return logout("expired");
@@ -4094,7 +4220,6 @@ async function togglePointPriority(pt) {
     map.__tm_dragEnd = handleDragEnd;
   }}
 />
-
           <TileLayer
             attribution="&copy; OpenStreetMap contributors"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -4230,6 +4355,20 @@ async function togglePointPriority(pt) {
                   <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
                     Wpisy w dzienniku: {journalCounts.points?.[pt.id] || 0}
                   </div>
+                  {pt.calibration_days_left != null ? (
+  <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
+    Kalibracja:{" "}
+    <b style={{ color: "rgba(255,255,255,0.90)" }}>
+      {pt.calibration_days_left} dni
+    </b>{" "}
+    do końca
+  </div>
+) : (
+  <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
+    Kalibracja: <span style={{ opacity: 0.85 }}>brak danych</span>
+  </div>
+)}
+
 
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
                     <button
