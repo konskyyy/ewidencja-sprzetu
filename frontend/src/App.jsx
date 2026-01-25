@@ -310,6 +310,72 @@ function calcCalibrationDaysLeft(lastCalibrationAt, intervalYears) {
   return Math.ceil(msLeft / (1000 * 60 * 60 * 24));
 }
 
+function calibrationMeta(pt) {
+  // Preferuj wartość z backendu, ale policz jeśli brak
+  const days =
+    pt?.calibration_days_left ??
+    calcCalibrationDaysLeft(pt?.last_calibration_at, pt?.calibration_interval_years);
+
+  if (days === null || days === undefined) {
+    return {
+      days: null,
+      label: "brak danych",
+      tone: "none", // none | ok | warn | overdue
+    };
+  }
+
+  const n = Number(days);
+
+  if (!Number.isFinite(n)) {
+    return { days: null, label: "brak danych", tone: "none" };
+  }
+
+  if (n < 0) {
+    return { days: n, label: `po terminie (${Math.abs(n)} dni)`, tone: "overdue" };
+  }
+  if (n <= 30) {
+    return { days: n, label: `${n} dni`, tone: "warn" };
+  }
+  return { days: n, label: `${n} dni`, tone: "ok" };
+}
+
+function calibrationPillStyle(tone, BORDER) {
+  // bez narzucania palety w całej appce — tylko tu, w jednym miejscu
+  if (tone === "overdue") {
+    return {
+      border: "1px solid rgba(255,80,80,0.55)",
+      background: "rgba(255,80,80,0.14)",
+      color: "rgba(255,255,255,0.92)",
+    };
+  }
+  if (tone === "warn") {
+    return {
+      border: "1px solid rgba(245,158,11,0.55)",
+      background: "rgba(245,158,11,0.14)",
+      color: "rgba(255,255,255,0.92)",
+    };
+  }
+  if (tone === "ok") {
+    return {
+      border: "1px solid rgba(34,197,94,0.55)",
+      background: "rgba(34,197,94,0.12)",
+      color: "rgba(255,255,255,0.92)",
+    };
+  }
+  return {
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.06)",
+    color: "rgba(255,255,255,0.80)",
+  };
+}
+function calibrationUrgencyRank(pt) {
+  const cal = calibrationMeta(pt);
+  if (cal.tone === "overdue") return 0;
+  if (cal.tone === "warn") return 1;
+  if (cal.tone === "ok") return 2;
+  return 3; // brak danych na końcu
+}
+
 
 /** ===== CHANCE RING ===== */
 function ringColor(pct) {
@@ -2824,12 +2890,7 @@ useEffect(() => {
   /** ===== EDIT ===== */
   const [editOpen, setEditOpen] = useState(false);
 
-  function byPriorityThenIdDesc(a, b) {
-    const ap = a?.priority === true ? 1 : 0;
-    const bp = b?.priority === true ? 1 : 0;
-    if (bp !== ap) return bp - ap;
-    return Number(b.id) - Number(a.id);
-  }
+  byPriorityThenIdDesc(a,b)
 
   const filteredPoints = useMemo(() => {
   return points
@@ -4370,19 +4431,41 @@ async function togglePointPriority(pt) {
                   <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
                     Wpisy w dzienniku: {journalCounts.points?.[pt.id] || 0}
                   </div>
-                  {pt.calibration_days_left != null ? (
-  <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
-    Kalibracja:{" "}
-    <b style={{ color: "rgba(255,255,255,0.90)" }}>
-      {pt.calibration_days_left} dni
-    </b>{" "}
-    do końca
-  </div>
-) : (
-  <div style={{ fontSize: 11, color: MUTED, marginTop: 6 }}>
-    Kalibracja: <span style={{ opacity: 0.85 }}>brak danych</span>
-  </div>
-)}
+                  {(() => {
+  const cal = calibrationMeta(pt);
+  const pill = calibrationPillStyle(cal.tone, BORDER);
+
+  return (
+    <div style={{ fontSize: 11, color: MUTED, marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
+      <span>Kalibracja:</span>
+
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          padding: "3px 8px",
+          borderRadius: 999,
+          fontWeight: 900,
+          fontSize: 11,
+          ...pill,
+        }}
+        title={
+          cal.tone === "overdue"
+            ? "Kalibracja po terminie"
+            : cal.tone === "warn"
+            ? "Kalibracja wkrótce"
+            : cal.tone === "ok"
+            ? "Kalibracja OK"
+            : "Brak danych kalibracji"
+        }
+      >
+        {cal.tone === "overdue" ? "🔴" : cal.tone === "warn" ? "🟠" : cal.tone === "ok" ? "🟢" : "—"}
+        {cal.label}
+      </span>
+    </div>
+  );
+})()}
 
 
                   <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
