@@ -17,7 +17,13 @@ import {
 } from "react-leaflet";
 
 /** ===== API ===== */
-const API = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+const API_BASE_SAFE =
+  (typeof API_BASE === "string" && API_BASE.trim()) ||
+  import.meta.env.VITE_API_BASE ||
+  ""; // albo "http://localhost:3001"
+
+const API = API_BASE_SAFE.endsWith("/api") ? API_BASE_SAFE : `${API_BASE_SAFE}/api`;
+
 
 /** ===== UI CONSTS ===== */
 const TEXT_LIGHT = "#ffffff";
@@ -2045,6 +2051,8 @@ function CreateDeviceModal({
               </option>
             ))}
           </select>
+
+
           {/* MAGAZYN */}
 <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
   <input
