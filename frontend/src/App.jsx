@@ -4095,12 +4095,6 @@ async function togglePointPriority(pt) {
   }}
 />
 
-          <ZoomControl position="bottomright" />
-          <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
           {worldMask ? (
             <GeoJSON
               data={worldMask}
