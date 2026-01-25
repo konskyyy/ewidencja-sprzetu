@@ -3,6 +3,8 @@ const cors = require("cors");
 const { Pool } = require("pg");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+// ✅ magazyny (w tym SERWIS)
 const WAREHOUSES = new Set(["GEO_BB", "GEO_OM", "GEO_LD", "SERWIS"]);
 
 const app = express();
@@ -125,6 +127,11 @@ function parseInStorage(v) {
   return v === true || v === "true" || v === 1 || v === "1";
 }
 
+function normalizeWarehouse(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).trim().toUpperCase();
+}
+
 /**
  * Zwraca zawsze spójny zestaw pól:
  * - jeśli magazyn: { in_storage:true, warehouse:<enum>, lat:null, lng:null }
@@ -132,16 +139,19 @@ function parseInStorage(v) {
  */
 function normalizeStorage(body) {
   const in_storage = parseInStorage(body?.in_storage);
-  const warehouse = (body?.warehouse ?? "").toString().trim();
+
+  // ✅ normalizacja na UPPERCASE (żeby nie wywalić się na "serwis" vs "SERWIS")
+  const warehouse = normalizeWarehouse(body?.warehouse);
 
   // MAGAZYN
   if (in_storage) {
-    if (!WAREHOUSES.has(warehouse)) {
+    const wh = warehouse || "GEO_BB"; // domyślny
+    if (!WAREHOUSES.has(wh)) {
       const err = new Error("Niepoprawny magazyn.");
       err.status = 400;
       throw err;
     }
-    return { in_storage: true, warehouse, lat: null, lng: null };
+    return { in_storage: true, warehouse: wh, lat: null, lng: null };
   }
 
   // POZA MAGAZYNEM -> lat/lng obowiązkowe
@@ -701,9 +711,10 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
 // ===== START =====
 (async () => {
   await ensureSchema();
+
   app.use((req, res) => {
-  res.status(404).json({ error: "Not Found", path: req.path, method: req.method });
-});
+    res.status(404).json({ error: "Not Found", path: req.path, method: req.method });
+  });
 
   app.listen(PORT, () => {
     console.log(`Backend działa na porcie ${PORT}`);
