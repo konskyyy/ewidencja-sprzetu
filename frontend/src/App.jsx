@@ -3719,17 +3719,20 @@ async function togglePointPriority(pt) {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span
-                        style={{
-                          width: 14,
-                          display: "flex",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {x.in_storage ? "📦" : "📍"}
-                      </span>
-
+  <span
+    style={{
+      width: 14,
+      display: "flex",
+      justifyContent: "center",
+      flexShrink: 0,
+    }}
+  >
+    {x.in_storage
+      ? x.warehouse === "SERWIS"
+        ? "🛠️"
+        : "📦"
+      : "📍"}
+  </span>
                       <span
                         style={{
                           fontWeight: 800,
