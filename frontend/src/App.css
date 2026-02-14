@@ -257,3 +257,52 @@ select option {
   background-color: #1f2937;
   color: #ffffff;
 }
+.device-marker-wrap {
+  background: transparent;
+  border: none;
+}
+
+.device-marker {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
+.device-marker .pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+
+.device-marker .alert-badge {
+  position: absolute;
+  right: -2px;
+  top: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #111827;
+  background: #f59e0b; /* pomarańcz */
+  box-shadow: 0 0 0 2px rgba(17,24,39,0.85);
+}
+
+/* pulsowanie */
+.device-marker .pulse {
+  animation: pulseBadge 1.2s ease-in-out infinite;
+}
+
+@keyframes pulseBadge {
+  0%   { transform: scale(1);   opacity: 1; }
+  50%  { transform: scale(1.25); opacity: 0.85; }
+  100% { transform: scale(1);   opacity: 1; }
+}

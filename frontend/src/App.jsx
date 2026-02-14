@@ -216,10 +216,21 @@ function pinSvg(color) {
   </svg>`;
 }
 
-function makePinIcon(color) {
+function makePinIcon(color, urgencyTone = null) {
+  const show = urgencyTone === "warn" || urgencyTone === "overdue";
+  const badgeClass =
+    urgencyTone === "overdue" ? "tmCalBadge tmCalBadge--overdue" :
+    urgencyTone === "warn" ? "tmCalBadge tmCalBadge--warn" :
+    "";
+
   return L.divIcon({
-    className: "",
-    html: pinSvg(color),
+    className: "tmPinWrap",
+    html: `
+      <div class="tmPinHost">
+        ${pinSvg(color)}
+        ${show ? `<div class="${badgeClass}">!</div>` : ""}
+      </div>
+    `,
     iconSize: [34, 34],
     iconAnchor: [17, 32],
     popupAnchor: [0, -28],
@@ -2802,8 +2813,13 @@ export default function App() {
 
 const pinIcons = useMemo(() => {
   const icons = {};
-  for (const t of DEVICE_TYPES) icons[t.value] = makePinIcon(typeColor(t.value));
-  icons.__default = makePinIcon(typeColor(null));
+  for (const t of DEVICE_TYPES) {
+    const baseColor = typeColor(t.value);
+    icons[`${t.value}__base`] = makePinIcon(baseColor, null);
+    icons[`${t.value}__warn`] = makePinIcon(baseColor, "warn");
+    icons[`${t.value}__overdue`] = makePinIcon(baseColor, "overdue");
+  }
+  icons.__default = makePinIcon(typeColor(null), null);
   return icons;
 }, []);
 
@@ -4351,29 +4367,45 @@ async function togglePointPriority(pt) {
           />
 
           {/* URZĄDZENIA */}
-          {filteredPoints
-  .filter((pt) => !toBool(pt.in_storage)) // ⬅️ TYLKO te na mapie
-  .map((pt) => (
-    <Marker
-      key={`pt-${pt.id}`}
-      position={[Number(pt.lat), Number(pt.lng)]}
-      icon={pinIcons[pt.status] || pinIcons.__default}
-      bubblingMouseEvents={false}
-      ref={(ref) => {
-        if (ref) markerRefs.current[pt.id] = ref;
-      }}
-      eventHandlers={{
-        click: (e) => {
-          suppressNextMapClickRef.current = true;
-          setTimeout(() => (suppressNextMapClickRef.current = false), 0);
+{filteredPoints
+  .filter((pt) => !toBool(pt.in_storage))
+  .map((pt) => {
+    const cal = calibrationMeta(pt);
+    const variant =
+      cal.tone === "overdue" ? "overdue" :
+      cal.tone === "warn" ? "warn" :
+      "base";
 
-          setSelectedPointId(pt.id);
-          try {
-            e?.target?.openPopup?.();
-          } catch {}
-        },
-      }}
-    >
+    const iconKey = `${pt.status}__${variant}`;
+
+    return (
+      <Marker
+        key={`pt-${pt.id}`}
+        position={[Number(pt.lat), Number(pt.lng)]}
+        icon={pinIcons[iconKey] || pinIcons.__default}
+        bubblingMouseEvents={false}
+        ref={(ref) => {
+          if (ref) markerRefs.current[pt.id] = ref;
+        }}
+        eventHandlers={{
+          click: (e) => {
+            suppressNextMapClickRef.current = true;
+            setTimeout(() => (suppressNextMapClickRef.current = false), 0);
+
+            setSelectedPointId(pt.id);
+            try {
+              e?.target?.openPopup?.();
+            } catch {}
+          },
+        }}
+      >
+        {/* TU ZOSTAJE TWÓJ POPUP - bez zmian */}
+        <Popup closeButton={false} className="tmPopup">
+          {/* ... */}
+        </Popup>
+      </Marker>
+    );
+  })}
               <Popup closeButton={false} className="tmPopup">
                 <div
                   style={{
