@@ -224,17 +224,17 @@ function makePinIcon(color, urgencyTone = null) {
     "";
 
   return L.divIcon({
-    className: "tmPinWrap",
-    html: `
-      <div class="tmPinHost">
-        ${pinSvg(color)}
-        ${show ? `<div class="${badgeClass}">!</div>` : ""}
-      </div>
-    `,
-    iconSize: [34, 34],
-    iconAnchor: [17, 32],
-    popupAnchor: [0, -28],
-  });
+  className: "leaflet-div-icon tmPinWrap",
+  html: `
+    <div class="tmPinHost">
+      ${pinSvg(color)}
+      ${show ? `<div class="${badgeClass}">!</div>` : ""}
+    </div>
+  `,
+  iconSize: [34, 34],
+  iconAnchor: [17, 32],
+  popupAnchor: [0, -28],
+});
 }
 
 function extractOuterRings(geometry) {
@@ -2819,7 +2819,7 @@ const pinIcons = useMemo(() => {
     icons[`${t.value}__warn`] = makePinIcon(baseColor, "warn");
     icons[`${t.value}__overdue`] = makePinIcon(baseColor, "overdue");
   }
-  icons.__default = makePinIcon(typeColor(null), null);
+  icons.__default = makePinIcon("#9ca3af", null);
   return icons;
 }, []);
 
@@ -4368,21 +4368,30 @@ async function togglePointPriority(pt) {
 
           {/* URZĄDZENIA */}
 {filteredPoints
-  .filter((pt) => !toBool(pt.in_storage)) // tylko te na mapie
+  .filter((pt) => !toBool(pt.in_storage))
+  .filter((pt) => Number.isFinite(Number(pt.lat)) && Number.isFinite(Number(pt.lng)))
   .map((pt) => {
     const cal = calibrationMeta(pt);
+
     const variant =
-      cal.tone === "overdue" ? "overdue" :
-      cal.tone === "warn" ? "warn" :
-      "base";
+      cal.tone === "overdue"
+        ? "overdue"
+        : cal.tone === "warn"
+        ? "warn"
+        : "base";
 
     const iconKey = `${pt.status}__${variant}`;
+    const baseKey = `${pt.status}__base`;
 
     return (
       <Marker
         key={`pt-${pt.id}`}
         position={[Number(pt.lat), Number(pt.lng)]}
-        icon={pinIcons[iconKey] || pinIcons.__default}
+        icon={
+          pinIcons[iconKey] ||
+          pinIcons[baseKey] ||
+          pinIcons.__default
+        }
         bubblingMouseEvents={false}
         ref={(ref) => {
           if (ref) markerRefs.current[pt.id] = ref;
@@ -4399,6 +4408,7 @@ async function togglePointPriority(pt) {
           },
         }}
       >
+
         <Popup closeButton={false} className="tmPopup">
           <div
             style={{
