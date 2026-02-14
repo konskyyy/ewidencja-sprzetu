@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "./App.css";
 import { API_BASE, getToken, loginRequest, meRequest, setToken } from "./api";
+import { QRCodeCanvas } from "qrcode.react";
 
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -177,6 +178,12 @@ function StorageOverlay({
   );
 }
 
+function deviceDeepLink(deviceId) {
+  const base = window.location.origin + window.location.pathname; // bez query
+  const url = new URL(base);
+  url.searchParams.set("device", String(deviceId));
+  return url.toString();
+}
 
 // Natural Earth (GeoJSON) – granice państw
 const NE_COUNTRIES_URL =
@@ -1634,6 +1641,7 @@ async function handleSave() {
   in_storage: !!form.in_storage,
   warehouse: form.in_storage ? (form.warehouse || "GEO_BB") : null,
 
+  
   // ✅ kalibracja
   last_calibration_at: form.last_calibration_at ? form.last_calibration_at : null,
   calibration_interval_years: form.calibration_interval_years
