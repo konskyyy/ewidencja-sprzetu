@@ -3893,41 +3893,67 @@ async function togglePointPriority(pt) {
           {/* LISTA URZĄDZEŃ — nagłówek + legenda (bez zmiany fontu) */}
           <div style={{ marginBottom: 10 }}>
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 10,
-              }}
-            >
-              {/* zostawiamy dokładnie taki sam styl jak w innych nagłówkach sekcji */}
-              <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  }}
+>
+  <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 11,
-                  color: MUTED,
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                }}
-              >
-                <span
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    border: "1px solid rgba(255,216,77,0.55)",
-                    background: "rgba(255,216,77,0.10)",
-                    boxShadow: "0 0 10px rgba(255,216,77,0.12)",
-                    display: "inline-block",
-                  }}
-                />
-                Ważne
-              </div>
-            </div>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+    {/* 🔔 Overdue chip */}
+    {overdueCount > 0 ? (
+      <span
+        title="Po terminie kalibracji"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          height: 22,
+          padding: "0 10px",
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 900,
+          color: "#111827",
+          background: "rgba(239,68,68,0.95)",
+          border: "1px solid rgba(239,68,68,0.65)",
+          boxShadow: "0 0 14px rgba(239,68,68,0.18)",
+          lineHeight: 1,
+        }}
+      >
+        🔔 {overdueCount}
+      </span>
+    ) : null}
+
+    {/* istniejąca legenda "Ważne" */}
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        fontSize: 11,
+        color: MUTED,
+        whiteSpace: "nowrap",
+      }}
+    >
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          borderRadius: 999,
+          border: "1px solid rgba(255,216,77,0.55)",
+          background: "rgba(255,216,77,0.10)",
+          boxShadow: "0 0 10px rgba(255,216,77,0.12)",
+          display: "inline-block",
+        }}
+      />
+      Ważne
+    </div>
+  </div>
+</div>
+
 
             {/* legenda POD tytułem (prosta i kompaktowa) */}
             <div
