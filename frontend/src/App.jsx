@@ -3425,10 +3425,14 @@ async function createDeviceFromForm() {
   const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
 
   const lat = in_storage ? null : toNumCoord(createForm.lat);
-  const lng = in_storage ? null : toNumCoord(createForm.lng);
-if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-  setApiError("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
-  return;
+const lng = in_storage ? null : toNumCoord(createForm.lng);
+
+// ✅ waliduj współrzędne tylko jeśli NIE jest na magazynie
+if (!in_storage) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    setApiError("Podaj poprawne współrzędne (lat/lng).");
+    return;
+  }
 }
 
   // ✅ kalibracja
