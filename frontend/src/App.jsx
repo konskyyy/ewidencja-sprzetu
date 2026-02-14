@@ -1879,6 +1879,95 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
   </div>
 </div>
 
+{/* ✅ QR / szybkie otwieranie */}
+<div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
+
+<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+  QR Code (szybkie otwieranie)
+</div>
+
+<div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+  <div
+    id="qrWrap"
+    style={{
+      padding: 10,
+      borderRadius: 14,
+      border: `1px solid ${BORDER}`,
+      background: "rgba(255,255,255,0.06)",
+      width: "fit-content",
+    }}
+  >
+    <QRCodeCanvas value={deviceDeepLink(device.id)} size={110} />
+  </div>
+
+  <div style={{ minWidth: 220, display: "grid", gap: 8 }}>
+    <div style={{ fontSize: 11, color: MUTED }}>
+      Zeskanuj telefonem, żeby otworzyć właściwości urządzenia.
+    </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        const wrap = document.getElementById("qrWrap");
+        const canvas = wrap?.querySelector("canvas");
+        if (!canvas) return;
+        const url = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `device-${device.id}-qr.png`;
+        a.click();
+      }}
+      style={{
+        padding: "9px 10px",
+        borderRadius: 12,
+        border: `1px solid ${BORDER}`,
+        background: "rgba(255,255,255,0.08)",
+        color: TEXT_LIGHT,
+        cursor: "pointer",
+        fontWeight: 900,
+        fontSize: 12,
+        width: "fit-content",
+      }}
+    >
+      Pobierz PNG
+    </button>
+
+    <input
+      readOnly
+      value={deviceDeepLink(device.id)}
+      style={{
+        boxSizing: "border-box",
+        width: "100%",
+        height: 34,
+        borderRadius: 12,
+        border: `1px solid ${BORDER}`,
+        background: "rgba(255,255,255,0.06)",
+        color: TEXT_LIGHT,
+        padding: "0 10px",
+        fontSize: 11,
+        fontWeight: 700,
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={() => navigator.clipboard?.writeText(deviceDeepLink(device.id))}
+      style={{
+        padding: "9px 10px",
+        borderRadius: 12,
+        border: `1px solid ${BORDER}`,
+        background: "rgba(255,255,255,0.08)",
+        color: TEXT_LIGHT,
+        cursor: "pointer",
+        fontWeight: 900,
+        fontSize: 12,
+        width: "fit-content",
+      }}
+    >
+      Kopiuj link
+    </button>
+  </div>
+</div>
 
           {/* MAGAZYN */}
           <label style={{ ...labelStyleLocal, display: "flex", alignItems: "center", gap: 8 }}>
@@ -3241,6 +3330,33 @@ async function loadPoints() {
     setLoadingPoints(false);
   }
 }
+
+useEffect(() => {
+  if (mode !== "app") return;
+  if (!points || points.length === 0) return;
+
+  const sp = new URLSearchParams(window.location.search);
+  const idStr = sp.get("device");
+  if (!idStr) return;
+
+  const pt = points.find((p) => String(p.id) === String(idStr));
+  if (!pt) return;
+
+  // ustaw selekcję
+  setSelectedPointId(pt.id);
+
+  // jeśli magazyn → od razu otwórz właściwości
+  if (toBool(pt.in_storage)) {
+    setEditOpen(true);
+    return;
+  }
+
+  // jeśli w terenie → zbliż i otwórz popup
+  focusPoint(pt);
+
+  // opcjonalnie: otwórz też właściwości po chwili
+  // setTimeout(() => setEditOpen(true), 350);
+}, [mode, points]); 
 
 useEffect(() => {
   if (mode !== "app") return;
