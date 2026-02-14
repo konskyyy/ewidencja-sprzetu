@@ -2375,14 +2375,15 @@ export default function App() {
     const key = sort.key;
 
     arr.sort((a, b) => {
-  const { key, dir } = sort;
+  const key = sort.key;
+  const dirNum = sort.dir === "asc" ? 1 : -1;
 
-  // ===== ID (numerycznie)
+  // ID (numerycznie)
   if (key === "id") {
-    return (Number(a?.id) - Number(b?.id)) * dir;
+    return (Number(a?.id) - Number(b?.id)) * dirNum;
   }
 
-  // ===== KALIBRACJA (po dniach)
+  // KALIBRACJA (po dniach)
   if (key === "calibration") {
     const da = calibrationMeta(a)?.daysLeft;
     const db = calibrationMeta(b)?.daysLeft;
@@ -2395,10 +2396,10 @@ export default function App() {
     if (!aHas && bHas) return 1;
     if (!aHas && !bHas) return 0;
 
-    return (da - db) * dir;
+    return (da - db) * dirNum;
   }
 
-  // ===== TEKSTOWE (title / status / note)
+  // TEKSTOWE (title / status / note)
   const av =
     key === "title"
       ? String(a?.title || a?.name || "")
@@ -2413,7 +2414,7 @@ export default function App() {
       ? String(b?.status || "")
       : String(b?.note || b?.notes || "");
 
-  return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dir;
+  return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dirNum;
 });
 
     return arr;
