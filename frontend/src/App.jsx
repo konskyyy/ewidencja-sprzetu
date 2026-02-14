@@ -2305,7 +2305,7 @@ export default function App() {
   GLASS_BG,
   GLASS_SHADOW,
 }) {
-  const [sort, setSort] = useState({ key: "title", dir: "asc" }); // key: title|status|id|note
+  const [sort, setSort] = useState({ key: "title", dir: "asc" }); // key: title|status|id|note|calibration
   const [filters, setFilters] = useState({
     title: "",
     status: "all",
@@ -2376,6 +2376,24 @@ export default function App() {
 
     arr.sort((a, b) => {
       if (key === "id") return (Number(a?.id) - Number(b?.id)) * dir;
+
+      if (key === "calibration") {
+  const ad = calibrationMeta(a).daysLeft;
+  const bd = calibrationMeta(b).daysLeft;
+
+  const aHas = Number.isFinite(ad);
+  const bHas = Number.isFinite(bd);
+
+  // brak danych zawsze na końcu
+  if (!aHas && !bHas) return 0;
+  if (!aHas) return 1;
+  if (!bHas) return -1;
+
+  // normalne sortowanie po liczbie dni
+  if (ad < bd) return -1 * dir;
+  if (ad > bd) return 1 * dir;
+  return 0;
+}
 
       const av =
         key === "title"
@@ -2583,8 +2601,11 @@ export default function App() {
                 <th style={thStyle} onClick={() => toggleSort("note")}>
                   Opis <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("note")}</span>
                 </th>
-                <th style={{ ...thStyle, width: 170, cursor: "default" }}>
-                  Kalibracja
+                <th
+                  style={{ ...thStyle, width: 170 }}
+                  onClick={() => toggleSort("calibration")}
+                >
+                  Kalibracja <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("calibration")}</span>
                 </th>
                 <th style={{ ...thStyle, width: 210, cursor: "default" }}>
                   Akcje
