@@ -4265,30 +4265,6 @@ async function togglePointPriority(pt) {
 >
   <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
     <span>Rodzaje urządzeń</span>
-
-    {overdueCount > 0 ? (
-      <span
-        title="Urządzenia po terminie kalibracji"
-        style={{
-          minWidth: 26,
-          height: 20,
-          padding: "0 8px",
-          borderRadius: 999,
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 12,
-          fontWeight: 900,
-          color: "#111827",
-          background: "rgba(239,68,68,0.95)",
-          border: "1px solid rgba(239,68,68,0.65)",
-          boxShadow: "0 0 14px rgba(239,68,68,0.18)",
-          lineHeight: 1,
-        }}
-      >
-        {overdueCount}
-      </span>
-    ) : null}
   </div>
 
   <span style={{ fontSize: 12, color: MUTED, flexShrink: 0 }}>
