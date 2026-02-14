@@ -2583,6 +2583,9 @@ export default function App() {
                 <th style={thStyle} onClick={() => toggleSort("note")}>
                   Opis <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("note")}</span>
                 </th>
+                <th style={{ ...thStyle, width: 170, cursor: "default" }}>
+                  Kalibracja
+                </th>
                 <th style={{ ...thStyle, width: 210, cursor: "default" }}>
                   Akcje
                 </th>
@@ -2597,6 +2600,9 @@ export default function App() {
                     placeholder="np. 12"
                     style={inputStyle}
                   />
+                </th>
+                <th style={filterCellStyle}>
+                 <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>—</div>
                 </th>
 
                 <th style={filterCellStyle}>
@@ -2642,7 +2648,7 @@ export default function App() {
             <tbody>
               {filteredSorted.length === 0 ? (
                 <tr>
-                  <td style={{ ...tdStyle, color: MUTED }} colSpan={5}>
+                  <td style={{ ...tdStyle, color: MUTED }} colSpan={6}>
                     Brak wyników dla aktywnych filtrów.
                   </td>
                 </tr>
@@ -2650,6 +2656,8 @@ export default function App() {
                 filteredSorted.map((d) => {
                   const title = d.title || `Urządzenie #${d.id}`;
                   const note = d.note || "";
+                  const cal = calibrationMeta(d);
+                  const pill = calibrationPillStyle(cal.tone, BORDER);
                   const hasCoords =
                     Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
 
@@ -2703,6 +2711,34 @@ export default function App() {
                           <span style={{ color: MUTED }}>Brak</span>
                         )}
                       </td>
+                      <td style={tdStyle}>
+  <span
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      padding: "4px 8px",
+      borderRadius: 999,
+      fontWeight: 900,
+      fontSize: 11,
+      whiteSpace: "nowrap",
+      ...pill,
+    }}
+    title={
+      cal.tone === "overdue"
+        ? "Kalibracja po terminie"
+        : cal.tone === "warn"
+        ? "Kalibracja wkrótce"
+        : cal.tone === "ok"
+        ? "Kalibracja OK"
+        : "Brak danych kalibracji"
+    }
+  >
+    {cal.tone === "overdue" ? "🔴" : cal.tone === "warn" ? "🟠" : cal.tone === "ok" ? "🟢" : "—"}
+    {cal.label}
+  </span>
+</td>
+
 
                       <td style={tdStyle}>
                         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
