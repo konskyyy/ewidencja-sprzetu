@@ -3227,7 +3227,7 @@ async function createDeviceFromForm() {
   const lat = in_storage ? null : toNumCoord(createForm.lat);
   const lng = in_storage ? null : toNumCoord(createForm.lng);
 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-  setErr("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
+  setApiError("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
   return;
 }
 
