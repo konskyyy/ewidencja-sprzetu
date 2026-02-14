@@ -3251,8 +3251,8 @@ function jumpToProject(kind, entityId) {
 
   const pt = points.find((x) => String(x.id) === String(entityId));
   if (!pt) return;
-  setSelectedPointId(pt.id);
-  focusPoint(pt);
+  setSelectedPointId(x.id);
+setEditOpen(true);
 }
 
 /** ===== World mask ===== */
