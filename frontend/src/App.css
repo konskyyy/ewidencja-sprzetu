@@ -300,21 +300,21 @@ select option {
 .tmPinHost { position: relative; width: 34px; height: 34px; }
 
 .tmStatusBadge{
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
-  font-size: 12px;
-  line-height: 1;
-  color: #111827;
-  z-index: 5;
-  pointer-events: none;
-  transform-origin: center;
+  position:absolute;
+  top: -4px;        /* wyżej */
+  right: -4px;      /* bardziej w prawo */
+  width: 16px;      /* minimalnie mniejszy */
+  height: 16px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+  font-size:11px;
+  line-height:1;
+  color:#111827;
+  z-index:5;
+  pointer-events:none;
+  transform-origin:center;
 }
 
 /* OVERDUE (czerwony) — pulsowanie */
