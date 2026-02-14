@@ -296,3 +296,35 @@ select option {
   60%  { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(239,68,68,0.00); }
   100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(239,68,68,0.00); }
 }
+/* ===== Badge na pinezce: wspólne ===== */
+.tmPinHost { position: relative; width: 34px; height: 34px; }
+
+.tmStatusBadge{
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 12px;
+  line-height: 1;
+  color: #111827;
+  z-index: 5;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+/* OVERDUE (czerwony) — pulsowanie */
+.tmStatusBadge[style*="rgba(239,68,68,0.95)"]{
+  animation: tmPulseOverdue 1.15s ease-in-out infinite;
+}
+
+@keyframes tmPulseOverdue {
+  0%   { transform: scale(1);    box-shadow: 0 0 0 0 rgba(239,68,68,0.35); }
+  60%  { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(239,68,68,0.00); }
+  100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(239,68,68,0.00); }
+}
+
