@@ -4514,7 +4514,7 @@ async function togglePointPriority(pt) {
                         cursor: "pointer",
                       }}
                     >
-                      Rozwiń
+                      Właściwości
                     </button>
                   </div>
                 </div>
