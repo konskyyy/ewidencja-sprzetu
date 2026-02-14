@@ -2944,6 +2944,18 @@ function byPriorityThenIdDesc(a, b) {
     .slice()
     .sort(byPriorityThenIdDesc);
 }, [points, visibleTypes]);
+
+const overdueCount = useMemo(() => {
+  // liczymy tylko te, które są na mapie (nie magazyn) i faktycznie overdue
+  const arr = (Array.isArray(points) ? points : []).filter((p) => !toBool(p?.in_storage));
+  let n = 0;
+  for (const p of arr) {
+    const cal = calibrationMeta(p);
+    if (cal.tone === "overdue") n++;
+  }
+  return n;
+}, [points]);
+
 const filteredDevicesSearch = useMemo(() => {
   const q = String(projectQuery || "").trim().toLowerCase();
 
@@ -4214,21 +4226,49 @@ async function togglePointPriority(pt) {
       }}
     >
       <div
-        onClick={() => setFiltersOpen((o) => !o)}
+  onClick={() => setFiltersOpen((o) => !o)}
+  style={{
+    padding: "10px 12px",
+    cursor: "pointer",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    fontWeight: 900,
+    gap: 10,
+  }}
+>
+  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+    <span>Rodzaje urządzeń</span>
+
+    {overdueCount > 0 ? (
+      <span
+        title="Urządzenia po terminie kalibracji"
         style={{
-          padding: "10px 12px",
-          cursor: "pointer",
-          display: "flex",
-          justifyContent: "space-between",
+          minWidth: 26,
+          height: 20,
+          padding: "0 8px",
+          borderRadius: 999,
+          display: "inline-flex",
           alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
           fontWeight: 900,
+          color: "#111827",
+          background: "rgba(239,68,68,0.95)",
+          border: "1px solid rgba(239,68,68,0.65)",
+          boxShadow: "0 0 14px rgba(239,68,68,0.18)",
+          lineHeight: 1,
         }}
       >
-        <span>Rodzaje urządzeń</span>
-        <span style={{ fontSize: 12, color: MUTED }}>
-          {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
-        </span>
-      </div>
+        {overdueCount}
+      </span>
+    ) : null}
+  </div>
+
+  <span style={{ fontSize: 12, color: MUTED, flexShrink: 0 }}>
+    {filteredPoints.length}/{points.length} {filtersOpen ? "▾" : "▸"}
+  </span>
+</div>
 
       {filtersOpen ? (
         <div style={{ padding: "8px 12px 12px", display: "grid", gap: 10 }}>
