@@ -243,3 +243,13 @@ body {
   padding-top: 0;
   margin-top: 0;
 }
+select {
+  background-color: #1f2937;
+  color: #ffffff;
+  border: 1px solid #4b5563;
+}
+
+select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
