@@ -2612,75 +2612,66 @@ export default function App() {
                 </th>
               </tr>
 
-              {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
-              <tr>
+             {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
+<tr>
   {/* ID */}
   <th style={filterCellStyle}>
     <input
-      value={idQuery}
-      onChange={(e) => setIdQuery(e.target.value)}
+      value={filters.id}
+      onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
       placeholder="np. 12"
-      style={filterInputStyle}
+      style={inputStyle}
     />
   </th>
 
   {/* Nazwa */}
   <th style={filterCellStyle}>
     <input
-      value={nameQuery}
-      onChange={(e) => setNameQuery(e.target.value)}
+      value={filters.title}
+      onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
       placeholder="Szukaj nazwy..."
-      style={filterInputStyle}
+      style={inputStyle}
     />
   </th>
 
   {/* Rodzaj */}
   <th style={filterCellStyle}>
     <select
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value)}
-      style={{ ...filterInputStyle, paddingRight: 26 }}
+      value={filters.status}
+      onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+      style={selectStyle}
     >
-      <option value="">Wszystkie</option>
-      {Array.from(new Set(devices.map((d) => String(d?.status || ""))))
-        .filter(Boolean)
-        .sort((a, b) =>
-          statusLabel(a).localeCompare(statusLabel(b), "pl", {
-            sensitivity: "base",
-          })
-        )
-        .map((s) => (
-          <option key={s} value={s}>
-            {statusLabel(s)}
-          </option>
-        ))}
+      {statusOptions.map((s) => (
+        <option key={s} value={s}>
+          {s === "all" ? "Wszystkie" : statusLabel(s)}
+        </option>
+      ))}
     </select>
   </th>
 
   {/* Opis */}
   <th style={filterCellStyle}>
     <input
-      value={noteQuery}
-      onChange={(e) => setNoteQuery(e.target.value)}
+      value={filters.note}
+      onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
       placeholder="Szukaj w opisie..."
-      style={filterInputStyle}
+      style={inputStyle}
     />
   </th>
 
-  {/* Kalibracja – brak filtra */}
+  {/* Kalibracja – brak filtra (pusto) */}
   <th style={filterCellStyle}>
-    <div style={{ fontSize: 11, color: MUTED }}>—</div>
+    {/* celowo puste */}
   </th>
 
   {/* Akcje */}
   <th style={filterCellStyle}>
-    <div style={{ fontSize: 11, color: MUTED }}>
+    <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
       Kliknij nagłówek, aby sortować.
     </div>
   </th>
 </tr>
 
-            </thead>
 
             <tbody>
               {filteredSorted.length === 0 ? (
