@@ -4368,7 +4368,7 @@ async function togglePointPriority(pt) {
 
           {/* URZĄDZENIA */}
 {filteredPoints
-  .filter((pt) => !toBool(pt.in_storage))
+  .filter((pt) => !toBool(pt.in_storage)) // tylko te na mapie
   .map((pt) => {
     const cal = calibrationMeta(pt);
     const variant =
@@ -4399,160 +4399,170 @@ async function togglePointPriority(pt) {
           },
         }}
       >
-        {/* TU ZOSTAJE TWÓJ POPUP - bez zmian */}
         <Popup closeButton={false} className="tmPopup">
-          {/* ... */}
+          <div
+            style={{
+              minWidth: 260,
+              borderRadius: 16,
+              border: `1px solid ${BORDER}`,
+              background: GLASS_BG,
+              backgroundImage:
+                "radial-gradient(520px 320px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+              color: TEXT_LIGHT,
+              boxShadow: GLASS_SHADOW,
+              padding: 12,
+              position: "relative",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <button
+              onClick={() => mapRef.current?.closePopup?.()}
+              title="Zamknij"
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                width: 26,
+                height: 26,
+                borderRadius: 8,
+                border: `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.06)",
+                color: "rgba(255,255,255,0.85)",
+                cursor: "pointer",
+                display: "grid",
+                placeItems: "center",
+                padding: 0,
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M6 6l12 12M18 6l-12 12"
+                  stroke="currentColor"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+
+            <div style={{ display: "flex", gap: 12 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 900, marginBottom: 4, lineHeight: 1.15 }}>
+                  {pt.title || `Urządzenie #${pt.id}`}
+                </div>
+                <div style={{ fontSize: 12, color: MUTED }}>
+                  Status:{" "}
+                  <b style={{ color: "rgba(255,255,255,0.92)" }}>
+                    {statusLabel(pt.status)}
+                  </b>
+                </div>
+              </div>
+
+              <div style={{ marginRight: 34, flexShrink: 0 }}>
+                <ChanceRing
+                  value={deviceChance({
+                    acquired: isAcquired("points", pt.id),
+                    journalCount: journalCounts.points?.[pt.id] || 0,
+                  })}
+                />
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
+
+            {pt.winner && (
+              <div style={{ fontSize: 12 }}>
+                <b>Firma:</b> {pt.winner}
+              </div>
+            )}
+
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 6 }}>
+              {pt.note || <span style={{ opacity: 0.65 }}>Brak notatki</span>}
+            </div>
+
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
+              Wpisy w dzienniku: {journalCounts.points?.[pt.id] || 0}
+            </div>
+
+            {(() => {
+              const cal2 = calibrationMeta(pt);
+              const pill = calibrationPillStyle(cal2.tone, BORDER);
+
+              return (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: MUTED,
+                    marginTop: 6,
+                    display: "flex",
+                    gap: 8,
+                    alignItems: "center",
+                  }}
+                >
+                  <span>Kalibracja:</span>
+
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      fontWeight: 900,
+                      fontSize: 11,
+                      ...pill,
+                    }}
+                    title={
+                      cal2.tone === "overdue"
+                        ? "Kalibracja po terminie"
+                        : cal2.tone === "warn"
+                        ? "Kalibracja wkrótce"
+                        : cal2.tone === "ok"
+                        ? "Kalibracja OK"
+                        : "Brak danych kalibracji"
+                    }
+                  >
+                    {cal2.tone === "overdue"
+                      ? "🔴"
+                      : cal2.tone === "warn"
+                      ? "🟠"
+                      : cal2.tone === "ok"
+                      ? "🟢"
+                      : "—"}
+                    {cal2.label}
+                  </span>
+                </div>
+              );
+            })()}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
+              <button
+                onClick={() => setEditOpen(true)}
+                style={{
+                  padding: "6px 10px",
+                  borderRadius: 10,
+                  border: `1px solid ${BORDER}`,
+                  background: "rgba(255,255,255,0.06)",
+                  color: TEXT_LIGHT,
+                  fontWeight: 800,
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                Właściwości
+              </button>
+            </div>
+          </div>
         </Popup>
       </Marker>
     );
   })}
-              <Popup closeButton={false} className="tmPopup">
-                <div
-                  style={{
-                    minWidth: 260,
-                    borderRadius: 16,
-                    border: `1px solid ${BORDER}`,
-                    background: GLASS_BG,
-                    backgroundImage:
-                      "radial-gradient(520px 320px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
-                    color: TEXT_LIGHT,
-                    boxShadow: GLASS_SHADOW,
-                    padding: 12,
-                    position: "relative",
-                    backdropFilter: "blur(8px)",
-                  }}
-                >
-                  <button
-                    onClick={() => mapRef.current?.closePopup?.()}
-                    title="Zamknij"
-                    style={{
-                      position: "absolute",
-                      top: 8,
-                      right: 8,
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.06)",
-                      color: "rgba(255,255,255,0.85)",
-                      cursor: "pointer",
-                      display: "grid",
-                      placeItems: "center",
-                      padding: 0,
-                    }}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M6 6l12 12M18 6l-12 12"
-                        stroke="currentColor"
-                        strokeWidth="2.4"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
 
-                  <div style={{ display: "flex", gap: 12 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 900, marginBottom: 4, lineHeight: 1.15 }}>
-                        {pt.title || `Urządzenie #${pt.id}`}
-                      </div>
-                      <div style={{ fontSize: 12, color: MUTED }}>
-                        Status:{" "}
-                        <b style={{ color: "rgba(255,255,255,0.92)" }}>
-                          {statusLabel(pt.status)}
-                        </b>
-                      </div>
-                    </div>
-
-                    <div style={{ marginRight: 34, flexShrink: 0 }}>
-                      <ChanceRing
-                        value={deviceChance({
-                          acquired: isAcquired("points", pt.id),
-                          journalCount: journalCounts.points?.[pt.id] || 0,
-                        })}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ height: 1, background: BORDER, margin: "10px 0" }} />
-
-                  {pt.winner && (
-                    <div style={{ fontSize: 12 }}>
-                      <b>Firma:</b> {pt.winner}
-                    </div>
-                  )}
-
-                  <div style={{ fontSize: 12, opacity: 0.9, marginTop: 6 }}>
-                    {pt.note || <span style={{ opacity: 0.65 }}>Brak notatki</span>}
-                  </div>
-
-                  <div style={{ fontSize: 11, color: MUTED, marginTop: 8 }}>
-                    Wpisy w dzienniku: {journalCounts.points?.[pt.id] || 0}
-                  </div>
-                  {(() => {
-  const cal = calibrationMeta(pt);
-  const pill = calibrationPillStyle(cal.tone, BORDER);
-
-  return (
-    <div style={{ fontSize: 11, color: MUTED, marginTop: 6, display: "flex", gap: 8, alignItems: "center" }}>
-      <span>Kalibracja:</span>
-
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "3px 8px",
-          borderRadius: 999,
-          fontWeight: 900,
-          fontSize: 11,
-          ...pill,
-        }}
-        title={
-          cal.tone === "overdue"
-            ? "Kalibracja po terminie"
-            : cal.tone === "warn"
-            ? "Kalibracja wkrótce"
-            : cal.tone === "ok"
-            ? "Kalibracja OK"
-            : "Brak danych kalibracji"
-        }
-      >
-        {cal.tone === "overdue" ? "🔴" : cal.tone === "warn" ? "🟠" : cal.tone === "ok" ? "🟢" : "—"}
-        {cal.label}
-      </span>
-    </div>
-  );
-})()}
-
-
-                  <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
-                    <button
-                      onClick={() => setEditOpen(true)}
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: 10,
-                        border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.06)",
-                        color: TEXT_LIGHT,
-                        fontWeight: 800,
-                        fontSize: 11,
-                        cursor: "pointer",
-                      }}
-                    >
-                      Właściwości
-                    </button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
         </MapContainer>
 
         <EditDeviceModal
