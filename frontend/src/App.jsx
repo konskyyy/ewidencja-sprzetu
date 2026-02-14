@@ -2224,6 +2224,7 @@ function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
 }
 export default function App() {
   const [projectQuery, setProjectQuery] = useState("");
+  const [onlyOverdue, setOnlyOverdue] = useState(false);
 
   /** ===== global refresh trigger for updates feed ===== */
   const [updatesTick, setUpdatesTick] = useState(0);
