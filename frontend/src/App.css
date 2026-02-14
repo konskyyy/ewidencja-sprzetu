@@ -306,3 +306,13 @@ select option {
   50%  { transform: scale(1.25); opacity: 0.85; }
   100% { transform: scale(1);   opacity: 1; }
 }
+.tmPinWrap {
+  background: transparent !important;
+  border: none !important;
+}
+
+.tmPinHost {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
