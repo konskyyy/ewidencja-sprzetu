@@ -2328,7 +2328,14 @@ export default function App() {
   function bumpUpdates() {
     setUpdatesTick((x) => x + 1);
   }
-  
+  const [deviceRouteId, setDeviceRouteId] = useState(null);
+
+useEffect(() => {
+  const match = window.location.pathname.match(/^\/device\/(\d+)/);
+  if (match) {
+    setDeviceRouteId(Number(match[1]));
+  }
+}, []);
 
   /** ===== JOURNAL COUNTS + ACQUIRED (localStorage) ===== */
   const [journalCounts, setJournalCounts] = useState(() => {
