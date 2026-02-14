@@ -2959,7 +2959,12 @@ const overdueCount = useMemo(() => {
 const filteredDevicesSearch = useMemo(() => {
   const q = String(projectQuery || "").trim().toLowerCase();
 
-  const base = Array.isArray(filteredPoints) ? filteredPoints : [];
+  let base = Array.isArray(filteredPoints) ? filteredPoints : [];
+
+  // ✅ filtr: tylko overdue
+  if (onlyOverdue) {
+    base = base.filter((p) => calibrationMeta(p).tone === "overdue");
+  }
 
   if (!q) return base;
 
@@ -2968,7 +2973,8 @@ const filteredDevicesSearch = useMemo(() => {
     const note = String(p?.note || p?.notes || "").toLowerCase();
     return title.includes(q) || note.includes(q);
   });
-}, [filteredPoints, projectQuery]);
+}, [filteredPoints, projectQuery, onlyOverdue]);
+
 
 const storageDevices = useMemo(() => {
   return (Array.isArray(points) ? points : []).filter((p) => toBool(p?.in_storage));
@@ -3905,27 +3911,41 @@ async function togglePointPriority(pt) {
   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
     {/* 🔔 Overdue chip */}
     {overdueCount > 0 ? (
-      <span
-        title="Po terminie kalibracji"
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 6,
-          height: 22,
-          padding: "0 10px",
-          borderRadius: 999,
-          fontSize: 12,
-          fontWeight: 900,
-          color: "#111827",
-          background: "rgba(239,68,68,0.95)",
-          border: "1px solid rgba(239,68,68,0.65)",
-          boxShadow: "0 0 14px rgba(239,68,68,0.18)",
-          lineHeight: 1,
-        }}
-      >
-        🔔 {overdueCount}
-      </span>
-    ) : null}
+  <button
+    type="button"
+    onClick={() => setOnlyOverdue((v) => !v)}
+    title={onlyOverdue ? "Pokaż wszystkie" : "Pokaż tylko po terminie kalibracji"}
+    style={{
+      all: "unset",
+      cursor: "pointer",
+      display: "inline-flex",
+      alignItems: "center",
+    }}
+  >
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minWidth: 22,
+        height: 22,
+        padding: "0 8px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 900,
+        color: "#111827",
+        background: "rgba(239,68,68,0.95)",
+        border: onlyOverdue
+          ? "2px solid rgba(255,255,255,0.75)"
+          : "1px solid rgba(239,68,68,0.65)",
+        boxShadow: onlyOverdue ? "0 0 0 3px rgba(239,68,68,0.18)" : "none",
+        userSelect: "none",
+      }}
+    >
+      🔔 {overdueCount}
+    </span>
+  </button>
+) : null}
 
     {/* istniejąca legenda "Ważne" */}
     <div
