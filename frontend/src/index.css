@@ -70,3 +70,27 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+.tmPinHost{
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
+.tmStatusBadge{
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  color: rgba(255,255,255,0.95);
+  border: 1px solid rgba(255,255,255,0.70);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+  pointer-events: none;
+}
+

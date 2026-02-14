@@ -216,25 +216,19 @@ function pinSvg(color) {
   </svg>`;
 }
 
-function makePinIcon(color, urgencyTone = null) {
-  const show = urgencyTone === "warn" || urgencyTone === "overdue";
-  const badgeClass =
-    urgencyTone === "overdue" ? "tmCalBadge tmCalBadge--overdue" :
-    urgencyTone === "warn" ? "tmCalBadge tmCalBadge--warn" :
-    "";
-
+function makePinIcon(color) {
   return L.divIcon({
-  className: "leaflet-div-icon tmPinWrap",
-  html: `
-    <div class="tmPinHost">
-      ${pinSvg(color)}
-      ${show ? `<div class="${badgeClass}">!</div>` : ""}
-    </div>
-  `,
-  iconSize: [34, 34],
-  iconAnchor: [17, 32],
-  popupAnchor: [0, -28],
-});
+    className: "leaflet-div-icon tmPinWrap",
+    html: `
+      <div class="tmPinHost">
+        ${pinSvg(color)}
+        <div class="tmStatusBadge" style="background:${color}">!</div>
+      </div>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 32],
+    popupAnchor: [0, -28],
+  });
 }
 
 function extractOuterRings(geometry) {
@@ -2822,11 +2816,9 @@ const pinIcons = useMemo(() => {
   const icons = {};
   for (const t of DEVICE_TYPES) {
     const baseColor = typeColor(t.value);
-    icons[`${t.value}__base`] = makePinIcon(baseColor, null);
-    icons[`${t.value}__warn`] = makePinIcon(baseColor, "warn");
-    icons[`${t.value}__overdue`] = makePinIcon(baseColor, "overdue");
+    icons[t.value] = makePinIcon(baseColor);
   }
-  icons.__default = makePinIcon("#9ca3af", null);
+  icons.__default = makePinIcon("#9ca3af");
   return icons;
 }, []);
 
@@ -4410,11 +4402,7 @@ async function togglePointPriority(pt) {
       <Marker
         key={`pt-${pt.id}`}
         position={[lat, lng]}
-        icon={
-          pinIcons[iconKey] ||
-          pinIcons[baseKey] ||
-          pinIcons.__default
-        }
+        icon={pinIcons[pt.status] || pinIcons.__default}
         bubblingMouseEvents={false}
         ref={(ref) => {
           if (ref) markerRefs.current[pt.id] = ref;
