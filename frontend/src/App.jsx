@@ -2614,56 +2614,72 @@ export default function App() {
 
               {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
               <tr>
-                <th style={filterCellStyle}>
-                  <input
-                    value={filters.id}
-                    onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
-                    placeholder="np. 12"
-                    style={inputStyle}
-                  />
-                </th>
-                <th style={filterCellStyle}>
-                 <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>—</div>
-                </th>
+  {/* ID */}
+  <th style={filterCellStyle}>
+    <input
+      value={idQuery}
+      onChange={(e) => setIdQuery(e.target.value)}
+      placeholder="np. 12"
+      style={filterInputStyle}
+    />
+  </th>
 
-                <th style={filterCellStyle}>
-                  <input
-                    value={filters.title}
-                    onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
-                    placeholder="Szukaj nazwy…"
-                    style={inputStyle}
-                  />
-                </th>
+  {/* Nazwa */}
+  <th style={filterCellStyle}>
+    <input
+      value={nameQuery}
+      onChange={(e) => setNameQuery(e.target.value)}
+      placeholder="Szukaj nazwy..."
+      style={filterInputStyle}
+    />
+  </th>
 
-                <th style={filterCellStyle}>
-                  <select
-                    value={filters.status}
-                    onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                    style={selectStyle}
-                  >
-                    {statusOptions.map((s) => (
-                      <option key={s} value={s}>
-                        {s === "all" ? "Wszystkie" : statusLabel(s)}
-                      </option>
-                    ))}
-                  </select>
-                </th>
+  {/* Rodzaj */}
+  <th style={filterCellStyle}>
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+      style={{ ...filterInputStyle, paddingRight: 26 }}
+    >
+      <option value="">Wszystkie</option>
+      {Array.from(new Set(devices.map((d) => String(d?.status || ""))))
+        .filter(Boolean)
+        .sort((a, b) =>
+          statusLabel(a).localeCompare(statusLabel(b), "pl", {
+            sensitivity: "base",
+          })
+        )
+        .map((s) => (
+          <option key={s} value={s}>
+            {statusLabel(s)}
+          </option>
+        ))}
+    </select>
+  </th>
 
-                <th style={filterCellStyle}>
-                  <input
-                    value={filters.note}
-                    onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
-                    placeholder="Szukaj w opisie…"
-                    style={inputStyle}
-                  />
-                </th>
+  {/* Opis */}
+  <th style={filterCellStyle}>
+    <input
+      value={noteQuery}
+      onChange={(e) => setNoteQuery(e.target.value)}
+      placeholder="Szukaj w opisie..."
+      style={filterInputStyle}
+    />
+  </th>
 
-                <th style={filterCellStyle}>
-                  <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
-                    Kliknij nagłówek, aby sortować.
-                  </div>
-                </th>
-              </tr>
+  {/* Kalibracja – brak filtra */}
+  <th style={filterCellStyle}>
+    <div style={{ fontSize: 11, color: MUTED }}>—</div>
+  </th>
+
+  {/* Akcje */}
+  <th style={filterCellStyle}>
+    <div style={{ fontSize: 11, color: MUTED }}>
+      Kliknij nagłówek, aby sortować.
+    </div>
+  </th>
+</tr>
+
             </thead>
 
             <tbody>
