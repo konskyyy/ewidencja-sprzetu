@@ -2417,6 +2417,7 @@ export default function App() {
   return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dirNum;
 });
 
+
     return arr;
   }, [list, filters, sort]);
 
@@ -2591,220 +2592,225 @@ export default function App() {
         </div>
 
         {/* TABLE */}
-        <div style={tableWrapStyle}>
-          <table style={tableStyle}>
-            <thead>
-              <tr>
-                <th style={{ ...thStyle, width: 90 }} onClick={() => toggleSort("id")}>
-                  ID <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("id")}</span>
-                </th>
-                <th style={thStyle} onClick={() => toggleSort("title")}>
-                  Nazwa <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("title")}</span>
-                </th>
-                <th style={{ ...thStyle, width: 160 }} onClick={() => toggleSort("status")}>
-                  Rodzaj <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("status")}</span>
-                </th>
-                <th style={thStyle} onClick={() => toggleSort("note")}>
-                  Opis <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("note")}</span>
-                </th>
-                <th
-                  style={{ ...thStyle, width: 170 }}
-                  onClick={() => toggleSort("calibration")}
-                >
-                  Kalibracja <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("calibration")}</span>
-                </th>
-                <th style={{ ...thStyle, width: 210, cursor: "default" }}>
-                  Akcje
-                </th>
-              </tr>
+<div style={tableWrapStyle}>
+  <table style={tableStyle}>
+    <thead>
+      <tr>
+        <th style={{ ...thStyle, width: 90 }} onClick={() => toggleSort("id")}>
+          ID <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("id")}</span>
+        </th>
+        <th style={thStyle} onClick={() => toggleSort("title")}>
+          Nazwa <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("title")}</span>
+        </th>
+        <th style={{ ...thStyle, width: 160 }} onClick={() => toggleSort("status")}>
+          Rodzaj <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("status")}</span>
+        </th>
+        <th style={thStyle} onClick={() => toggleSort("note")}>
+          Opis <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("note")}</span>
+        </th>
+        <th style={{ ...thStyle, width: 170 }} onClick={() => toggleSort("calibration")}>
+          Kalibracja{" "}
+          <span style={{ color: MUTED, marginLeft: 6 }}>{sortIcon("calibration")}</span>
+        </th>
+        <th style={{ ...thStyle, width: 210, cursor: "default" }}>Akcje</th>
+      </tr>
 
-             {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
-            <tr>
-              {/* ID */}
-              <th style={filterCellStyle}>
-                <input
-                  value={filters.id}
-                  onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
-                  placeholder="np. 12"
-                  style={inputStyle}
-                />
-              </th>
+      {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
+      <tr>
+        {/* ID */}
+        <th style={filterCellStyle}>
+          <input
+            value={filters.id}
+            onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
+            placeholder="np. 12"
+            style={inputStyle}
+          />
+        </th>
 
-              {/* Nazwa */}
-              <th style={filterCellStyle}>
-                <input
-                  value={filters.title}
-                  onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="Szukaj nazwy..."
-                  style={inputStyle}
-                />
-              </th>
+        {/* Nazwa */}
+        <th style={filterCellStyle}>
+          <input
+            value={filters.title}
+            onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
+            placeholder="Szukaj nazwy..."
+            style={inputStyle}
+          />
+        </th>
 
-              {/* Rodzaj */}
-              <th style={filterCellStyle}>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                  style={selectStyle}
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s === "all" ? "Wszystkie" : statusLabel(s)}
-                    </option>
-                  ))}
-                </select>
-              </th>
+        {/* Rodzaj */}
+        <th style={filterCellStyle}>
+          <select
+            value={filters.status}
+            onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+            style={selectStyle}
+          >
+            {statusOptions.map((s) => (
+              <option key={s} value={s}>
+                {s === "all" ? "Wszystkie" : statusLabel(s)}
+              </option>
+            ))}
+          </select>
+        </th>
 
-              {/* Opis */}
-              <th style={filterCellStyle}>
-                <input
-                  value={filters.note}
-                  onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
-                  placeholder="Szukaj w opisie..."
-                  style={inputStyle}
-                />
-              </th>
+        {/* Opis */}
+        <th style={filterCellStyle}>
+          <input
+            value={filters.note}
+            onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
+            placeholder="Szukaj w opisie..."
+            style={inputStyle}
+          />
+        </th>
 
-              {/* Kalibracja – brak filtra (pusto) */}
-              <th style={filterCellStyle}>
-                {/* celowo puste */}
-              </th>
+        {/* Kalibracja – brak filtra (pusto) */}
+        <th style={filterCellStyle}>{/* celowo puste */}</th>
 
-              {/* Akcje */}
-              <th style={filterCellStyle}>
-                <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
-                  Kliknij nagłówek, aby sortować.
+        {/* Akcje */}
+        <th style={filterCellStyle}>
+          <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
+            Kliknij nagłówek, aby sortować.
+          </div>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {filteredSorted.length === 0 ? (
+        <tr>
+          <td style={{ ...tdStyle, color: MUTED }} colSpan={6}>
+            Brak wyników dla aktywnych filtrów.
+          </td>
+        </tr>
+      ) : (
+        filteredSorted.map((d) => {
+          const title = d.title || `Urządzenie #${d.id}`;
+          const note = d.note || "";
+          const cal = calibrationMeta(d);
+          const pill = calibrationPillStyle(cal.tone, BORDER);
+          const hasCoords =
+            Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
+
+          return (
+            <tr key={`wh-row-${warehouseKey}-${d.id}`}>
+              <td style={tdStyle}>
+                <b style={{ color: "rgba(255,255,255,0.92)" }}>{d.id}</b>
+              </td>
+
+              <td style={tdStyle}>
+                <div style={{ fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+                <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
+                  📦 {warehouseKey}
                 </div>
-              </th>
+              </td>
+
+              <td style={tdStyle}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    border: `1px solid ${BORDER}`,
+                    background: "rgba(255,255,255,0.06)",
+                    fontWeight: 900,
+                    fontSize: 11,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 999,
+                      background: typeColor(d.status),
+                      display: "inline-block",
+                    }}
+                  />
+                  {statusLabel(d.status)}
+                </span>
+              </td>
+
+              <td style={tdStyle}>
+                {note ? (
+                  <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.35 }}>{note}</div>
+                ) : (
+                  <span style={{ color: MUTED }}>Brak</span>
+                )}
+              </td>
+
+              <td style={tdStyle}>
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    padding: "4px 8px",
+                    borderRadius: 999,
+                    fontWeight: 900,
+                    fontSize: 11,
+                    whiteSpace: "nowrap",
+                    ...pill,
+                  }}
+                  title={
+                    cal.tone === "overdue"
+                      ? "Kalibracja po terminie"
+                      : cal.tone === "warn"
+                      ? "Kalibracja wkrótce"
+                      : cal.tone === "ok"
+                      ? "Kalibracja OK"
+                      : "Brak danych kalibracji"
+                  }
+                >
+                  {cal.tone === "overdue"
+                    ? "🔴"
+                    : cal.tone === "warn"
+                    ? "🟠"
+                    : cal.tone === "ok"
+                    ? "🟢"
+                    : "—"}
+                  {cal.label}
+                </span>
+              </td>
+
+              <td style={tdStyle}>
+                <div
+                  style={{
+                    display: "flex",
+                    gap: 8,
+                    justifyContent: "flex-end",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <button
+                    onClick={() => onSelectDevice?.(d)}
+                    style={actionBtn}
+                    title="Edytuj urządzenie"
+                  >
+                    Edytuj
+                  </button>
+
+                  <button
+                    onClick={() => onShowOnMap?.(d)}
+                    style={{
+                      ...actionBtn,
+                      opacity: hasCoords ? 1 : 0.45,
+                      cursor: hasCoords ? "pointer" : "default",
+                    }}
+                    disabled={!hasCoords}
+                    title={hasCoords ? "Pokaż na mapie" : "Brak współrzędnych"}
+                  >
+                    Pokaż
+                  </button>
+                </div>
+              </td>
             </tr>
-
-
-            <tbody>
-              {filteredSorted.length === 0 ? (
-                <tr>
-                  <td style={{ ...tdStyle, color: MUTED }} colSpan={6}>
-                    Brak wyników dla aktywnych filtrów.
-                  </td>
-                </tr>
-              ) : (
-                filteredSorted.map((d) => {
-                  const title = d.title || `Urządzenie #${d.id}`;
-                  const note = d.note || "";
-                  const cal = calibrationMeta(d);
-                  const pill = calibrationPillStyle(cal.tone, BORDER);
-                  const hasCoords =
-                    Number.isFinite(Number(d.lat)) && Number.isFinite(Number(d.lng));
-
-                  return (
-                    <tr key={`wh-row-${warehouseKey}-${d.id}`}>
-                      <td style={tdStyle}>
-                        <b style={{ color: "rgba(255,255,255,0.92)" }}>{d.id}</b>
-                      </td>
-
-                      <td style={tdStyle}>
-                        <div style={{ fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
-                        <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
-                          📦 {warehouseKey}
-                        </div>
-                      </td>
-
-                      <td style={tdStyle}>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 8,
-                            padding: "4px 8px",
-                            borderRadius: 999,
-                            border: `1px solid ${BORDER}`,
-                            background: "rgba(255,255,255,0.06)",
-                            fontWeight: 900,
-                            fontSize: 11,
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 10,
-                              height: 10,
-                              borderRadius: 999,
-                              background: typeColor(d.status),
-                              display: "inline-block",
-                            }}
-                          />
-                          {statusLabel(d.status)}
-                        </span>
-                      </td>
-
-                      <td style={tdStyle}>
-                        {note ? (
-                          <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.35 }}>
-                            {note}
-                          </div>
-                        ) : (
-                          <span style={{ color: MUTED }}>Brak</span>
-                        )}
-                      </td>
-                      <td style={tdStyle}>
-  <span
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 6,
-      padding: "4px 8px",
-      borderRadius: 999,
-      fontWeight: 900,
-      fontSize: 11,
-      whiteSpace: "nowrap",
-      ...pill,
-    }}
-    title={
-      cal.tone === "overdue"
-        ? "Kalibracja po terminie"
-        : cal.tone === "warn"
-        ? "Kalibracja wkrótce"
-        : cal.tone === "ok"
-        ? "Kalibracja OK"
-        : "Brak danych kalibracji"
-    }
-  >
-    {cal.tone === "overdue" ? "🔴" : cal.tone === "warn" ? "🟠" : cal.tone === "ok" ? "🟢" : "—"}
-    {cal.label}
-  </span>
-</td>
-
-
-                      <td style={tdStyle}>
-                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                          <button
-                            onClick={() => onSelectDevice?.(d)}
-                            style={actionBtn}
-                            title="Edytuj urządzenie"
-                          >
-                            Edytuj
-                          </button>
-
-                          <button
-                            onClick={() => onShowOnMap?.(d)}
-                            style={{
-                              ...actionBtn,
-                              opacity: hasCoords ? 1 : 0.45,
-                              cursor: hasCoords ? "pointer" : "default",
-                            }}
-                            disabled={!hasCoords}
-                            title={hasCoords ? "Pokaż na mapie" : "Brak współrzędnych"}
-                          >
-                            Pokaż
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+          );
+        })
+      )}
+    </tbody>
+  </table>
+</div>
       </div>
     </div>
   );
