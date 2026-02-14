@@ -4840,20 +4840,34 @@ const baseKey = `${pt.status}__base`;
 
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10 }}>
               <button
-                onClick={() => setEditOpen(true)}
-                style={{
-                  padding: "6px 10px",
-                  borderRadius: 10,
-                  border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.06)",
-                  color: TEXT_LIGHT,
-                  fontWeight: 800,
-                  fontSize: 11,
-                  cursor: "pointer",
-                }}
-              >
-                Właściwości
-              </button>
+  type="button"
+  onMouseDown={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // zgaś następny "klik mapy" (ten sam tick)
+    suppressNextMapClickRef.current = true;
+    setTimeout(() => (suppressNextMapClickRef.current = false), 0);
+
+    setEditOpen(true);
+  }}
+  style={{
+    padding: "6px 10px",
+    borderRadius: 10,
+    border: `1px solid ${BORDER}`,
+    background: "rgba(255,255,255,0.06)",
+    color: TEXT_LIGHT,
+    fontWeight: 800,
+    fontSize: 11,
+    cursor: "pointer",
+  }}
+>
+  Właściwości
+</button>
             </div>
           </div>
         </Popup>
