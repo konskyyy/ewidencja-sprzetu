@@ -2375,41 +2375,46 @@ export default function App() {
     const key = sort.key;
 
     arr.sort((a, b) => {
-      if (key === "id") return (Number(a?.id) - Number(b?.id)) * dir;
+  const { key, dir } = sort;
 
-      if (key === "calibration") {
-  const ad = calibrationMeta(a).daysLeft;
-  const bd = calibrationMeta(b).daysLeft;
+  // ===== ID (numerycznie)
+  if (key === "id") {
+    return (Number(a?.id) - Number(b?.id)) * dir;
+  }
 
-  const aHas = Number.isFinite(ad);
-  const bHas = Number.isFinite(bd);
+  // ===== KALIBRACJA (po dniach)
+  if (key === "calibration") {
+    const da = calibrationMeta(a)?.daysLeft;
+    const db = calibrationMeta(b)?.daysLeft;
 
-  // brak danych zawsze na końcu
-  if (!aHas && !bHas) return 0;
-  if (!aHas) return 1;
-  if (!bHas) return -1;
+    const aHas = Number.isFinite(da);
+    const bHas = Number.isFinite(db);
 
-  // normalne sortowanie po liczbie dni
-  if (ad < bd) return -1 * dir;
-  if (ad > bd) return 1 * dir;
-  return 0;
-}
+    // brak danych zawsze na końcu
+    if (aHas && !bHas) return -1;
+    if (!aHas && bHas) return 1;
+    if (!aHas && !bHas) return 0;
 
-      const av =
-        key === "title"
-          ? String(a?.title || a?.name || "")
-          : key === "status"
-          ? String(a?.status || "")
-          : String(a?.note || a?.notes || "");
-      const bv =
-        key === "title"
-          ? String(b?.title || b?.name || "")
-          : key === "status"
-          ? String(b?.status || "")
-          : String(b?.note || b?.notes || "");
+    return (da - db) * dir;
+  }
 
-      return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dir;
-    });
+  // ===== TEKSTOWE (title / status / note)
+  const av =
+    key === "title"
+      ? String(a?.title || a?.name || "")
+      : key === "status"
+      ? String(a?.status || "")
+      : String(a?.note || a?.notes || "");
+
+  const bv =
+    key === "title"
+      ? String(b?.title || b?.name || "")
+      : key === "status"
+      ? String(b?.status || "")
+      : String(b?.note || b?.notes || "");
+
+  return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dir;
+});
 
     return arr;
   }, [list, filters, sort]);
@@ -2613,64 +2618,64 @@ export default function App() {
               </tr>
 
              {/* WIERSZ FILTRÓW POD NAGŁÓWKAMI */}
-<tr>
-  {/* ID */}
-  <th style={filterCellStyle}>
-    <input
-      value={filters.id}
-      onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
-      placeholder="np. 12"
-      style={inputStyle}
-    />
-  </th>
+            <tr>
+              {/* ID */}
+              <th style={filterCellStyle}>
+                <input
+                  value={filters.id}
+                  onChange={(e) => setFilters((f) => ({ ...f, id: e.target.value }))}
+                  placeholder="np. 12"
+                  style={inputStyle}
+                />
+              </th>
 
-  {/* Nazwa */}
-  <th style={filterCellStyle}>
-    <input
-      value={filters.title}
-      onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
-      placeholder="Szukaj nazwy..."
-      style={inputStyle}
-    />
-  </th>
+              {/* Nazwa */}
+              <th style={filterCellStyle}>
+                <input
+                  value={filters.title}
+                  onChange={(e) => setFilters((f) => ({ ...f, title: e.target.value }))}
+                  placeholder="Szukaj nazwy..."
+                  style={inputStyle}
+                />
+              </th>
 
-  {/* Rodzaj */}
-  <th style={filterCellStyle}>
-    <select
-      value={filters.status}
-      onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-      style={selectStyle}
-    >
-      {statusOptions.map((s) => (
-        <option key={s} value={s}>
-          {s === "all" ? "Wszystkie" : statusLabel(s)}
-        </option>
-      ))}
-    </select>
-  </th>
+              {/* Rodzaj */}
+              <th style={filterCellStyle}>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
+                  style={selectStyle}
+                >
+                  {statusOptions.map((s) => (
+                    <option key={s} value={s}>
+                      {s === "all" ? "Wszystkie" : statusLabel(s)}
+                    </option>
+                  ))}
+                </select>
+              </th>
 
-  {/* Opis */}
-  <th style={filterCellStyle}>
-    <input
-      value={filters.note}
-      onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
-      placeholder="Szukaj w opisie..."
-      style={inputStyle}
-    />
-  </th>
+              {/* Opis */}
+              <th style={filterCellStyle}>
+                <input
+                  value={filters.note}
+                  onChange={(e) => setFilters((f) => ({ ...f, note: e.target.value }))}
+                  placeholder="Szukaj w opisie..."
+                  style={inputStyle}
+                />
+              </th>
 
-  {/* Kalibracja – brak filtra (pusto) */}
-  <th style={filterCellStyle}>
-    {/* celowo puste */}
-  </th>
+              {/* Kalibracja – brak filtra (pusto) */}
+              <th style={filterCellStyle}>
+                {/* celowo puste */}
+              </th>
 
-  {/* Akcje */}
-  <th style={filterCellStyle}>
-    <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
-      Kliknij nagłówek, aby sortować.
-    </div>
-  </th>
-</tr>
+              {/* Akcje */}
+              <th style={filterCellStyle}>
+                <div style={{ fontSize: 11, color: MUTED, fontWeight: 800 }}>
+                  Kliknij nagłówek, aby sortować.
+                </div>
+              </th>
+            </tr>
 
 
             <tbody>
