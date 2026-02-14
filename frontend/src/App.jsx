@@ -2304,8 +2304,8 @@ function MapAutoDeselect({ enabled, onDeselect, mapRef, suppressRef }) {
       if (!target) return;
 
       const isInteractive = target.closest(
-        ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-popup-content-wrapper, .leaflet-popup-content, .leaflet-control, .leaflet-tooltip"
-      );
+  ".leaflet-marker-icon, .leaflet-interactive, .leaflet-popup, .leaflet-popup-content-wrapper, .leaflet-popup-content, .leaflet-control, .leaflet-tooltip"
+);
 
       if (isInteractive) return;
 
