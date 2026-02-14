@@ -1647,10 +1647,12 @@ async function handleSave() {
   if (!payload.in_storage) {
   // urządzenie musi mieć współrzędne, ale modal ich nie zbiera
   // więc co najmniej wymuś, że device już je ma
-  if (!Number.isFinite(Number(device?.lat)) || !Number.isFinite(Number(device?.lng))) {
-    setErr("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
-    return;
-  }
+  const lat = toNumCoord(device?.lat);
+const lng = toNumCoord(device?.lng);
+if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  setErr("To urządzenie nie ma współrzędnych...");
+  return;
+}
 }
 
 
@@ -3201,8 +3203,12 @@ async function createDeviceFromForm() {
   const in_storage = createForm.in_storage === true;
   const warehouse = in_storage ? String(createForm.warehouse || "GEO_BB") : null;
 
-  const lat = in_storage ? null : Number(createForm.lat);
-  const lng = in_storage ? null : Number(createForm.lng);
+  const lat = toNumCoord(device?.lat);
+const lng = toNumCoord(device?.lng);
+if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  setErr("To urządzenie nie ma współrzędnych. Aby zdjąć z magazynu, ustaw je na mapie (dodaj lat/lng).");
+  return;
+}
 
   // ✅ kalibracja
   const last_calibration_at = createForm.last_calibration_at
@@ -3300,8 +3306,8 @@ async function saveEditedDevice(payload) {
   in_storage: payload.in_storage === true,
   warehouse: payload.in_storage ? payload.warehouse : null,
 
-  lat: payload.in_storage ? null : pt.lat,
-  lng: payload.in_storage ? null : pt.lng,
+  lat: payload.in_storage ? null : toNumCoord(pt.lat),
+lng: payload.in_storage ? null : toNumCoord(pt.lng),
 
   last_calibration_at: payload.last_calibration_at ?? null,
   calibration_interval_years: payload.calibration_interval_years ?? null,
