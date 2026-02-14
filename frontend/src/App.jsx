@@ -2350,6 +2350,86 @@ useEffect(() => {
       return { points: {}, tunnels: {} };
     }
   });
+function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
+  const [device, setDevice] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`/api/points/${deviceId}`)
+      .then((r) => r.json())
+      .then(setDevice)
+      .catch(() => setError("Nie znaleziono urządzenia."));
+  }, [deviceId]);
+
+  if (error) {
+    return (
+      <div style={{ padding: 20, color: "white", background: "#111827", minHeight: "100vh" }}>
+        {error}
+      </div>
+    );
+  }
+
+  if (!device) {
+    return (
+      <div style={{ padding: 20, color: "white", background: "#111827", minHeight: "100vh" }}>
+        Ładowanie...
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#111827",
+        color: TEXT_LIGHT,
+        padding: 16,
+        display: "flex",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 480,
+          borderRadius: 18,
+          border: `1px solid ${BORDER}`,
+          background: GLASS_BG,
+          padding: 18,
+        }}
+      >
+        <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>
+          {device.title || `Urządzenie #${device.id}`}
+        </div>
+
+        <div style={{ fontSize: 13, color: MUTED, marginBottom: 10 }}>
+          Rodzaj: {device.status}
+        </div>
+
+        <div style={{ fontSize: 14, marginBottom: 14 }}>
+          {device.note || "Brak opisu"}
+        </div>
+
+        <button
+          onClick={() => (window.location.href = "/")}
+          style={{
+            padding: "10px 14px",
+            borderRadius: 12,
+            border: `1px solid ${BORDER}`,
+            background: "rgba(255,255,255,0.08)",
+            color: TEXT_LIGHT,
+            fontWeight: 800,
+            cursor: "pointer",
+            width: "100%",
+          }}
+        >
+          Otwórz pełną aplikację
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
   function handleCountsChange(kind, id, count) {
     setJournalCounts((prev) => ({
@@ -2521,7 +2601,17 @@ useEffect(() => {
   return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dirNum;
 });
 
-
+if (deviceRouteId) {
+  return (
+    <MobileDeviceView
+      deviceId={deviceRouteId}
+      BORDER={BORDER}
+      TEXT_LIGHT={TEXT_LIGHT}
+      MUTED={MUTED}
+      GLASS_BG={GLASS_BG_DARK}
+    />
+  );
+}
     return arr;
   }, [list, filters, sort]);
 
