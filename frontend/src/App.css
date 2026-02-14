@@ -253,3 +253,7 @@ select:focus {
   outline: none;
   border-color: #3b82f6;
 }
+select option {
+  background-color: #1f2937;
+  color: #ffffff;
+}
