@@ -2334,6 +2334,17 @@ useEffect(() => {
   }
 }, []);
 
+if (deviceRouteId) {
+  return (
+    <MobileDeviceView
+      deviceId={deviceRouteId}
+      BORDER={BORDER}
+      TEXT_LIGHT={TEXT_LIGHT}
+      MUTED={MUTED}
+      GLASS_BG={GLASS_BG_DARK}
+    />
+  );
+}
   /** ===== JOURNAL COUNTS + ACQUIRED (localStorage) ===== */
   const [journalCounts, setJournalCounts] = useState(() => {
     try {
@@ -2598,17 +2609,6 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
   return av.localeCompare(bv, "pl", { sensitivity: "base" }) * dirNum;
 });
 
-if (deviceRouteId) {
-  return (
-    <MobileDeviceView
-      deviceId={deviceRouteId}
-      BORDER={BORDER}
-      TEXT_LIGHT={TEXT_LIGHT}
-      MUTED={MUTED}
-      GLASS_BG={GLASS_BG_DARK}
-    />
-  );
-}
     return arr;
   }, [list, filters, sort]);
 
