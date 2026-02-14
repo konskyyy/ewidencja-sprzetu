@@ -216,13 +216,22 @@ function pinSvg(color) {
   </svg>`;
 }
 
-function makePinIcon(color) {
+function makePinIcon(pinColor, badgeTone = null) {
+  const show = badgeTone === "warn" || badgeTone === "overdue";
+
+  const badgeBg =
+    badgeTone === "overdue"
+      ? "rgba(239,68,68,0.95)"   // czerwony
+      : badgeTone === "warn"
+      ? "rgba(245,158,11,0.95)"  // pomarańcz
+      : "transparent";
+
   return L.divIcon({
     className: "leaflet-div-icon tmPinWrap",
     html: `
       <div class="tmPinHost">
-        ${pinSvg(color)}
-        <div class="tmStatusBadge" style="background:${color}">!</div>
+        ${pinSvg(pinColor)}
+        ${show ? `<div class="tmStatusBadge" style="background:${badgeBg}">!</div>` : ""}
       </div>
     `,
     iconSize: [34, 34],
@@ -2816,12 +2825,13 @@ const pinIcons = useMemo(() => {
   const icons = {};
   for (const t of DEVICE_TYPES) {
     const baseColor = typeColor(t.value);
-    icons[t.value] = makePinIcon(baseColor);
+    icons[`${t.value}__base`] = makePinIcon(baseColor, null);
+    icons[`${t.value}__warn`] = makePinIcon(baseColor, "warn");
+    icons[`${t.value}__overdue`] = makePinIcon(baseColor, "overdue");
   }
-  icons.__default = makePinIcon("#9ca3af");
+  icons.__default = makePinIcon("#9ca3af", null);
   return icons;
 }, []);
-
 
   /** ===== Map + refs (zoom/popup) ===== */
   const mapRef = useRef(null);
@@ -4388,21 +4398,21 @@ async function togglePointPriority(pt) {
 
     const cal = calibrationMeta(pt);
 
-    const variant =
-      cal.tone === "overdue"
-        ? "overdue"
-        : cal.tone === "warn"
-        ? "warn"
-        : "base";
+const variant =
+  cal.tone === "overdue"
+    ? "overdue"
+    : cal.tone === "warn"
+    ? "warn"
+    : "base";
 
-    const iconKey = `${pt.status}__${variant}`;
-    const baseKey = `${pt.status}__base`;
+const iconKey = `${pt.status}__${variant}`;
+const baseKey = `${pt.status}__base`;
 
     return (
       <Marker
         key={`pt-${pt.id}`}
         position={[lat, lng]}
-        icon={pinIcons[pt.status] || pinIcons.__default}
+        icon={pinIcons[iconKey] || pinIcons[baseKey] || pinIcons.__default}
         bubblingMouseEvents={false}
         ref={(ref) => {
           if (ref) markerRefs.current[pt.id] = ref;
