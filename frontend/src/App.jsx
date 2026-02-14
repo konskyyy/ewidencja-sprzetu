@@ -281,6 +281,11 @@ async function readJsonOrThrow(res) {
 function toBool(v) {
   return v === true || v === 1 || v === "1" || v === "true";
 }
+function toNumCoord(v) {
+  if (v === null || v === undefined) return NaN;
+  const s = String(v).trim().replace(",", ".");
+  return Number(s);
+}
 
 function MapRefSetter({ onReady }) {
   const map = useMap();
@@ -3025,8 +3030,9 @@ function focusPoint(pt) {
   if (pt.in_storage === true) return;
   if (!map || !pt) return;
 
-  const lat = Number(pt.lat);
-  const lng = Number(pt.lng);
+  const lat = toNumCoord(pt.lat);
+const lng = toNumCoord(pt.lng);
+if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
   map.flyTo([lat, lng], Math.max(map.getZoom(), 12), {
     animate: true,
@@ -3370,7 +3376,12 @@ async function togglePointPriority(pt) {
         body: JSON.stringify(body),
       });
       const data = await readJsonOrThrow(res);
-      const normalized = { ...data, priority: data?.priority === true };
+      const normalized = {
+  ...data,
+  priority: data?.priority === true,
+  in_storage: toBool(data?.in_storage),
+  warehouse: data?.warehouse ?? null,
+};
 
       setPoints((p) => [normalized, ...p]);
       setSelectedPointId(normalized.id);
@@ -4367,10 +4378,16 @@ async function togglePointPriority(pt) {
           />
 
           {/* URZĄDZENIA */}
+{/* URZĄDZENIA */}
 {filteredPoints
   .filter((pt) => !toBool(pt.in_storage))
-  .filter((pt) => Number.isFinite(Number(pt.lat)) && Number.isFinite(Number(pt.lng)))
   .map((pt) => {
+    const lat = toNumCoord(pt.lat);
+    const lng = toNumCoord(pt.lng);
+
+    // jeśli brak poprawnych współrzędnych – nie renderuj markera
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+
     const cal = calibrationMeta(pt);
 
     const variant =
@@ -4386,7 +4403,7 @@ async function togglePointPriority(pt) {
     return (
       <Marker
         key={`pt-${pt.id}`}
-        position={[Number(pt.lat), Number(pt.lng)]}
+        position={[lat, lng]}
         icon={
           pinIcons[iconKey] ||
           pinIcons[baseKey] ||
