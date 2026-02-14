@@ -178,11 +178,8 @@ function StorageOverlay({
   );
 }
 
-function deviceDeepLink(deviceId) {
-  const base = window.location.origin + window.location.pathname; // bez query
-  const url = new URL(base);
-  url.searchParams.set("device", String(deviceId));
-  return url.toString();
+function deviceDeepLink(id) {
+  return `${window.location.origin}/device/${id}`;
 }
 
 // Natural Earth (GeoJSON) – granice państw
