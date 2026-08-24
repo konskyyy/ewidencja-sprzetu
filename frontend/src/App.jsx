@@ -166,7 +166,7 @@ function StorageOverlay({
                 justifyContent: "space-between",
                 alignItems: "center",
                 cursor: "pointer",
-                transition: "transform 120ms ease, background 120ms ease",
+                transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease",
               }}
               title={`Otwórz magazyn ${key}`}
             >
@@ -1374,7 +1374,7 @@ async function markRead(u) {
               markAllRead();
             }}
             disabled={items.length === 0}
-            title="Oznacz wszystkie widoczne aktualizacje jako przeczytane"
+            title="Oznacz wszystkie widoczne aktualizacje jako przeczytane" aria-label="Oznacz wszystkie widoczne aktualizacje jako przeczytane"
             style={{
               padding: "10px 12px",
               borderRadius: 12,
@@ -1384,7 +1384,7 @@ async function markRead(u) {
               cursor: items.length === 0 ? "default" : "pointer",
               fontWeight: 900,
               fontSize: 12,
-              transition: "background 120ms ease, border-color 120ms ease, transform 120ms ease",
+              transition: "background 220ms ease, border-color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
             className="markAllBtn"
           >
@@ -1447,7 +1447,7 @@ async function markRead(u) {
                         e.stopPropagation();
                         markRead(u);
                       }}
-                      title="Odczytane"
+                      title="Odczytane" aria-label="Odczytane"
                       style={{
                         position: "absolute",
                         top: 8,
@@ -1570,6 +1570,21 @@ async function markRead(u) {
 
 /** ===== EDIT MODAL ===== */
 /** ===== EDIT MODAL ===== */
+/** Zamykanie modala klawiszem Escape (dostępność klawiaturowa). */
+function useEscapeKey(active, onEscape) {
+  useEffect(() => {
+    if (!active || typeof onEscape !== "function") return;
+    const handler = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onEscape();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [active, onEscape]);
+}
+
 function EditDeviceModal({
   open,
   device,
@@ -1580,6 +1595,7 @@ function EditDeviceModal({
   MUTED,
   GLASS_BG,
 }) {
+  useEscapeKey(open, onClose);
   function normalizeDeviceType(v) {
     const s = String(v || "").trim().toLowerCase();
 
@@ -1772,7 +1788,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     cursor: "pointer",
     fontWeight: 900,
     fontSize: 12,
-    transition: "transform 120ms ease, background 120ms ease, border-color 120ms ease",
+    transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease, border-color 220ms ease",
   };
 
   return (
@@ -1782,7 +1798,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div style={modalStyle}>
+      <div style={modalStyle} role="dialog" aria-modal="true">
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
             <div
@@ -2057,6 +2073,7 @@ function CreateDeviceModal({
   DEVICE_TYPES,
   WAREHOUSES
 }) {
+  useEscapeKey(open, onClose);
   if (!open) return null;
 
   const overlayStyle = {
@@ -2142,7 +2159,7 @@ function CreateDeviceModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div style={modalStyle}>
+      <div style={modalStyle} role="dialog" aria-modal="true">
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
@@ -2510,6 +2527,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
   GLASS_BG,
   GLASS_SHADOW,
 }) {
+  useEscapeKey(open, onClose);
   const [sort, setSort] = useState({ key: "title", dir: "asc" }); // key: title|status|id|note|calibration
   const [filters, setFilters] = useState({
     title: "",
@@ -2757,7 +2775,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
         if (e.target === e.currentTarget) onClose?.();
       }}
     >
-      <div style={modalStyle}>
+      <div style={modalStyle} role="dialog" aria-modal="true">
         {/* HEADER */}
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
@@ -2785,7 +2803,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
             <button
               onClick={() => setFilters({ title: "", status: "all", note: "", id: "" })}
               style={{ ...btnStyle, background: "#fafbfd" }}
-              title="Wyczyść filtry"
+              title="Wyczyść filtry" aria-label="Wyczyść filtry"
             >
               Wyczyść filtry
             </button>
@@ -2989,7 +3007,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
                   <button
                     onClick={() => onSelectDevice?.(d)}
                     style={actionBtn}
-                    title="Edytuj urządzenie"
+                    title="Edytuj urządzenie" aria-label="Edytuj urządzenie"
                   >
                     Edytuj
                   </button>
@@ -3771,8 +3789,10 @@ async function togglePointPriority(pt) {
           {err ? <div style={errorStyle}>{err}</div> : null}
 
           <form onSubmit={onLoginSubmit} style={{ marginTop: 14 }}>
-            <label style={labelStyle}>Login</label>
+            <label htmlFor="login-user" style={labelStyle}>Login</label>
             <input
+              id="login-user"
+              name="username"
               value={login}
               onChange={(e) => setLogin(e.target.value)}
               placeholder="np. admin@firma.pl"
@@ -3781,8 +3801,10 @@ async function togglePointPriority(pt) {
               style={inputStyle}
             />
 
-            <label style={{ ...labelStyle, marginTop: 10 }}>Hasło</label>
+            <label htmlFor="login-password" style={{ ...labelStyle, marginTop: 10 }}>Hasło</label>
             <input
+              id="login-password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
@@ -3826,7 +3848,7 @@ async function togglePointPriority(pt) {
     borderRight: sidebarOpen ? `1px solid ${BORDER}` : "none",
     overflow: "hidden",
     width: sidebarOpen ? sidebarWidthOpen : sidebarWidthClosed,
-    transition: "width 200ms ease",
+    transition: "width 320ms cubic-bezier(0.22, 1, 0.36, 1)",
     background: GLASS_BG,
     backgroundImage: GLASS_HIGHLIGHT,
     backdropFilter: "blur(8px)",
@@ -3853,7 +3875,7 @@ async function togglePointPriority(pt) {
       >
         <button
           onClick={() => setSidebarOpen(false)}
-          title="Zwiń panel"
+          title="Zwiń panel" aria-label="Zwiń panel"
           style={{
             width: 36,
             height: 36,
@@ -4155,7 +4177,7 @@ async function togglePointPriority(pt) {
                   justifyContent: "center",
                   color: TEXT_LIGHT,
                 }}
-                title="Oznacz jako ważne"
+                title="Oznacz jako ważne" aria-label="Oznacz jako ważne"
               >
                 <span
                   style={{
@@ -4452,7 +4474,7 @@ async function togglePointPriority(pt) {
   {!sidebarOpen ? (
     <button
       onClick={() => setSidebarOpen(true)}
-      title="Pokaż panel"
+      title="Pokaż panel" aria-label="Pokaż panel"
       style={{
         position: "absolute",
         zIndex: 1500,
@@ -4535,7 +4557,7 @@ async function togglePointPriority(pt) {
               fontWeight: 900,
               fontSize: 12,
             }}
-            title="Wyjdź z trybu dodawania"
+            title="Wyjdź z trybu dodawania" aria-label="Wyjdź z trybu dodawania"
           >
             Zakończ
           </button>
@@ -4822,7 +4844,7 @@ const baseKey = `${pt.status}__base`;
           >
             <button
               onClick={() => mapRef.current?.closePopup?.()}
-              title="Zamknij"
+              title="Zamknij" aria-label="Zamknij"
               style={{
                 position: "absolute",
                 top: 8,
@@ -5177,7 +5199,7 @@ const primaryButtonStyle = (loading) => ({
   fontSize: 15,
   boxShadow: "0 14px 34px rgba(124,77,255,0.36)",
   cursor: loading ? "wait" : "pointer",
-  transition: "0.2s",
+  transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 220ms ease, filter 220ms ease",
 });
 
 const hintStyle = {

@@ -398,3 +398,125 @@ select:focus-visible {
   border: 3px solid #fff;
 }
 *::-webkit-scrollbar-thumb:hover { background: #a9b0c2; }
+
+/* =========================================================
+   WARSTWA INTERAKCJI — ruch i stany wg GeoPlannera
+   Celowo operujemy na transform / filter / box-shadow: te
+   właściwości nie występują w inline style'ach App.jsx,
+   więc działają bez !important i nie nadpisują kolorów
+   poszczególnych przycisków (czerwony zostaje czerwony).
+   ========================================================= */
+
+:root {
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ring: 0 0 0 3px rgba(124, 77, 255, 0.22);
+}
+
+/* --- przyciski --- */
+button {
+  transition: transform 0.22s var(--ease), box-shadow 0.22s ease,
+    filter 0.22s ease, opacity 0.22s ease;
+}
+button:not(:disabled):not([disabled]):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06) saturate(1.03);
+}
+button:not(:disabled):not([disabled]):active {
+  transform: translateY(0) scale(0.985);
+  filter: brightness(0.98);
+}
+button:disabled,
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+  transform: none !important;
+  filter: none !important;
+}
+
+/* --- klikalne karty i wiersze (divy z cursor:pointer) --- */
+div[style*="cursor: pointer"] {
+  transition: transform 0.26s var(--ease), box-shadow 0.26s ease,
+    border-color 0.26s ease, filter 0.26s ease;
+}
+div[style*="cursor: pointer"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 46px rgba(80, 69, 140, 0.13);
+  filter: brightness(1.02);
+}
+div[style*="cursor: pointer"]:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+/* mapa rządzi się sama — żadnych podskoków nad Leafletem */
+.leaflet-container div[style*="cursor: pointer"],
+.leaflet-container button,
+.leaflet-marker-icon,
+.leaflet-marker-icon * {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none;
+}
+.leaflet-control-zoom a {
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+/* --- widoczny focus dla klawiatury (wcześniej nie istniał) --- */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+div[style*="cursor: pointer"]:focus-visible {
+  outline: 2px solid rgba(124, 77, 255, 0.7);
+  outline-offset: 2px;
+  box-shadow: var(--ring);
+}
+
+/* --- zaznaczanie tekstu w kolorze marki --- */
+::selection {
+  background: rgba(124, 77, 255, 0.18);
+  color: var(--ink);
+}
+
+/* --- szanujemy ustawienia systemowe (dostępność) --- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  button:hover,
+  div[style*="cursor: pointer"]:hover {
+    transform: none !important;
+  }
+}
+
+/* =========================================================
+   ANIMACJE WEJŚCIA — miękkie pojawianie się jak w GeoPlannerze
+   (wyłączane automatycznie przez prefers-reduced-motion wyżej)
+   ========================================================= */
+
+@keyframes tmModalIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes tmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+[role="dialog"] {
+  animation: tmModalIn 0.28s var(--ease) both;
+}
+
+/* przyciemnione tło modala wchodzi łagodnie */
+div:has(> [role="dialog"]) {
+  animation: tmFadeIn 0.2s ease both;
+  backdrop-filter: blur(3px);
+}
+
+/* karta logowania */
+form {
+  animation: tmModalIn 0.42s var(--ease) both;
+}

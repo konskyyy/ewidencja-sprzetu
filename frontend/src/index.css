@@ -64,10 +64,6 @@ button {
   background-color: var(--purple);
   color: #fff;
   cursor: pointer;
-  transition: 0.2s;
-}
-button:hover { background-color: var(--purple-2); }
-button:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.25);
+  /* stany (hover/active/focus/transition) są w App.css —
+     jedna warstwa interakcji dla całej aplikacji */
 }
