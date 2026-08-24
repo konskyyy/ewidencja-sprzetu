@@ -51,6 +51,55 @@ const GLASS_HIGHLIGHT =
 // typografia
 const FONT_DISPLAY = '"Plus Jakarta Sans", Inter, system-ui, sans-serif';
 
+/** ===== PRZYCISKI — wspólny system wg GeoPlannera =====
+ *  Wcześniej ten sam styl był powielony w 6 miejscach, a akcje główne
+ *  ("Zapisz") wyglądały jak drugorzędne ("Anuluj") — różnica sprowadzała
+ *  się do dwóch odcieni prawie-bieli. GeoPlanner rozróżnia je wyraźnie:
+ *  primary = fiolet z cieniem, secondary = neutralne tło.
+ */
+const BTN_BASE = {
+  padding: "9px 12px",
+  borderRadius: 13,
+  border: `1px solid ${BORDER}`,
+  background: SOFT_BG,
+  color: TEXT_LIGHT,
+  cursor: "pointer",
+  fontFamily: FONT_DISPLAY,
+  fontWeight: 800,
+  fontSize: 12,
+};
+
+/** Akcja główna — jedna na widok (Zapisz, Utwórz). */
+const BTN_PRIMARY = {
+  ...BTN_BASE,
+  background: ACCENT,
+  border: `1px solid ${ACCENT}`,
+  color: "#fff",
+  boxShadow: "0 14px 34px rgba(124,77,255,0.28)",
+};
+
+/** Akcja drugorzędna — Anuluj, Zamknij. */
+const BTN_SECONDARY = {
+  ...BTN_BASE,
+  background: "#fff",
+};
+
+/** Wariant kompaktowy (paski narzędzi, wiersze tabel). */
+const BTN_SMALL = {
+  ...BTN_BASE,
+  padding: "6px 9px",
+  fontSize: 11,
+};
+
+/** Akcja destrukcyjna — Usuń. Czerwień z palety GeoPlannera (--red),
+ *  wcześniej używano rgba(255,80,80) spoza palety w 4 miejscach. */
+const BTN_DANGER = {
+  ...BTN_BASE,
+  background: "rgba(239,68,68,0.10)",
+  border: "1px solid rgba(239,68,68,0.35)",
+  color: "#b91c1c",
+};
+
 
 /** ===== MAP CONSTS ===== */
 const POLAND_BOUNDS = [
@@ -134,8 +183,8 @@ function StorageOverlay({
           justifyContent: "space-between",
           alignItems: "center",
           cursor: "pointer",
-          fontWeight: 900,
-          background: "rgba(0,0,0,0.12)",
+          fontWeight: 800,
+          background: SOFT_BG,
         }}
       >
         <span>Magazyny</span>
@@ -173,7 +222,7 @@ function StorageOverlay({
               <span style={{ fontWeight: 800, fontSize: 12 }}>
               {warehouseIcon(key)} {key}
               </span>
-              <span style={{ fontSize: 12, color: MUTED, fontWeight: 900 }}>
+              <span style={{ fontSize: 12, color: MUTED, fontWeight: 800 }}>
                 {list.length}
               </span>
             </button>
@@ -384,30 +433,30 @@ function calibrationMeta(device) {
   if (n <= 30) return { tone: "warn", label: `${n} dni`, daysLeft: n };
   return { tone: "ok", label: `${n} dni`, daysLeft: n };
 }
-
-
-
+/** Pigułki statusu kalibracji.
+ *  Wzorzec GeoPlannera (.tag): jasne tło + nasycony tekst w tym samym
+ *  kolorze — status czyta się od razu, bez wpatrywania się w obramowanie.
+ */
 function calibrationPillStyle(tone, BORDER) {
-  // bez narzucania palety w całej appce — tylko tu, w jednym miejscu
   if (tone === "overdue") {
     return {
-      border: "1px solid rgba(255,80,80,0.55)",
-      background: "rgba(255,80,80,0.14)",
-      color: TEXT_LIGHT,
+      border: "1px solid rgba(239,68,68,0.35)",
+      background: "rgba(239,68,68,0.10)",
+      color: "#b91c1c",
     };
   }
   if (tone === "warn") {
     return {
-      border: "1px solid rgba(245,158,11,0.55)",
+      border: "1px solid rgba(245,158,11,0.45)",
       background: "rgba(245,158,11,0.14)",
-      color: TEXT_LIGHT,
+      color: "#b45309",
     };
   }
   if (tone === "ok") {
     return {
-      border: "1px solid rgba(34,197,94,0.55)",
+      border: "1px solid rgba(34,197,94,0.40)",
       background: "rgba(34,197,94,0.12)",
-      color: TEXT_LIGHT,
+      color: "#15803d",
     };
   }
   return {
@@ -499,7 +548,7 @@ function ChanceRing({ value = 50, size = 44, tooltip = "" }) {
             inset: 0,
             display: "grid",
             placeItems: "center",
-            fontWeight: 900,
+            fontWeight: 800,
             fontSize: 12,
             color: TEXT_LIGHT,
             pointerEvents: "none",
@@ -719,13 +768,13 @@ function JournalPanel({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.10)",
+    fontWeight: 800,
+    background: SOFT_BG,
   };
 
   const sectionTitleStyle = {
     fontSize: 12,
-    fontWeight: 900,
+    fontWeight: 800,
     color: TEXT_LIGHT,
     letterSpacing: 0.2,
   };
@@ -762,16 +811,7 @@ function JournalPanel({
     color: TEXT_LIGHT,
   };
 
-  const smallBtnStyle = {
-    padding: "6px 9px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: SOFT_BG,
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 11,
-  };
+  const smallBtnStyle = BTN_SMALL;
 
   const maxHeightAll = 170;
 
@@ -844,14 +884,9 @@ function JournalPanel({
               onClick={addComment}
               disabled={busyActionId === "add" || !draft.trim()}
               style={{
-                padding: "8px 10px",
-                borderRadius: 12,
-                border: `1px solid ${BORDER}`,
-                background: "#eef0f6",
-                color: TEXT_LIGHT,
-                cursor: busyActionId === "add" || !draft.trim() ? "default" : "pointer",
-                fontWeight: 900,
-                fontSize: 12,
+                ...BTN_PRIMARY,
+                padding: "8px 12px",
+                cursor: busyActionId === "add" || !draft.trim() ? "not-allowed" : "pointer",
                 width: "fit-content",
                 justifySelf: "start",
               }}
@@ -918,11 +953,7 @@ function JournalPanel({
                             <button
                               onClick={() => removeComment(c.id)}
                               disabled={busyActionId === c.id}
-                              style={{
-                                ...smallBtnStyle,
-                                border: "1px solid rgba(255,80,80,0.55)",
-                                background: "rgba(255,80,80,0.12)",
-                              }}
+                              style={{ ...BTN_DANGER, padding: "6px 9px", fontSize: 11 }}
                             >
                               {busyActionId === c.id ? "..." : "Usuń"}
                             </button>
@@ -954,15 +985,10 @@ function JournalPanel({
                               onClick={() => saveEdit(c.id)}
                               disabled={busyActionId === c.id || !editingBody.trim()}
                               style={{
+                                ...BTN_PRIMARY,
                                 flex: 1,
                                 padding: 10,
-                                borderRadius: 12,
-                                border: `1px solid ${BORDER}`,
-                                background: "#eef0f6",
-                                color: TEXT_LIGHT,
-                                cursor: busyActionId === c.id ? "default" : "pointer",
-                                fontWeight: 900,
-                                fontSize: 12,
+                                cursor: busyActionId === c.id ? "wait" : "pointer",
                               }}
                             >
                               {busyActionId === c.id ? "Zapisuję..." : "Zapisz"}
@@ -974,15 +1000,9 @@ function JournalPanel({
                                 setEditingBody("");
                               }}
                               style={{
+                                ...BTN_SECONDARY,
                                 flex: 1,
                                 padding: 10,
-                                borderRadius: 12,
-                                border: `1px solid ${BORDER}`,
-                                background: "#fafbfd",
-                                color: TEXT_LIGHT,
-                                cursor: "pointer",
-                                fontWeight: 900,
-                                fontSize: 12,
                               }}
                             >
                               Anuluj
@@ -1044,11 +1064,7 @@ function JournalPanel({
                             <button
                               onClick={() => removeComment(c.id)}
                               disabled={busyActionId === c.id}
-                              style={{
-                                ...smallBtnStyle,
-                                border: "1px solid rgba(255,80,80,0.55)",
-                                background: "rgba(255,80,80,0.12)",
-                              }}
+                              style={{ ...BTN_DANGER, padding: "6px 9px", fontSize: 11 }}
                             >
                               {busyActionId === c.id ? "..." : "Usuń"}
                             </button>
@@ -1080,15 +1096,10 @@ function JournalPanel({
                               onClick={() => saveEdit(c.id)}
                               disabled={busyActionId === c.id || !editingBody.trim()}
                               style={{
+                                ...BTN_PRIMARY,
                                 flex: 1,
                                 padding: 10,
-                                borderRadius: 12,
-                                border: `1px solid ${BORDER}`,
-                                background: "#eef0f6",
-                                color: TEXT_LIGHT,
-                                cursor: busyActionId === c.id ? "default" : "pointer",
-                                fontWeight: 900,
-                                fontSize: 12,
+                                cursor: busyActionId === c.id ? "wait" : "pointer",
                               }}
                             >
                               {busyActionId === c.id ? "Zapisuję..." : "Zapisz"}
@@ -1100,15 +1111,9 @@ function JournalPanel({
                                 setEditingBody("");
                               }}
                               style={{
+                                ...BTN_SECONDARY,
                                 flex: 1,
                                 padding: 10,
-                                borderRadius: 12,
-                                border: `1px solid ${BORDER}`,
-                                background: "#fafbfd",
-                                color: TEXT_LIGHT,
-                                cursor: "pointer",
-                                fontWeight: 900,
-                                fontSize: 12,
                               }}
                             >
                               Anuluj
@@ -1133,7 +1138,7 @@ function JournalPanel({
               background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: loading ? "default" : "pointer",
-              fontWeight: 900,
+              fontWeight: 800,
               fontSize: 12,
               width: "fit-content",
               justifySelf: "start",
@@ -1264,8 +1269,8 @@ async function markRead(u) {
           justifyContent: "space-between",
           alignItems: "center",
           gap: 10,
-          fontWeight: 900,
-          background: "rgba(0,0,0,0.10)",
+          fontWeight: 800,
+          background: SOFT_BG,
         }}
       >
         <button
@@ -1294,7 +1299,7 @@ async function markRead(u) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 12,
-                fontWeight: 900,
+                fontWeight: 800,
                 color: TEXT_LIGHT,
                 background: "rgba(239,68,68,0.22)",
                 border: "1px solid rgba(239,68,68,0.55)",
@@ -1318,7 +1323,7 @@ async function markRead(u) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 12,
-                fontWeight: 900,
+                fontWeight: 800,
                 color: "rgba(34,197,94,0.95)",
                 background: "rgba(34,197,94,0.08)",
                 border: "1px solid rgba(34,197,94,0.55)",
@@ -1333,7 +1338,7 @@ async function markRead(u) {
 
           <span
             style={{
-              fontSize: 10,
+              fontSize: 11,
               color: MUTED,
               fontWeight: 700,
               whiteSpace: "nowrap",
@@ -1361,7 +1366,7 @@ async function markRead(u) {
               background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: loading ? "default" : "pointer",
-              fontWeight: 900,
+              fontWeight: 800,
               fontSize: 12,
             }}
           >
@@ -1382,7 +1387,7 @@ async function markRead(u) {
               background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: items.length === 0 ? "default" : "pointer",
-              fontWeight: 900,
+              fontWeight: 800,
               fontSize: 12,
               transition: "background 220ms ease, border-color 220ms ease, transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
@@ -1528,7 +1533,7 @@ async function markRead(u) {
                           background: SOFT_BG,
                           color: TEXT_LIGHT,
                           cursor: "pointer",
-                          fontWeight: 900,
+                          fontWeight: 800,
                           fontSize: 12,
                         }}
                       >
@@ -1550,7 +1555,7 @@ async function markRead(u) {
                           background: "#fafbfd",
                           color: TEXT_LIGHT,
                           cursor: "pointer",
-                          fontWeight: 900,
+                          fontWeight: 800,
                           fontSize: 12,
                         }}
                       >
@@ -1722,9 +1727,9 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
 
   const modalStyle = {
     width: "min(640px, 100%)",
-    borderRadius: 16,
+    borderRadius: 22,
     border: `1px solid ${BORDER}`,
-    background: GLASS_BG,
+    background: GLASS_BG_DARK,
     backgroundImage:
       "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
@@ -1740,8 +1745,10 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.10)",
+    fontWeight: 800,
+    fontFamily: FONT_DISPLAY,
+    letterSpacing: "-0.02em",
+    background: SOFT_BG,
   };
 
   const bodyStyle = {
@@ -1779,17 +1786,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     lineHeight: 1.35,
   };
 
-  const btnStyle = {
-    padding: "9px 10px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: SOFT_BG,
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 12,
-    transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease, border-color 220ms ease",
-  };
+  const btnStyle = BTN_BASE;
 
   return (
     <div
@@ -1875,7 +1872,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           {/* ✅ KALIBRACJA */}
 <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
-<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+<div style={{ fontWeight: 800, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
   Kalibracja
 </div>
 
@@ -1908,7 +1905,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
 {/* ✅ QR / szybkie otwieranie */}
 <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
-<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+<div style={{ fontWeight: 800, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
   QR Code (szybkie otwieranie)
 </div>
 
@@ -1950,7 +1947,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         background: SOFT_BG,
         color: TEXT_LIGHT,
         cursor: "pointer",
-        fontWeight: 900,
+        fontWeight: 800,
         fontSize: 12,
         width: "fit-content",
       }}
@@ -1985,7 +1982,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         background: SOFT_BG,
         color: TEXT_LIGHT,
         cursor: "pointer",
-        fontWeight: 900,
+        fontWeight: 800,
         fontSize: 12,
         width: "fit-content",
       }}
@@ -2031,13 +2028,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
           <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button
-              onClick={onClose}
-              style={{
-                ...btnStyle,
-                background: "#fafbfd",
-              }}
-            >
+            <button onClick={onClose} style={BTN_SECONDARY}>
               Anuluj
             </button>
 
@@ -2045,10 +2036,9 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
               onClick={handleSave}
               disabled={saving}
               style={{
-                ...btnStyle,
-                background: "#eef0f6",
+                ...BTN_PRIMARY,
                 opacity: saving ? 0.75 : 1,
-                cursor: saving ? "default" : "pointer",
+                cursor: saving ? "wait" : "pointer",
               }}
             >
               {saving ? "Zapisuję..." : "Zapisz"}
@@ -2088,9 +2078,9 @@ function CreateDeviceModal({
 
   const modalStyle = {
     width: "min(640px, 100%)",
-    borderRadius: 16,
+    borderRadius: 22,
     border: `1px solid ${BORDER}`,
-    background: GLASS_BG,
+    background: GLASS_BG_DARK,
     backgroundImage:
       "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
@@ -2106,8 +2096,10 @@ function CreateDeviceModal({
     justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.10)",
+    fontWeight: 800,
+    fontFamily: FONT_DISPLAY,
+    letterSpacing: "-0.02em",
+    background: SOFT_BG,
   };
 
   const bodyStyle = { padding: 12, display: "grid", gap: 10 };
@@ -2141,16 +2133,7 @@ function CreateDeviceModal({
     lineHeight: 1.35,
   };
 
-  const btnStyle = {
-    padding: "9px 10px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: SOFT_BG,
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 12,
-  };
+  const btnStyle = BTN_BASE;
 
   return (
     <div
@@ -2162,7 +2145,7 @@ function CreateDeviceModal({
       <div style={modalStyle} role="dialog" aria-modal="true">
         <div style={headerStyle}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 900 }}>
+            <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 800 }}>
               Dodaj urządzenie (ręcznie)
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
@@ -2273,7 +2256,7 @@ function CreateDeviceModal({
           {/* ✅ KALIBRACJA */}
 <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
-<div style={{ fontWeight: 900, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
+<div style={{ fontWeight: 800, fontSize: 12, opacity: 0.9, marginTop: 2 }}>
   Kalibracja
 </div>
 
@@ -2307,10 +2290,10 @@ function CreateDeviceModal({
           <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button onClick={onClose} style={{ ...btnStyle, background: "#fafbfd" }}>
+            <button onClick={onClose} style={BTN_SECONDARY}>
               Anuluj
             </button>
-            <button onClick={onCreate} style={{ ...btnStyle, background: "#eef0f6" }}>
+            <button onClick={onCreate} style={BTN_PRIMARY}>
               Zapisz i dodaj
             </button>
           </div>
@@ -2430,7 +2413,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
         style={{
           width: "100%",
           maxWidth: 480,
-          borderRadius: 18,
+          borderRadius: 22,
           border: `1px solid ${BORDER}`,
           background: GLASS_BG,
           padding: 18,
@@ -2656,9 +2639,9 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
   const modalStyle = {
     width: "min(980px, 100%)",
     maxHeight: "min(760px, calc(100vh - 32px))",
-    borderRadius: 16,
+    borderRadius: 22,
     border: `1px solid ${BORDER}`,
-    background: GLASS_BG,
+    background: GLASS_BG_DARK,
     backgroundImage:
       "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
@@ -2676,20 +2659,13 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     justifyContent: "space-between",
     alignItems: "center",
     gap: 10,
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.10)",
+    fontWeight: 800,
+    fontFamily: FONT_DISPLAY,
+    letterSpacing: "-0.02em",
+    background: SOFT_BG,
   };
 
-  const btnStyle = {
-    padding: "9px 10px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: SOFT_BG,
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 12,
-  };
+  const btnStyle = BTN_BASE;
 
   const tableWrapStyle = {
     padding: 12,
@@ -2713,8 +2689,8 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     textAlign: "left",
     padding: "10px 10px",
     fontSize: 12,
-    fontWeight: 900,
-    background: "rgba(0,0,0,0.16)",
+    fontWeight: 800,
+    background: "#eef0f6",
     borderBottom: `1px solid ${BORDER}`,
     whiteSpace: "nowrap",
     cursor: "pointer",
@@ -2726,7 +2702,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     top: 38, // wysokość headera tabeli
     zIndex: 2,
     padding: "8px 10px",
-    background: "rgba(0,0,0,0.10)",
+    background: SOFT_BG,
     borderBottom: `1px solid ${BORDER}`,
   };
 
@@ -2756,17 +2732,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     height: 34,
   };
 
-  const actionBtn = {
-    padding: "7px 9px",
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-    background: SOFT_BG,
-    color: TEXT_LIGHT,
-    cursor: "pointer",
-    fontWeight: 900,
-    fontSize: 12,
-    whiteSpace: "nowrap",
-  };
+  const actionBtn = { ...BTN_BASE, padding: "7px 9px", whiteSpace: "nowrap" };
 
   return (
     <div
@@ -2919,7 +2885,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
               </td>
 
               <td style={tdStyle}>
-                <div style={{ fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+                <div style={{ fontWeight: 800, lineHeight: 1.2 }}>{title}</div>
                 <div style={{ marginTop: 4, fontSize: 11, color: MUTED }}>
                   📦 {warehouseKey}
                 </div>
@@ -2935,7 +2901,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
                     borderRadius: 999,
                     border: `1px solid ${BORDER}`,
                     background: SOFT_BG,
-                    fontWeight: 900,
+                    fontWeight: 800,
                     fontSize: 11,
                     whiteSpace: "nowrap",
                   }}
@@ -2969,7 +2935,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
                     gap: 6,
                     padding: "4px 8px",
                     borderRadius: 999,
-                    fontWeight: 900,
+                    fontWeight: 800,
                     fontSize: 11,
                     whiteSpace: "nowrap",
                     ...pill,
@@ -3899,8 +3865,8 @@ async function togglePointPriority(pt) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
             <span
               style={{
-                fontSize: 10,
-                fontWeight: 900,
+                fontSize: 11,
+                fontWeight: 800,
                 letterSpacing: 0.6,
                 padding: "3px 8px",
                 borderRadius: 999,
@@ -3915,9 +3881,10 @@ async function togglePointPriority(pt) {
 
             <div
               style={{
-                fontWeight: 900,
-                letterSpacing: 0.2,
-                fontSize: 14,
+                fontFamily: FONT_DISPLAY,
+                fontWeight: 800,
+                letterSpacing: "-0.02em",
+                fontSize: 15,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -3964,7 +3931,7 @@ async function togglePointPriority(pt) {
             background: SOFT_BG,
             color: TEXT_LIGHT,
             cursor: "pointer",
-            fontWeight: 900,
+            fontWeight: 800,
             fontSize: 11,
             boxShadow: "0 10px 26px rgba(20,24,40,0.06)",
           }}
@@ -4196,32 +4163,14 @@ async function togglePointPriority(pt) {
 
               <button
                 onClick={() => setEditOpen(true)}
-                style={{
-                  padding: 9,
-                  borderRadius: 12,
-                  border: `1px solid ${BORDER}`,
-                  background: "#eef0f6",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
+                style={{ ...BTN_PRIMARY, padding: "9px 12px" }}
               >
                 Edytuj
               </button>
 
               <button
                 onClick={deleteSelectedDevice}
-                style={{
-                  padding: 9,
-                  borderRadius: 12,
-                  border: "1px solid rgba(255,80,80,0.55)",
-                  background: "rgba(255,80,80,0.14)",
-                  color: TEXT_LIGHT,
-                  cursor: "pointer",
-                  fontWeight: 800,
-                  fontSize: 12,
-                }}
+                style={{ ...BTN_DANGER, padding: "9px 12px" }}
               >
                 Usuń
               </button>
@@ -4240,7 +4189,7 @@ async function togglePointPriority(pt) {
     gap: 10,
   }}
 >
-  <div style={{ fontWeight: 900 }}>Lista urządzeń</div>
+  <div style={{ fontWeight: 800 }}>Lista urządzeń</div>
 
   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
     {/* 🔔 Overdue chip */}
@@ -4266,7 +4215,7 @@ async function togglePointPriority(pt) {
         padding: "0 8px",
         borderRadius: 999,
         fontSize: 12,
-        fontWeight: 900,
+        fontWeight: 800,
         color: "#111827",
         background: "rgba(239,68,68,0.95)",
         border: onlyOverdue
@@ -4527,8 +4476,8 @@ async function togglePointPriority(pt) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
-          fontWeight: 900,
-          background: "rgba(0,0,0,0.10)",
+          fontWeight: 800,
+          background: SOFT_BG,
         }}
       >
         <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
@@ -4554,7 +4503,7 @@ async function togglePointPriority(pt) {
               background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: "pointer",
-              fontWeight: 900,
+              fontWeight: 800,
               fontSize: 12,
             }}
             title="Wyjdź z trybu dodawania" aria-label="Wyjdź z trybu dodawania"
@@ -4613,7 +4562,7 @@ async function togglePointPriority(pt) {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    fontWeight: 900,
+    fontWeight: 800,
     gap: 10,
   }}
 >
@@ -4671,7 +4620,7 @@ async function togglePointPriority(pt) {
               onClick={showAllTypes}
               style={{
                 padding: "8px 10px",
-                borderRadius: 10,
+                borderRadius: 12,
                 border: `1px solid ${BORDER}`,
                 background: SOFT_BG,
                 color: TEXT_LIGHT,
@@ -4687,7 +4636,7 @@ async function togglePointPriority(pt) {
               onClick={hideAllTypes}
               style={{
                 padding: "8px 10px",
-                borderRadius: 10,
+                borderRadius: 12,
                 border: `1px solid ${BORDER}`,
                 background: "#fafbfd",
                 color: TEXT_LIGHT,
@@ -4851,7 +4800,7 @@ const baseKey = `${pt.status}__base`;
                 right: 8,
                 width: 26,
                 height: 26,
-                borderRadius: 8,
+                borderRadius: 10,
                 border: `1px solid ${BORDER}`,
                 background: SOFT_BG,
                 color: TEXT_LIGHT,
@@ -4879,7 +4828,7 @@ const baseKey = `${pt.status}__base`;
 
             <div style={{ display: "flex", gap: 12 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 900, marginBottom: 4, lineHeight: 1.15 }}>
+                <div style={{ fontWeight: 800, marginBottom: 4, lineHeight: 1.15 }}>
                   {pt.title || `Urządzenie #${pt.id}`}
                 </div>
                 <div style={{ fontSize: 12, color: MUTED }}>
@@ -4940,7 +4889,7 @@ const baseKey = `${pt.status}__base`;
                       gap: 6,
                       padding: "3px 8px",
                       borderRadius: 999,
-                      fontWeight: 900,
+                      fontWeight: 800,
                       fontSize: 11,
                       ...pill,
                     }}
@@ -4986,7 +4935,7 @@ const baseKey = `${pt.status}__base`;
   }}
   style={{
     padding: "6px 10px",
-    borderRadius: 10,
+    borderRadius: 12,
     border: `1px solid ${BORDER}`,
     background: SOFT_BG,
     color: TEXT_LIGHT,
