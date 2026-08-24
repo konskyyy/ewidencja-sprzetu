@@ -26,17 +26,30 @@ const API_BASE_SAFE =
 const API = API_BASE_SAFE.endsWith("/api") ? API_BASE_SAFE : `${API_BASE_SAFE}/api`;
 
 
-/** ===== UI CONSTS ===== */
-const TEXT_LIGHT = "#ffffff";
-const BORDER = "rgba(255,255,255,0.12)";
-const MUTED = "rgba(255,255,255,0.75)";
+/** ===== UI CONSTS — paleta GeoPlanner (jasny motyw) =====
+ *  UWAGA: nazwy stałych zostały zachowane (TEXT_LIGHT, GLASS_*), bo są używane
+ *  w ~300 miejscach w tym pliku. Zmieniły się WARTOŚCI, nie znaczenie:
+ *  TEXT_LIGHT = kolor tekstu podstawowego, GLASS_* = panele nad mapą.
+ */
+const TEXT_LIGHT = "#121826";          // --ink : główny tekst (ciemny granat)
+const BORDER = "#e7e8f0";              // --line
+const MUTED = "#64748b";               // --muted
 
-// glossy
-const GLASS_BG = "rgba(22,42,64,0.70)";
-const GLASS_BG_DARK = "rgba(22,42,64,0.90)";
-const GLASS_SHADOW = "0 10px 28px rgba(0,0,0,0.35)";
+// akcent GeoPlannera
+const ACCENT = "#7c4dff";              // --purple
+const ACCENT_2 = "#6840e6";            // --purple-2
+const ACCENT_SOFT = "#f1edff";         // --purple-soft
+const SOFT_BG = "#f6f7fb";             // --soft
+
+// panele nad mapą — jasne "szkło"
+const GLASS_BG = "rgba(255,255,255,0.92)";
+const GLASS_BG_DARK = "rgba(255,255,255,0.98)";
+const GLASS_SHADOW = "0 20px 60px rgba(20,24,40,0.10)";
 const GLASS_HIGHLIGHT =
-  "radial-gradient(700px 400px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)";
+  "radial-gradient(700px 400px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)";
+
+// typografia
+const FONT_DISPLAY = '"Plus Jakarta Sans", Inter, system-ui, sans-serif';
 
 
 /** ===== MAP CONSTS ===== */
@@ -148,7 +161,7 @@ function StorageOverlay({
                 padding: "8px 10px",
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
+                background: "#fafbfd",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -380,27 +393,27 @@ function calibrationPillStyle(tone, BORDER) {
     return {
       border: "1px solid rgba(255,80,80,0.55)",
       background: "rgba(255,80,80,0.14)",
-      color: "rgba(255,255,255,0.92)",
+      color: TEXT_LIGHT,
     };
   }
   if (tone === "warn") {
     return {
       border: "1px solid rgba(245,158,11,0.55)",
       background: "rgba(245,158,11,0.14)",
-      color: "rgba(255,255,255,0.92)",
+      color: TEXT_LIGHT,
     };
   }
   if (tone === "ok") {
     return {
       border: "1px solid rgba(34,197,94,0.55)",
       background: "rgba(34,197,94,0.12)",
-      color: "rgba(255,255,255,0.92)",
+      color: TEXT_LIGHT,
     };
   }
   return {
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.06)",
-    color: "rgba(255,255,255,0.80)",
+    background: SOFT_BG,
+    color: MUTED,
   };
 }
 function calibrationUrgencyRank(pt) {
@@ -442,7 +455,7 @@ function ChanceRing({ value = 50, size = 44, tooltip = "" }) {
         style={{
           fontSize: 11,
           fontWeight: 800,
-          color: "rgba(255,255,255,0.65)",
+          color: MUTED,
           letterSpacing: 0.2,
         }}
       >
@@ -463,7 +476,7 @@ function ChanceRing({ value = 50, size = 44, tooltip = "" }) {
             cx={size / 2}
             cy={size / 2}
             r={r}
-            stroke="rgba(255,255,255,0.18)"
+            stroke={BORDER}
             strokeWidth={stroke}
             fill="transparent"
           />
@@ -488,7 +501,7 @@ function ChanceRing({ value = 50, size = 44, tooltip = "" }) {
             placeItems: "center",
             fontWeight: 900,
             fontSize: 12,
-            color: "rgba(255,255,255,0.92)",
+            color: TEXT_LIGHT,
             pointerEvents: "none",
           }}
         >
@@ -713,7 +726,7 @@ function JournalPanel({
   const sectionTitleStyle = {
     fontSize: 12,
     fontWeight: 900,
-    color: "rgba(255,255,255,0.88)",
+    color: TEXT_LIGHT,
     letterSpacing: 0.2,
   };
 
@@ -734,7 +747,7 @@ function JournalPanel({
   const cardItemStyle = {
     borderRadius: 14,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.06)",
+    background: SOFT_BG,
     padding: 10,
     display: "grid",
     gap: 8,
@@ -746,14 +759,14 @@ function JournalPanel({
     whiteSpace: "pre-wrap",
     fontSize: 13,
     lineHeight: 1.45,
-    color: "rgba(255,255,255,0.92)",
+    color: TEXT_LIGHT,
   };
 
   const smallBtnStyle = {
     padding: "6px 9px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     cursor: "pointer",
     fontWeight: 900,
@@ -769,7 +782,7 @@ function JournalPanel({
         border: `1px solid ${BORDER}`,
         background: GLASS_BG,
         backgroundImage:
-          "radial-gradient(520px 320px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+          "radial-gradient(520px 320px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
         color: TEXT_LIGHT,
         overflow: "hidden",
         boxShadow: GLASS_SHADOW,
@@ -801,7 +814,7 @@ function JournalPanel({
                 borderRadius: 14,
                 border: "1px solid rgba(255,120,120,0.45)",
                 background: "rgba(255,120,120,0.12)",
-                color: "rgba(255,255,255,0.95)",
+                color: TEXT_LIGHT,
                 fontSize: 12,
               }}
             >
@@ -821,7 +834,7 @@ function JournalPanel({
                 padding: 8,
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
+                background: SOFT_BG,
                 outline: "none",
                 resize: "vertical",
               }}
@@ -834,7 +847,7 @@ function JournalPanel({
                 padding: "8px 10px",
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.10)",
+                background: "#eef0f6",
                 color: TEXT_LIGHT,
                 cursor: busyActionId === "add" || !draft.trim() ? "default" : "pointer",
                 fontWeight: 900,
@@ -862,7 +875,7 @@ function JournalPanel({
                   padding: 10,
                   borderRadius: 14,
                   border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.05)",
+                  background: "#fafbfd",
                   fontSize: 12,
                   color: MUTED,
                 }}
@@ -879,7 +892,7 @@ function JournalPanel({
                     <div key={c.id} style={cardItemStyle}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                         <div style={metaStyle}>
-                          <b style={{ color: "rgba(255,255,255,0.92)" }}>
+                          <b style={{ color: TEXT_LIGHT }}>
                             {c.user_email || "użytkownik"}
                           </b>{" "}
                           • {formatDateTimePL(c.created_at)}
@@ -930,7 +943,7 @@ function JournalPanel({
                               padding: 8,
                               borderRadius: 12,
                               border: `1px solid ${BORDER}`,
-                              background: "rgba(255,255,255,0.08)",
+                              background: SOFT_BG,
                               outline: "none",
                               resize: "vertical",
                             }}
@@ -945,7 +958,7 @@ function JournalPanel({
                                 padding: 10,
                                 borderRadius: 12,
                                 border: `1px solid ${BORDER}`,
-                                background: "rgba(255,255,255,0.10)",
+                                background: "#eef0f6",
                                 color: TEXT_LIGHT,
                                 cursor: busyActionId === c.id ? "default" : "pointer",
                                 fontWeight: 900,
@@ -965,7 +978,7 @@ function JournalPanel({
                                 padding: 10,
                                 borderRadius: 12,
                                 border: `1px solid ${BORDER}`,
-                                background: "rgba(255,255,255,0.05)",
+                                background: "#fafbfd",
                                 color: TEXT_LIGHT,
                                 cursor: "pointer",
                                 fontWeight: 900,
@@ -1005,7 +1018,7 @@ function JournalPanel({
                     <div key={`all-${c.id}`} style={cardItemStyle}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
                         <div style={metaStyle}>
-                          <b style={{ color: "rgba(255,255,255,0.92)" }}>
+                          <b style={{ color: TEXT_LIGHT }}>
                             {c.user_email || "użytkownik"}
                           </b>{" "}
                           • {formatDateTimePL(c.created_at)}
@@ -1056,7 +1069,7 @@ function JournalPanel({
                               padding: 8,
                               borderRadius: 12,
                               border: `1px solid ${BORDER}`,
-                              background: "rgba(255,255,255,0.08)",
+                              background: SOFT_BG,
                               outline: "none",
                               resize: "vertical",
                             }}
@@ -1071,7 +1084,7 @@ function JournalPanel({
                                 padding: 10,
                                 borderRadius: 12,
                                 border: `1px solid ${BORDER}`,
-                                background: "rgba(255,255,255,0.10)",
+                                background: "#eef0f6",
                                 color: TEXT_LIGHT,
                                 cursor: busyActionId === c.id ? "default" : "pointer",
                                 fontWeight: 900,
@@ -1091,7 +1104,7 @@ function JournalPanel({
                                 padding: 10,
                                 borderRadius: 12,
                                 border: `1px solid ${BORDER}`,
-                                background: "rgba(255,255,255,0.05)",
+                                background: "#fafbfd",
                                 color: TEXT_LIGHT,
                                 cursor: "pointer",
                                 fontWeight: 900,
@@ -1117,7 +1130,7 @@ function JournalPanel({
               padding: 10,
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: loading ? "default" : "pointer",
               fontWeight: 900,
@@ -1236,7 +1249,7 @@ async function markRead(u) {
         border: `1px solid ${BORDER}`,
         background: GLASS_BG,
         backgroundImage:
-          "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+          "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
         color: TEXT_LIGHT,
         boxShadow: GLASS_SHADOW,
         overflow: "hidden",
@@ -1282,7 +1295,7 @@ async function markRead(u) {
                 justifyContent: "center",
                 fontSize: 12,
                 fontWeight: 900,
-                color: "rgba(255,255,255,0.92)",
+                color: TEXT_LIGHT,
                 background: "rgba(239,68,68,0.22)",
                 border: "1px solid rgba(239,68,68,0.55)",
                 boxShadow: "0 0 18px rgba(239,68,68,0.15)",
@@ -1345,7 +1358,7 @@ async function markRead(u) {
               padding: "10px 12px",
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: loading ? "default" : "pointer",
               fontWeight: 900,
@@ -1366,7 +1379,7 @@ async function markRead(u) {
               padding: "10px 12px",
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: items.length === 0 ? "default" : "pointer",
               fontWeight: 900,
@@ -1390,7 +1403,7 @@ async function markRead(u) {
                 borderRadius: 14,
                 border: "1px solid rgba(255,120,120,0.45)",
                 background: "rgba(255,120,120,0.12)",
-                color: "rgba(255,255,255,0.95)",
+                color: TEXT_LIGHT,
                 fontSize: 12,
               }}
             >
@@ -1421,7 +1434,7 @@ async function markRead(u) {
                     style={{
                       borderRadius: 14,
                       border: `1px solid ${BORDER}`,
-                      background: "rgba(255,255,255,0.05)",
+                      background: "#fafbfd",
                       padding: 10,
                       position: "relative",
                       display: "grid",
@@ -1443,8 +1456,8 @@ async function markRead(u) {
                         height: 34,
                         borderRadius: 12,
                         border: `1px solid ${BORDER}`,
-                        background: "rgba(255,255,255,0.08)",
-                        color: "rgba(255,255,255,0.85)",
+                        background: SOFT_BG,
+                        color: TEXT_LIGHT,
                         cursor: "pointer",
                         display: "flex",
                         alignItems: "center",
@@ -1474,7 +1487,7 @@ async function markRead(u) {
                     </button>
 
                     <div style={{ fontSize: 12, color: MUTED, paddingRight: 44 }}>
-                      <b style={{ color: "rgba(255,255,255,0.92)" }}>
+                      <b style={{ color: TEXT_LIGHT }}>
                         {u.entity_title || `${u.kind} #${u.entity_id}`}
                       </b>{" "}
                       • {u.user_email || "użytkownik"} • {formatDateTimePL(u.created_at)}
@@ -1512,7 +1525,7 @@ async function markRead(u) {
                           padding: "8px 10px",
                           borderRadius: 12,
                           border: `1px solid ${BORDER}`,
-                          background: "rgba(255,255,255,0.06)",
+                          background: SOFT_BG,
                           color: TEXT_LIGHT,
                           cursor: "pointer",
                           fontWeight: 900,
@@ -1534,7 +1547,7 @@ async function markRead(u) {
                           padding: "8px 10px",
                           borderRadius: 12,
                           border: `1px solid ${BORDER}`,
-                          background: "rgba(255,255,255,0.05)",
+                          background: "#fafbfd",
                           color: TEXT_LIGHT,
                           cursor: "pointer",
                           fontWeight: 900,
@@ -1685,7 +1698,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     position: "fixed",
     inset: 0,
     zIndex: 9999,
-    background: "rgba(0,0,0,0.55)",
+    background: "rgba(18,24,38,0.42)",
     display: "grid",
     placeItems: "center",
     padding: 16,
@@ -1697,9 +1710,9 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     border: `1px solid ${BORDER}`,
     background: GLASS_BG,
     backgroundImage:
-      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+      "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
-    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
+    boxShadow: "0 20px 60px rgba(20,24,40,0.14)",
     overflow: "hidden",
     backdropFilter: "blur(10px)",
   };
@@ -1734,7 +1747,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     height: 38,
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     padding: "0 12px",
     outline: "none",
@@ -1754,7 +1767,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
     padding: "9px 10px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     cursor: "pointer",
     fontWeight: 900,
@@ -1793,7 +1806,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
             style={{
               ...btnStyle,
               padding: "8px 10px",
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               flexShrink: 0,
             }}
           >
@@ -1809,7 +1822,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
                 borderRadius: 14,
                 border: "1px solid rgba(255,120,120,0.45)",
                 background: "rgba(255,120,120,0.12)",
-                color: "rgba(255,255,255,0.95)",
+                color: TEXT_LIGHT,
                 fontSize: 12,
               }}
             >
@@ -1890,7 +1903,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       padding: 10,
       borderRadius: 14,
       border: `1px solid ${BORDER}`,
-      background: "rgba(255,255,255,0.06)",
+      background: SOFT_BG,
       width: "fit-content",
     }}
   >
@@ -1918,7 +1931,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         padding: "9px 10px",
         borderRadius: 12,
         border: `1px solid ${BORDER}`,
-        background: "rgba(255,255,255,0.08)",
+        background: SOFT_BG,
         color: TEXT_LIGHT,
         cursor: "pointer",
         fontWeight: 900,
@@ -1938,7 +1951,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         height: 34,
         borderRadius: 12,
         border: `1px solid ${BORDER}`,
-        background: "rgba(255,255,255,0.06)",
+        background: SOFT_BG,
         color: TEXT_LIGHT,
         padding: "0 10px",
         fontSize: 11,
@@ -1953,7 +1966,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         padding: "9px 10px",
         borderRadius: 12,
         border: `1px solid ${BORDER}`,
-        background: "rgba(255,255,255,0.08)",
+        background: SOFT_BG,
         color: TEXT_LIGHT,
         cursor: "pointer",
         fontWeight: 900,
@@ -2006,7 +2019,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
               onClick={onClose}
               style={{
                 ...btnStyle,
-                background: "rgba(255,255,255,0.05)",
+                background: "#fafbfd",
               }}
             >
               Anuluj
@@ -2017,7 +2030,7 @@ if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
               disabled={saving}
               style={{
                 ...btnStyle,
-                background: "rgba(255,255,255,0.10)",
+                background: "#eef0f6",
                 opacity: saving ? 0.75 : 1,
                 cursor: saving ? "default" : "pointer",
               }}
@@ -2050,7 +2063,7 @@ function CreateDeviceModal({
     position: "fixed",
     inset: 0,
     zIndex: 9999,
-    background: "rgba(0,0,0,0.55)",
+    background: "rgba(18,24,38,0.42)",
     display: "grid",
     placeItems: "center",
     padding: 16,
@@ -2062,9 +2075,9 @@ function CreateDeviceModal({
     border: `1px solid ${BORDER}`,
     background: GLASS_BG,
     backgroundImage:
-      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+      "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
-    boxShadow: "0 18px 55px rgba(0,0,0,0.55)",
+    boxShadow: "0 20px 60px rgba(20,24,40,0.14)",
     overflow: "hidden",
     backdropFilter: "blur(10px)",
   };
@@ -2095,7 +2108,7 @@ function CreateDeviceModal({
     height: 38,
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     padding: "0 12px",
     outline: "none",
@@ -2115,7 +2128,7 @@ function CreateDeviceModal({
     padding: "9px 10px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.08)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     cursor: "pointer",
     fontWeight: 900,
@@ -2140,7 +2153,7 @@ function CreateDeviceModal({
             </div>
           </div>
 
-          <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.06)" }}>
+          <button onClick={onClose} style={{ ...btnStyle, background: SOFT_BG }}>
             Zamknij
           </button>
         </div>
@@ -2277,10 +2290,10 @@ function CreateDeviceModal({
           <div style={{ height: 1, background: BORDER, opacity: 0.9, marginTop: 2 }} />
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <button onClick={onClose} style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}>
+            <button onClick={onClose} style={{ ...btnStyle, background: "#fafbfd" }}>
               Anuluj
             </button>
-            <button onClick={onCreate} style={{ ...btnStyle, background: "rgba(255,255,255,0.10)" }}>
+            <button onClick={onCreate} style={{ ...btnStyle, background: "#eef0f6" }}>
               Zapisz i dodaj
             </button>
           </div>
@@ -2371,7 +2384,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
 
   if (error) {
     return (
-      <div style={{ padding: 20, color: "white", background: "#111827", minHeight: "100vh" }}>
+      <div style={{ padding: 20, color: TEXT_LIGHT, background: SOFT_BG, minHeight: "100vh" }}>
         {error}
       </div>
     );
@@ -2379,7 +2392,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
 
   if (!device) {
     return (
-      <div style={{ padding: 20, color: "white", background: "#111827", minHeight: "100vh" }}>
+      <div style={{ padding: 20, color: TEXT_LIGHT, background: SOFT_BG, minHeight: "100vh" }}>
         Ładowanie...
       </div>
     );
@@ -2389,7 +2402,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "#111827",
+        background: SOFT_BG,
         color: TEXT_LIGHT,
         padding: 16,
         display: "flex",
@@ -2406,7 +2419,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
           padding: 18,
         }}
       >
-        <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>
+        <div style={{ fontFamily: FONT_DISPLAY, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", marginBottom: 8 }}>
           {device.title || `Urządzenie #${device.id}`}
         </div>
 
@@ -2424,7 +2437,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
             padding: "10px 14px",
             borderRadius: 12,
             border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.08)",
+            background: SOFT_BG,
             color: TEXT_LIGHT,
             fontWeight: 800,
             cursor: "pointer",
@@ -2616,7 +2629,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     position: "fixed",
     inset: 0,
     zIndex: 9999,
-    background: "rgba(0,0,0,0.55)",
+    background: "rgba(18,24,38,0.42)",
     display: "grid",
     placeItems: "center",
     padding: 16,
@@ -2629,7 +2642,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     border: `1px solid ${BORDER}`,
     background: GLASS_BG,
     backgroundImage:
-      "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+      "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
     color: TEXT_LIGHT,
     boxShadow: GLASS_SHADOW,
     overflow: "hidden",
@@ -2653,7 +2666,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     padding: "9px 10px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.06)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     cursor: "pointer",
     fontWeight: 900,
@@ -2672,7 +2685,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     overflow: "hidden",
     borderRadius: 14,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.04)",
+    background: "#fafbfd",
   };
 
   const thStyle = {
@@ -2713,7 +2726,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     padding: "0 10px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.07)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     outline: "none",
     fontSize: 12,
@@ -2729,7 +2742,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     padding: "7px 9px",
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.06)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     cursor: "pointer",
     fontWeight: 900,
@@ -2761,17 +2774,17 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
             </div>
             <div style={{ fontSize: 11, color: MUTED, opacity: 0.9, marginTop: 2 }}>
               Rekordy:{" "}
-              <b style={{ color: "rgba(255,255,255,0.88)" }}>
+              <b style={{ color: TEXT_LIGHT }}>
                 {filteredSorted.length}/{list.length}
               </b>{" "}
-              • Sort: <b style={{ color: "rgba(255,255,255,0.88)" }}>{sort.key}</b> ({sort.dir})
+              • Sort: <b style={{ color: TEXT_LIGHT }}>{sort.key}</b> ({sort.dir})
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
             <button
               onClick={() => setFilters({ title: "", status: "all", note: "", id: "" })}
-              style={{ ...btnStyle, background: "rgba(255,255,255,0.05)" }}
+              style={{ ...btnStyle, background: "#fafbfd" }}
               title="Wyczyść filtry"
             >
               Wyczyść filtry
@@ -2884,7 +2897,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
           return (
             <tr key={`wh-row-${warehouseKey}-${d.id}`}>
               <td style={tdStyle}>
-                <b style={{ color: "rgba(255,255,255,0.92)" }}>{d.id}</b>
+                <b style={{ color: TEXT_LIGHT }}>{d.id}</b>
               </td>
 
               <td style={tdStyle}>
@@ -2903,7 +2916,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
                     padding: "4px 8px",
                     borderRadius: 999,
                     border: `1px solid ${BORDER}`,
-                    background: "rgba(255,255,255,0.06)",
+                    background: SOFT_BG,
                     fontWeight: 900,
                     fontSize: 11,
                     whiteSpace: "nowrap",
@@ -3722,7 +3735,7 @@ async function togglePointPriority(pt) {
   if (mode === "checking") {
     return (
       <div style={pageStyle}>
-        <div style={{ color: "white", opacity: 0.85 }}>Sprawdzam sesję...</div>
+        <div style={{ color: MUTED }}>Sprawdzam sesję...</div>
       </div>
     );
   }
@@ -3748,7 +3761,7 @@ async function togglePointPriority(pt) {
                 borderRadius: 12,
                 background: "rgba(59, 130, 246, 0.16)",
                 border: "1px solid rgba(59, 130, 246, 0.35)",
-                color: "rgba(255,255,255,0.96)",
+                color: TEXT_LIGHT,
               }}
             >
               {authNotice}
@@ -3846,7 +3859,7 @@ async function togglePointPriority(pt) {
             height: 36,
             borderRadius: 12,
             border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.06)",
+            background: SOFT_BG,
             color: TEXT_LIGHT,
             cursor: "pointer",
             display: "grid",
@@ -3854,7 +3867,7 @@ async function togglePointPriority(pt) {
             fontSize: 16,
             lineHeight: 1,
             padding: 0,
-            boxShadow: "0 10px 22px rgba(0,0,0,0.18)",
+            boxShadow: "0 10px 26px rgba(20,24,40,0.06)",
           }}
         >
           ⟨
@@ -3870,8 +3883,8 @@ async function togglePointPriority(pt) {
                 padding: "3px 8px",
                 borderRadius: 999,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.88)",
+                background: SOFT_BG,
+                color: TEXT_LIGHT,
                 flexShrink: 0,
               }}
             >
@@ -3913,7 +3926,7 @@ async function togglePointPriority(pt) {
               }}
             >
               Zalogowano:{" "}
-              <b style={{ color: "rgba(255,255,255,0.88)" }}>
+              <b style={{ color: TEXT_LIGHT }}>
                 {user?.email || "(użytkownik)"}
               </b>
             </div>
@@ -3926,12 +3939,12 @@ async function togglePointPriority(pt) {
             padding: "8px 10px",
             borderRadius: 12,
             border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.06)",
+            background: SOFT_BG,
             color: TEXT_LIGHT,
             cursor: "pointer",
             fontWeight: 900,
             fontSize: 11,
-            boxShadow: "0 10px 22px rgba(0,0,0,0.16)",
+            boxShadow: "0 10px 26px rgba(20,24,40,0.06)",
           }}
         >
           Wyloguj
@@ -3954,7 +3967,7 @@ async function togglePointPriority(pt) {
               borderRadius: 14,
               border: "1px solid rgba(255,120,120,0.45)",
               background: "rgba(255,120,120,0.12)",
-              color: "rgba(255,255,255,0.95)",
+              color: TEXT_LIGHT,
               fontSize: 11,
               marginBottom: 10,
             }}
@@ -3969,7 +3982,7 @@ async function togglePointPriority(pt) {
             padding: 10,
             borderRadius: 14,
             border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.04)",
+            background: "#fafbfd",
             backgroundImage: GLASS_HIGHLIGHT,
             backdropFilter: "blur(8px)",
             marginBottom: 10,
@@ -4003,7 +4016,7 @@ async function togglePointPriority(pt) {
                 padding: "9px 10px",
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
+                background: SOFT_BG,
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4035,7 +4048,7 @@ async function togglePointPriority(pt) {
                 padding: "9px 10px",
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: addMode === "point" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.08)",
+                background: addMode === "point" ? ACCENT_SOFT : SOFT_BG,
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4061,7 +4074,7 @@ async function togglePointPriority(pt) {
             padding: 10,
             borderRadius: 14,
             border: `1px solid ${BORDER}`,
-            background: "rgba(255,255,255,0.04)",
+            background: "#fafbfd",
             backgroundImage: GLASS_HIGHLIGHT,
             backdropFilter: "blur(8px)",
             marginBottom: 10,
@@ -4090,7 +4103,7 @@ async function togglePointPriority(pt) {
                 padding: 9,
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
+                background: SOFT_BG,
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4112,7 +4125,7 @@ async function togglePointPriority(pt) {
                 padding: 9,
                 borderRadius: 12,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
+                background: "#fafbfd",
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4133,7 +4146,7 @@ async function togglePointPriority(pt) {
                   padding: "9px 10px",
                   borderRadius: 12,
                   border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.08)",
+                  background: SOFT_BG,
                   cursor: "pointer",
                   fontWeight: 800,
                   display: "flex",
@@ -4149,7 +4162,7 @@ async function togglePointPriority(pt) {
                     fontSize: 16,
                     lineHeight: 1,
                     color: selectedPoint?.priority
-                      ? "rgba(255,255,255,0.65)"
+                      ? MUTED
                       : "rgba(245,158,11,0.95)",
                     textShadow: selectedPoint?.priority ? "none" : "0 0 12px rgba(245,158,11,0.25)",
                   }}
@@ -4165,7 +4178,7 @@ async function togglePointPriority(pt) {
                   padding: 9,
                   borderRadius: 12,
                   border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.10)",
+                  background: "#eef0f6",
                   color: TEXT_LIGHT,
                   cursor: "pointer",
                   fontWeight: 800,
@@ -4235,7 +4248,7 @@ async function togglePointPriority(pt) {
         color: "#111827",
         background: "rgba(239,68,68,0.95)",
         border: onlyOverdue
-          ? "2px solid rgba(255,255,255,0.75)"
+          ? `2px solid ${ACCENT}`
           : "1px solid rgba(239,68,68,0.65)",
         boxShadow: onlyOverdue ? "0 0 0 3px rgba(239,68,68,0.18)" : "none",
         userSelect: "none",
@@ -4283,7 +4296,7 @@ async function togglePointPriority(pt) {
                 gap: 14,
                 flexWrap: "wrap",
                 fontSize: 12,
-                color: "rgba(255,255,255,0.65)",
+                color: MUTED,
               }}
             >
               <div style={{ fontSize: 11, color: MUTED, display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -4306,7 +4319,7 @@ async function togglePointPriority(pt) {
               padding: "0 10px",
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               color: TEXT_LIGHT,
               outline: "none",
               fontSize: 12,
@@ -4338,9 +4351,9 @@ async function togglePointPriority(pt) {
                       border: x.priority
                         ? "2px solid rgba(255,216,77,0.70)"
                         : selected
-                        ? "2px solid rgba(255,255,255,0.35)"
+                        ? `2px solid ${ACCENT}`
                         : `1px solid ${BORDER}`,
-                      background: x.priority ? "rgba(255,216,77,0.08)" : "rgba(255,255,255,0.05)",
+                      background: x.priority ? "rgba(255,216,77,0.16)" : "#fafbfd",
                       cursor: "pointer",
                     }}
                   >
@@ -4456,7 +4469,7 @@ async function togglePointPriority(pt) {
         display: "flex",
         alignItems: "center",
         gap: 10,
-        boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+        boxShadow: "0 10px 26px rgba(20,24,40,0.08)",
         backdropFilter: "blur(8px)",
       }}
     >
@@ -4478,7 +4491,7 @@ async function togglePointPriority(pt) {
         borderRadius: 16,
         border: `1px solid ${BORDER}`,
         background: GLASS_BG,
-        backgroundImage: "radial-gradient(700px 420px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+        backgroundImage: "radial-gradient(700px 420px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
         color: TEXT_LIGHT,
         boxShadow: GLASS_SHADOW,
         overflow: "hidden",
@@ -4516,7 +4529,7 @@ async function togglePointPriority(pt) {
               padding: "9px 10px",
               borderRadius: 12,
               border: `1px solid ${BORDER}`,
-              background: "rgba(255,255,255,0.06)",
+              background: SOFT_BG,
               color: TEXT_LIGHT,
               cursor: "pointer",
               fontWeight: 900,
@@ -4563,7 +4576,7 @@ async function togglePointPriority(pt) {
         borderRadius: 16,
         border: `1px solid ${BORDER}`,
         background: GLASS_BG,
-        backgroundImage: "radial-gradient(500px 300px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+        backgroundImage: "radial-gradient(500px 300px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
         backdropFilter: "blur(8px)",
         color: TEXT_LIGHT,
         overflow: "hidden",
@@ -4607,7 +4620,7 @@ async function togglePointPriority(pt) {
                   padding: "8px 10px",
                   borderRadius: 12,
                   border: `1px solid ${BORDER}`,
-                  background: "rgba(255,255,255,0.04)",
+                  background: "#fafbfd",
                 }}
               >
                 <input
@@ -4638,7 +4651,7 @@ async function togglePointPriority(pt) {
                 padding: "8px 10px",
                 borderRadius: 10,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.08)",
+                background: SOFT_BG,
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4654,7 +4667,7 @@ async function togglePointPriority(pt) {
                 padding: "8px 10px",
                 borderRadius: 10,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.05)",
+                background: "#fafbfd",
                 color: TEXT_LIGHT,
                 cursor: "pointer",
                 fontWeight: 800,
@@ -4725,17 +4738,17 @@ async function togglePointPriority(pt) {
   }}
 />
           <TileLayer
-            attribution="&copy; OpenStreetMap contributors"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution="&copy; OpenStreetMap contributors &copy; CARTO"
+            url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
           />
 
           {worldMask ? (
             <GeoJSON
               data={worldMask}
               style={{
-                fillColor: "#0f172a",
-                fillOpacity: 0.55,
-                color: "#0f172a",
+                fillColor: "#ffffff",
+                fillOpacity: 0.62,
+                color: "#ffffff",
                 weight: 0,
               }}
             />
@@ -4799,7 +4812,7 @@ const baseKey = `${pt.status}__base`;
               border: `1px solid ${BORDER}`,
               background: GLASS_BG,
               backgroundImage:
-                "radial-gradient(520px 320px at 20% 10%, rgba(255,255,255,0.10), transparent 60%)",
+                "radial-gradient(520px 320px at 20% 10%, rgba(124,77,255,0.06), transparent 60%)",
               color: TEXT_LIGHT,
               boxShadow: GLASS_SHADOW,
               padding: 12,
@@ -4818,8 +4831,8 @@ const baseKey = `${pt.status}__base`;
                 height: 26,
                 borderRadius: 8,
                 border: `1px solid ${BORDER}`,
-                background: "rgba(255,255,255,0.06)",
-                color: "rgba(255,255,255,0.85)",
+                background: SOFT_BG,
+                color: TEXT_LIGHT,
                 cursor: "pointer",
                 display: "grid",
                 placeItems: "center",
@@ -4849,7 +4862,7 @@ const baseKey = `${pt.status}__base`;
                 </div>
                 <div style={{ fontSize: 12, color: MUTED }}>
                   Status:{" "}
-                  <b style={{ color: "rgba(255,255,255,0.92)" }}>
+                  <b style={{ color: TEXT_LIGHT }}>
                     {statusLabel(pt.status)}
                   </b>
                 </div>
@@ -4953,7 +4966,7 @@ const baseKey = `${pt.status}__base`;
     padding: "6px 10px",
     borderRadius: 10,
     border: `1px solid ${BORDER}`,
-    background: "rgba(255,255,255,0.06)",
+    background: SOFT_BG,
     color: TEXT_LIGHT,
     fontWeight: 800,
     fontSize: 11,
@@ -5043,9 +5056,9 @@ const pillStyle = {
   fontSize: 11,
   padding: "2px 8px",
   borderRadius: 999,
-  background: "rgba(255,255,255,0.10)",
+  background: "#eef0f6",
   border: `1px solid ${BORDER}`,
-  color: "rgba(255,255,255,0.9)",
+  color: TEXT_LIGHT,
   whiteSpace: "nowrap",
 };
 
@@ -5061,22 +5074,21 @@ const pageStyle = {
   overflow: "hidden",
   overflowX: "hidden",
   background:
-    "radial-gradient(1200px 600px at 20% 10%, rgba(99,102,241,0.22), transparent 60%)," +
-    "radial-gradient(900px 500px at 85% 20%, rgba(34,197,94,0.14), transparent 55%)," +
-    "radial-gradient(900px 500px at 40% 95%, rgba(59,130,246,0.16), transparent 55%)," +
-    "linear-gradient(180deg, #070B14 0%, #0B1220 45%, #070B14 100%)",
+    "radial-gradient(1200px 600px at 20% 10%, rgba(124,77,255,0.14), transparent 60%)," +
+    "radial-gradient(900px 500px at 85% 20%, rgba(139,92,246,0.10), transparent 55%)," +
+    "radial-gradient(900px 500px at 40% 95%, rgba(124,77,255,0.08), transparent 55%)," +
+    "linear-gradient(180deg, #ffffff 0%, #f6f7fb 45%, #f1edff 100%)",
 };
 
 const cardStyle = {
   boxSizing: "border-box",
   width: "min(420px, calc(100% - 32px))",
   maxWidth: 520,
-  background: "rgba(18, 32, 51, 0.72)",
-  borderRadius: 18,
-  padding: "clamp(16px, 2.2vw, 22px)",
-  boxShadow: "0 18px 55px rgba(0,0,0,0.45)",
-  border: "1px solid rgba(255,255,255,0.10)",
-  backdropFilter: "blur(10px)",
+  background: "#fff",
+  borderRadius: 28,
+  padding: "clamp(20px, 2.4vw, 28px)",
+  boxShadow: "0 20px 60px rgba(20,24,40,0.10)",
+  border: `1px solid ${BORDER}`,
 };
 
 const brandRow = {
@@ -5086,53 +5098,58 @@ const brandRow = {
 };
 
 const brandDot = {
-  width: 10,
-  height: 10,
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.85)",
-  boxShadow: "0 0 0 6px rgba(255,255,255,0.08)",
+  width: 30,
+  height: 30,
+  borderRadius: 9,
+  background: "linear-gradient(135deg,#7c4dff,#9b6cff)",
+  boxShadow: "0 8px 20px rgba(124,77,255,0.28)",
   flex: "0 0 auto",
 };
 
 const brandText = {
-  color: "white",
+  color: TEXT_LIGHT,
+  fontFamily: FONT_DISPLAY,
   fontWeight: 800,
-  letterSpacing: 0.2,
-  fontSize: 14,
+  letterSpacing: "-0.02em",
+  fontSize: 17,
 };
 
 const titleStyle = {
-  margin: "10px 0 0",
-  fontSize: 22,
-  color: "white",
+  margin: "18px 0 0",
+  fontFamily: FONT_DISPLAY,
+  fontSize: 28,
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  color: TEXT_LIGHT,
   textAlign: "center",
 };
 
 const subtitleStyle = {
   marginTop: 8,
-  opacity: 0.82,
-  color: "white",
+  fontSize: 15,
+  color: MUTED,
   textAlign: "center",
 };
 
 const labelStyle = {
   display: "block",
-  color: "rgba(255,255,255,0.85)",
+  color: TEXT_LIGHT,
   fontSize: 12,
   fontWeight: 700,
-  marginBottom: 6,
+  marginBottom: 7,
 };
 
 const inputStyle = {
   boxSizing: "border-box",
   width: "100%",
-  height: 40,
+  minHeight: 48,
   borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.12)",
-  background: "rgba(255,255,255,0.06)",
-  color: "white",
-  padding: "0 12px",
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  color: TEXT_LIGHT,
+  padding: "12px",
   outline: "none",
+  fontSize: 15,
 };
 
 const errorStyle = {
@@ -5140,28 +5157,32 @@ const errorStyle = {
   marginTop: 12,
   padding: 12,
   borderRadius: 12,
-  background: "rgba(255, 59, 59, 0.16)",
-  border: "1px solid rgba(255, 59, 59, 0.40)",
-  color: "rgba(255,255,255,0.96)",
+  background: "rgba(239, 68, 68, 0.10)",
+  border: "1px solid rgba(239, 68, 68, 0.35)",
+  color: "#b91c1c",
+  fontWeight: 600,
 };
 
 const primaryButtonStyle = (loading) => ({
   boxSizing: "border-box",
-  marginTop: 14,
+  marginTop: 16,
   width: "100%",
-  height: 40,
-  borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.14)",
-  background: "rgba(255,255,255,0.10)",
-  color: "white",
+  minHeight: 50,
+  borderRadius: 13,
+  border: 0,
+  background: loading ? "#a892f5" : ACCENT,
+  color: "#fff",
+  fontFamily: FONT_DISPLAY,
   fontWeight: 800,
-  cursor: loading ? "not-allowed" : "pointer",
+  fontSize: 15,
+  boxShadow: "0 14px 34px rgba(124,77,255,0.36)",
+  cursor: loading ? "wait" : "pointer",
+  transition: "0.2s",
 });
 
 const hintStyle = {
-  marginTop: 12,
-  opacity: 0.78,
+  marginTop: 14,
   fontSize: 13,
-  color: "white",
+  color: MUTED,
   textAlign: "center",
 };

@@ -1,0 +1,40 @@
+/* =========================================================
+   Design tokens — przeniesione 1:1 z GeoPlanner (index.html)
+   Jeden "source of truth" dla całej aplikacji.
+   ========================================================= */
+:root {
+  /* --- paleta GeoPlanner --- */
+  --ink: #121826;
+  --ink-2: #1e293b;
+  --muted: #64748b;
+  --soft: #f6f7fb;
+  --line: #e7e8f0;
+  --white: #fff;
+
+  --purple: #7c4dff;
+  --purple-2: #6840e6;
+  --purple-soft: #f1edff;
+  --violet: #8b5cf6;
+
+  --orange: #ff8a00;
+  --green: #14b870;
+  --blue: #2563eb;
+  --red: #ef4444;
+
+  /* --- kształt --- */
+  --radius: 22px;
+  --radius-sm: 13px;
+  --radius-lg: 28px;
+  --shadow: 0 20px 60px rgba(20, 24, 40, 0.1);
+  --shadow-sm: 0 10px 26px rgba(20, 24, 40, 0.04);
+  --shadow-purple: 0 14px 34px rgba(124, 77, 255, 0.36);
+
+  /* --- typografia --- */
+  --font-body: Inter, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+
+  /* --- panele nad mapą (jasne "szkło") --- */
+  --panel-bg: rgba(255, 255, 255, 0.92);
+  --panel-bg-solid: rgba(255, 255, 255, 0.98);
+  --panel-blur: blur(16px);
+}
