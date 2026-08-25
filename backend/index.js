@@ -896,6 +896,7 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
 // `status` doprecyzowuje jego rodzaj/kategorię.
 
 const MATERIAL_CATEGORIES = ["inklinometry", "czujniki_drgan", "hlc"];
+const WAREHOUSE_VALUES = ["GEO_BB", "GEO_OM", "GEO_LD", "SERWIS"];
 
 app.get("/api/materials", authRequired, async (req, res) => {
   try {
@@ -946,7 +947,13 @@ app.post("/api/materials", authRequired, async (req, res) => {
       ? Math.max(0, Math.trunc(Number(body.quantity)))
       : 0;
     const unit = String(body.unit || "szt.").trim();
-    const warehouse = body.warehouse ? String(body.warehouse).trim() : null;
+    // Tabela wymusza: in_storage = true => warehouse NOT NULL
+    // (ograniczenie assets_storage_location_chk). Pozycja materiałowa
+    // zawsze leży w jakimś magazynie, więc brak wyboru = magazyn domyślny.
+    const warehouse = body.warehouse ? String(body.warehouse).trim() : "GEO_BB";
+    if (!WAREHOUSE_VALUES.includes(warehouse)) {
+      return res.status(400).json({ error: "Nieznany magazyn" });
+    }
     const notes = String(body.notes || "");
 
     const q = await pool.query(
@@ -1000,7 +1007,12 @@ app.patch("/api/materials/:id", authRequired, async (req, res) => {
       sets.push(`unit = $${params.length}`);
     }
     if (body.warehouse !== undefined) {
-      params.push(body.warehouse ? String(body.warehouse).trim() : null);
+      // Pusty magazyn złamałby assets_storage_location_chk przy in_storage=true.
+      const w = String(body.warehouse || "").trim();
+      if (!WAREHOUSE_VALUES.includes(w)) {
+        return res.status(400).json({ error: "Nieznany magazyn" });
+      }
+      params.push(w);
       sets.push(`warehouse = $${params.length}`);
     }
     if (body.notes !== undefined) {
