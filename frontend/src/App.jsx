@@ -3876,6 +3876,34 @@ async function togglePointPriority(pt) {
         : storageDevices.slice().sort(byPriorityThenIdDesc)
     ).filter(matches);
 
+
+    /* --- dane do wykresów (liczone z aktualnie widocznej listy) --- */
+    const typeStats = DEVICE_TYPES.map((t) => ({
+      value: t.value,
+      label: t.label,
+      color: DEVICE_COLORS[t.value] || MUTED,
+      count: visibleList.filter((d) => d.type === t.value).length,
+    }));
+    const typeMax = Math.max(1, ...typeStats.map((t) => t.count));
+
+    const calStats = visibleList.reduce(
+      (acc, d) => {
+        const tone = calibrationMeta(d).tone;
+        if (tone === "overdue") acc.overdue += 1;
+        else if (tone === "warn") acc.warn += 1;
+        else if (tone === "ok") acc.ok += 1;
+        else acc.unknown += 1;
+        return acc;
+      },
+      { overdue: 0, warn: 0, ok: 0, unknown: 0 }
+    );
+
+    const calBreakdown = [
+      { key: "overdue", label: "Po terminie", count: calStats.overdue, color: "#ef4444" },
+      { key: "warn", label: "Wkrótce (30 dni)", count: calStats.warn, color: "#f59e0b" },
+      { key: "ok", label: "Aktualna", count: calStats.ok, color: "#14b870" },
+      { key: "unknown", label: "Brak daty", count: calStats.unknown, color: "#94a3b8" },
+    ];
     const warehouseIcon = (key) => (key === "SERWIS" ? "🛠️" : "📦");
 
     return (
@@ -3957,6 +3985,126 @@ async function togglePointPriority(pt) {
                 </button>
               );
             })}
+          </div>
+
+          {/* PODSUMOWANIE LICZBOWE */}
+          <div style={statRowStyle}>
+            <div style={statTileStyle}>
+              <div style={statLabelStyle}>W magazynach</div>
+              <div style={statValueStyle}>{visibleList.length}</div>
+              <div style={statHintStyle}>
+                {storageWarehouse ? `magazyn ${storageWarehouse}` : "wszystkie magazyny"}
+              </div>
+            </div>
+            <div style={statTileStyle}>
+              <div style={statLabelStyle}>Kalibracja po terminie</div>
+              <div style={{ ...statValueStyle, color: calStats.overdue > 0 ? "#b91c1c" : TEXT_LIGHT }}>
+                {calStats.overdue}
+              </div>
+              <div style={statHintStyle}>wymaga natychmiastowej obsługi</div>
+            </div>
+            <div style={statTileStyle}>
+              <div style={statLabelStyle}>Kalibracja wkrótce</div>
+              <div style={{ ...statValueStyle, color: calStats.warn > 0 ? "#b45309" : TEXT_LIGHT }}>
+                {calStats.warn}
+              </div>
+              <div style={statHintStyle}>w ciągu 30 dni</div>
+            </div>
+            <div style={statTileStyle}>
+              <div style={statLabelStyle}>Rodzaje sprzętu</div>
+              <div style={statValueStyle}>{typeStats.filter((t) => t.count > 0).length}</div>
+              <div style={statHintStyle}>z {DEVICE_TYPES.length} kategorii</div>
+            </div>
+          </div>
+
+          {/* WYKRESY */}
+          <div style={chartsRowStyle}>
+            {/* Rozkład wg rodzaju sprzętu */}
+            <section style={chartCardStyle} aria-label="Rozkład sprzętu wg rodzaju">
+              <h2 style={chartTitleStyle}>Sprzęt wg rodzaju</h2>
+              <p style={chartSubtitleStyle}>
+                Liczba urządzeń w {storageWarehouse ? `magazynie ${storageWarehouse}` : "magazynach"}
+              </p>
+
+              {typeStats.every((t) => t.count === 0) ? (
+                <div style={chartEmptyStyle}>Brak danych do pokazania.</div>
+              ) : (
+                <div style={barListStyle}>
+                  {typeStats.map((t) => {
+                    const pct = typeMax > 0 ? Math.round((t.count / typeMax) * 100) : 0;
+                    return (
+                      <div key={t.value} style={barRowStyle}>
+                        <div style={barHeadStyle}>
+                          <span style={barLabelStyle}>
+                            <span
+                              style={{ ...barSwatchStyle, background: t.color }}
+                              aria-hidden="true"
+                            />
+                            {t.label}
+                          </span>
+                          <span style={barValueStyle}>{t.count}</span>
+                        </div>
+                        <div
+                          style={barTrackStyle}
+                          title={`${t.label}: ${t.count} z ${visibleList.length}`}
+                        >
+                          <div
+                            style={{
+                              ...barFillStyle,
+                              width: `${pct}%`,
+                              background: t.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Stan kalibracji */}
+            <section style={chartCardStyle} aria-label="Stan kalibracji sprzętu">
+              <h2 style={chartTitleStyle}>Stan kalibracji</h2>
+              <p style={chartSubtitleStyle}>Ile urządzeń wymaga uwagi</p>
+
+              {visibleList.length === 0 ? (
+                <div style={chartEmptyStyle}>Brak danych do pokazania.</div>
+              ) : (
+                <div style={barListStyle}>
+                  {calBreakdown.map((c) => {
+                    const pct = visibleList.length > 0
+                      ? Math.round((c.count / visibleList.length) * 100)
+                      : 0;
+                    return (
+                      <div key={c.key} style={barRowStyle}>
+                        <div style={barHeadStyle}>
+                          <span style={barLabelStyle}>
+                            <span
+                              style={{ ...barSwatchStyle, background: c.color }}
+                              aria-hidden="true"
+                            />
+                            {c.label}
+                          </span>
+                          <span style={barValueStyle}>
+                            {c.count}
+                            <span style={barPctStyle}> · {pct}%</span>
+                          </span>
+                        </div>
+                        <div
+                          style={barTrackStyle}
+                          title={`${c.label}: ${c.count} z ${visibleList.length} (${pct}%)`}
+                        >
+                          <div
+                            style={{ ...barFillStyle, width: `${pct}%`, background: c.color }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
           </div>
 
           {/* TABELA */}
@@ -5660,4 +5808,134 @@ const storageTdStyle = {
   fontSize: 12,
   borderBottom: `1px solid ${BORDER}`,
   verticalAlign: "middle",
+};
+
+/** ===== TRYB MAGAZYNOWY — podsumowanie i wykresy =====
+ *  Słupki poziome: cienki znacznik, zaokrąglony koniec danych, recesywny
+ *  tor. Każdy słupek ma etykietę tekstową i wartość, więc tożsamość
+ *  kategorii nigdy nie zależy od samego koloru (wymóg dostępności przy
+ *  wadach widzenia barw).
+ */
+const statRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+  gap: 12,
+};
+
+const statTileStyle = {
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 20,
+  padding: "16px 18px",
+  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
+};
+
+const statLabelStyle = {
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: MUTED,
+};
+
+const statValueStyle = {
+  marginTop: 6,
+  fontFamily: FONT_DISPLAY,
+  fontSize: 30,
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  lineHeight: 1.1,
+  color: TEXT_LIGHT,
+};
+
+const statHintStyle = { marginTop: 2, fontSize: 11, color: MUTED };
+
+const chartsRowStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+  gap: 16,
+};
+
+const chartCardStyle = {
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 22,
+  padding: "20px 22px 22px",
+  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
+};
+
+const chartTitleStyle = {
+  margin: 0,
+  fontFamily: FONT_DISPLAY,
+  fontSize: 17,
+  fontWeight: 800,
+  letterSpacing: "-0.02em",
+  color: TEXT_LIGHT,
+};
+
+const chartSubtitleStyle = {
+  margin: "4px 0 18px",
+  fontSize: 12,
+  color: MUTED,
+};
+
+const chartEmptyStyle = {
+  padding: "24px 0",
+  fontSize: 13,
+  color: MUTED,
+};
+
+const barListStyle = { display: "grid", gap: 14 };
+
+const barRowStyle = { display: "grid", gap: 6 };
+
+const barHeadStyle = {
+  display: "flex",
+  alignItems: "baseline",
+  justifyContent: "space-between",
+  gap: 10,
+};
+
+const barLabelStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  fontSize: 12,
+  fontWeight: 700,
+  color: TEXT_LIGHT,
+  minWidth: 0,
+};
+
+/** Próbka koloru — wzmacnia identyfikację, ale nie jest jej nośnikiem. */
+const barSwatchStyle = {
+  width: 10,
+  height: 10,
+  borderRadius: 3,
+  flex: "0 0 auto",
+};
+
+const barValueStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 13,
+  fontWeight: 800,
+  color: TEXT_LIGHT,
+  whiteSpace: "nowrap",
+};
+
+const barPctStyle = { fontWeight: 700, color: MUTED };
+
+/** Tor słupka — recesywny, nie konkuruje z danymi. */
+const barTrackStyle = {
+  position: "relative",
+  height: 10,
+  borderRadius: 999,
+  background: "#eef0f6",
+  overflow: "hidden",
+};
+
+const barFillStyle = {
+  height: "100%",
+  borderRadius: 999,
+  minWidth: 3,
+  transition: "width 420ms cubic-bezier(0.22, 1, 0.36, 1)",
 };
