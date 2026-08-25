@@ -3005,6 +3005,12 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
 }
 
 
+  /** ===== TRYB PRACY =====
+   *  Po zalogowaniu użytkownik wybiera obszar pracy: ewidencja (mapa)
+   *  albo stan magazynowy. null = ekran wyboru trybu.
+   */
+  const [workspace, setWorkspace] = useState(null); // null | "inventory" | "storage"
+  const [storageWarehouse, setStorageWarehouse] = useState(null); // wybrany magazyn w trybie magazynowym
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -3059,6 +3065,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     setPassword("");
     setErr("");
     setMode("login");
+    setWorkspace(null);
 
     setSelectedPointId(null);
     setPoints([]);
@@ -3790,6 +3797,263 @@ async function togglePointPriority(pt) {
     );
   }
 
+  /** ===== WYBÓR TRYBU PRACY =====
+   *  Pojawia się od razu po zalogowaniu: dwa kafelki w stylu GeoPlannera.
+   */
+  if (!workspace) {
+    const storageCount = storageDevices.length;
+    const mapCount = Math.max(0, (points?.length || 0) - storageCount);
+
+    return (
+      <div style={pageStyle}>
+        <div style={workspacePickerStyle}>
+          <div style={{ ...brandRow, justifyContent: "center", marginBottom: 6 }}>
+            <div style={brandDot} />
+            <div style={brandText}>Ewidencja sprzętu</div>
+          </div>
+
+          <h1 style={workspaceTitleStyle}>Wybierz obszar pracy</h1>
+          <p style={workspaceSubtitleStyle}>
+            Zalogowano jako {user?.email || user?.login || "użytkownik"}.
+          </p>
+
+          <div style={workspaceGridStyle}>
+            <button
+              onClick={() => setWorkspace("inventory")}
+              style={workspaceCardStyle}
+              aria-label="Otwórz ewidencję sprzętu"
+            >
+              <span style={workspaceIconStyle} aria-hidden="true">🗺️</span>
+              <span style={workspaceCardTitleStyle}>Ewidencja sprzętu</span>
+              <span style={workspaceCardDescStyle}>
+                Mapa urządzeń w terenie, lokalizacje, dziennik i kalibracje.
+              </span>
+              <span style={workspaceCountStyle}>
+                {mapCount} {mapCount === 1 ? "urządzenie" : "na mapie"}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setWorkspace("storage")}
+              style={workspaceCardStyle}
+              aria-label="Otwórz stan magazynowy"
+            >
+              <span style={workspaceIconStyle} aria-hidden="true">📦</span>
+              <span style={workspaceCardTitleStyle}>Stan magazynowy</span>
+              <span style={workspaceCardDescStyle}>
+                Sprzęt w magazynach GEO BB, GEO OM, GEO LD i SERWIS.
+              </span>
+              <span style={workspaceCountStyle}>
+                {storageCount} {storageCount === 1 ? "urządzenie" : "w magazynach"}
+              </span>
+            </button>
+          </div>
+
+          <button onClick={() => logout()} style={workspaceLogoutStyle}>
+            Wyloguj
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /** ===== TRYB: STAN MAGAZYNOWY =====
+   *  Pełny widok bez mapy: kafelki magazynów + tabela sprzętu.
+   *  Korzysta z tych samych danych co panel Magazyny w ewidencji.
+   */
+  if (workspace === "storage") {
+    const q = String(projectQuery || "").trim().toLowerCase();
+    const matches = (p) => {
+      if (!q) return true;
+      const title = String(p?.title || p?.name || "").toLowerCase();
+      const note = String(p?.note || p?.notes || "").toLowerCase();
+      return title.includes(q) || note.includes(q) || String(p?.id || "").includes(q);
+    };
+
+    const visibleList = (
+      storageWarehouse
+        ? storageByWarehouse[storageWarehouse] || []
+        : storageDevices.slice().sort(byPriorityThenIdDesc)
+    ).filter(matches);
+
+    const warehouseIcon = (key) => (key === "SERWIS" ? "🛠️" : "📦");
+
+    return (
+      <div style={storagePageStyle}>
+        {/* PASEK GÓRNY */}
+        <header style={storageHeaderStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={brandDot} />
+            <div style={{ minWidth: 0 }}>
+              <div style={storageBrandStyle}>Stan magazynowy</div>
+              <div style={{ fontSize: 12, color: MUTED }}>
+                {storageDevices.length} urządzeń w magazynach
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => {
+                setStorageWarehouse(null);
+                setWorkspace(null);
+              }}
+              style={BTN_SECONDARY}
+              aria-label="Wróć do wyboru trybu"
+            >
+              ⟵ Zmień tryb
+            </button>
+            <button onClick={() => logout()} style={BTN_SECONDARY}>
+              Wyloguj
+            </button>
+          </div>
+        </header>
+
+        {/* TREŚĆ */}
+        <div style={storageBodyStyle}>
+          <input
+            value={projectQuery}
+            onChange={(e) => setProjectQuery(e.target.value)}
+            placeholder="Szukaj po nazwie, notatce lub ID…"
+            className="projectSearch"
+            style={storageSearchStyle}
+            aria-label="Szukaj urządzenia w magazynach"
+          />
+
+          {/* KAFELKI MAGAZYNÓW */}
+          <div style={storageTilesStyle}>
+            <button
+              onClick={() => setStorageWarehouse(null)}
+              style={{
+                ...storageTileStyle,
+                borderColor: storageWarehouse === null ? ACCENT : BORDER,
+                background: storageWarehouse === null ? ACCENT_SOFT : "#fff",
+              }}
+            >
+              <span style={storageTileIconStyle} aria-hidden="true">🗂️</span>
+              <span style={storageTileNameStyle}>Wszystkie</span>
+              <span style={storageTileCountStyle}>{storageDevices.length}</span>
+            </button>
+
+            {WAREHOUSES.map((w) => {
+              const list = storageByWarehouse[w.value] || [];
+              const active = storageWarehouse === w.value;
+              return (
+                <button
+                  key={w.value}
+                  onClick={() => setStorageWarehouse(active ? null : w.value)}
+                  style={{
+                    ...storageTileStyle,
+                    borderColor: active ? ACCENT : BORDER,
+                    background: active ? ACCENT_SOFT : "#fff",
+                  }}
+                  aria-label={`Magazyn ${w.label}, ${list.length} urządzeń`}
+                >
+                  <span style={storageTileIconStyle} aria-hidden="true">
+                    {warehouseIcon(w.value)}
+                  </span>
+                  <span style={storageTileNameStyle}>{w.label}</span>
+                  <span style={storageTileCountStyle}>{list.length}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* TABELA */}
+          <div style={storageTableWrapStyle}>
+            {visibleList.length === 0 ? (
+              <div style={storageEmptyStyle}>
+                {q
+                  ? "Brak urządzeń pasujących do wyszukiwania."
+                  : "Ten magazyn jest pusty."}
+              </div>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={storageThStyle}>Urządzenie</th>
+                    <th style={storageThStyle}>Typ</th>
+                    <th style={storageThStyle}>Magazyn</th>
+                    <th style={storageThStyle}>Kalibracja</th>
+                    <th style={{ ...storageThStyle, textAlign: "right" }}>Akcje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleList.map((d) => {
+                    const cal = calibrationMeta(d);
+                    return (
+                      <tr key={d.id}>
+                        <td style={storageTdStyle}>
+                          <div style={{ fontWeight: 800 }}>
+                            {d.title || d.name || `Urządzenie #${d.id}`}
+                          </div>
+                          <div style={{ fontSize: 11, color: MUTED }}>ID {d.id}</div>
+                        </td>
+                        <td style={storageTdStyle}>
+                          <span
+                            style={{
+                              ...pillStyle,
+                              borderColor: typeColor(d.type),
+                              color: typeColor(d.type),
+                            }}
+                          >
+                            {typeLabel(d.type)}
+                          </span>
+                        </td>
+                        <td style={storageTdStyle}>
+                          <span style={{ fontWeight: 800, fontSize: 12 }}>
+                            {warehouseIcon(d.warehouse)} {d.warehouse || "GEO_BB"}
+                          </span>
+                        </td>
+                        <td style={storageTdStyle}>
+                          <span
+                            style={{
+                              ...pillStyle,
+                              ...calibrationPillStyle(cal.tone, BORDER),
+                            }}
+                          >
+                            {cal.label}
+                          </span>
+                        </td>
+                        <td style={{ ...storageTdStyle, textAlign: "right" }}>
+                          <button
+                            onClick={() => {
+                              setSelectedPointId(d.id);
+                              setEditOpen(true);
+                            }}
+                            style={{ ...BTN_SMALL, ...BTN_PRIMARY, padding: "6px 10px", fontSize: 11 }}
+                          >
+                            Edytuj
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <EditDeviceModal
+          open={editOpen}
+          device={
+            selectedPoint
+              ? { ...selectedPoint, acquired: isAcquired("points", selectedPoint.id) }
+              : null
+          }
+          onClose={() => setEditOpen(false)}
+          onSave={saveEditedDevice}
+          BORDER={BORDER}
+          TEXT_LIGHT={TEXT_LIGHT}
+          MUTED={MUTED}
+          GLASS_BG={GLASS_BG_DARK}
+          WAREHOUSES={WAREHOUSES}
+        />
+      </div>
+    );
+  }
+
   /** ===== APP UI ===== */
   const sidebarWidthOpen = 380;
   const sidebarWidthClosed = 0;
@@ -3922,22 +4186,23 @@ async function togglePointPriority(pt) {
           </div>
         </div>
 
-        <button
-          onClick={() => logout()}
-          style={{
-            padding: "8px 10px",
-            borderRadius: 12,
-            border: `1px solid ${BORDER}`,
-            background: SOFT_BG,
-            color: TEXT_LIGHT,
-            cursor: "pointer",
-            fontWeight: 800,
-            fontSize: 11,
-            boxShadow: "0 10px 26px rgba(20,24,40,0.06)",
-          }}
-        >
-          Wyloguj
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <button
+            onClick={() => setWorkspace(null)}
+            style={{ ...BTN_SMALL, boxShadow: "0 10px 26px rgba(20,24,40,0.06)" }}
+            title="Wróć do wyboru trybu pracy"
+            aria-label="Wróć do wyboru trybu pracy"
+          >
+            ⟵ Tryb
+          </button>
+
+          <button
+            onClick={() => logout()}
+            style={{ ...BTN_SMALL, boxShadow: "0 10px 26px rgba(20,24,40,0.06)" }}
+          >
+            Wyloguj
+          </button>
+        </div>
       </div>
 
       <div
@@ -5156,4 +5421,243 @@ const hintStyle = {
   fontSize: 13,
   color: MUTED,
   textAlign: "center",
+};
+
+/** ===== EKRAN WYBORU TRYBU PRACY =====
+ *  Kafelki wzorowane na .price-card / .step z GeoPlannera: biała karta,
+ *  duże zaokrąglenie, miękki cień. Podnoszenie przy hover obsługuje
+ *  warstwa interakcji w App.css (reguła dla <button>).
+ */
+const workspacePickerStyle = {
+  boxSizing: "border-box",
+  width: "min(860px, calc(100% - 32px))",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  maxHeight: "100%",
+  overflowY: "auto",
+};
+
+const workspaceTitleStyle = {
+  margin: "18px 0 0",
+  fontFamily: FONT_DISPLAY,
+  fontSize: "clamp(26px, 3.2vw, 38px)",
+  fontWeight: 800,
+  letterSpacing: "-0.03em",
+  lineHeight: 1.13,
+  color: TEXT_LIGHT,
+  textAlign: "center",
+};
+
+const workspaceSubtitleStyle = {
+  marginTop: 8,
+  marginBottom: 0,
+  fontSize: 15,
+  color: MUTED,
+  textAlign: "center",
+};
+
+const workspaceGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+  gap: 18,
+  width: "100%",
+  marginTop: 32,
+};
+
+const workspaceCardStyle = {
+  all: "unset",
+  boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: 8,
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 28,
+  padding: 28,
+  boxShadow: "0 14px 38px rgba(20,24,40,0.055)",
+  cursor: "pointer",
+  minHeight: "100%",
+};
+
+const workspaceIconStyle = {
+  display: "grid",
+  placeItems: "center",
+  width: 52,
+  height: 52,
+  borderRadius: 16,
+  background: ACCENT_SOFT,
+  fontSize: 26,
+  lineHeight: 1,
+  marginBottom: 10,
+};
+
+const workspaceCardTitleStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 22,
+  fontWeight: 800,
+  letterSpacing: "-0.02em",
+  color: TEXT_LIGHT,
+};
+
+const workspaceCardDescStyle = {
+  fontSize: 14,
+  lineHeight: 1.5,
+  color: MUTED,
+};
+
+const workspaceCountStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  marginTop: 12,
+  padding: "7px 11px",
+  borderRadius: 999,
+  background: ACCENT_SOFT,
+  color: ACCENT,
+  fontSize: 12,
+  fontWeight: 800,
+};
+
+const workspaceLogoutStyle = {
+  marginTop: 28,
+  padding: "10px 18px",
+  borderRadius: 12,
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  color: MUTED,
+  fontFamily: FONT_DISPLAY,
+  fontWeight: 800,
+  fontSize: 13,
+  cursor: "pointer",
+};
+
+/** ===== TRYB MAGAZYNOWY — style =====
+ *  Układ bez mapy: pasek górny + treść na jasnym tle GeoPlannera.
+ */
+const storagePageStyle = {
+  position: "fixed",
+  inset: 0,
+  display: "flex",
+  flexDirection: "column",
+  background: SOFT_BG,
+  color: TEXT_LIGHT,
+  overflow: "hidden",
+};
+
+const storageHeaderStyle = {
+  flex: "0 0 auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "14px 20px",
+  background: "rgba(255,255,255,0.86)",
+  backdropFilter: "blur(16px)",
+  borderBottom: `1px solid ${BORDER}`,
+};
+
+const storageBrandStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 17,
+  fontWeight: 800,
+  letterSpacing: "-0.02em",
+  color: TEXT_LIGHT,
+};
+
+const storageBodyStyle = {
+  flex: "1 1 auto",
+  overflowY: "auto",
+  padding: "20px clamp(16px, 3vw, 28px) 28px",
+  display: "flex",
+  flexDirection: "column",
+  gap: 18,
+  width: "min(1320px, 100%)",
+  marginInline: "auto",
+  boxSizing: "border-box",
+};
+
+const storageSearchStyle = {
+  boxSizing: "border-box",
+  width: "min(420px, 100%)",
+  minHeight: 44,
+  padding: "10px 14px",
+  borderRadius: 12,
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  color: TEXT_LIGHT,
+  fontSize: 14,
+  outline: "none",
+};
+
+const storageTilesStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+  gap: 12,
+};
+
+const storageTileStyle = {
+  all: "unset",
+  boxSizing: "border-box",
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+  padding: "16px 18px",
+  borderRadius: 20,
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
+  cursor: "pointer",
+};
+
+const storageTileIconStyle = { fontSize: 22, lineHeight: 1 };
+
+const storageTileNameStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 14,
+  fontWeight: 800,
+  letterSpacing: "-0.01em",
+  color: TEXT_LIGHT,
+};
+
+const storageTileCountStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 22,
+  fontWeight: 800,
+  color: ACCENT,
+};
+
+const storageTableWrapStyle = {
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 22,
+  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
+  overflowX: "auto",
+};
+
+const storageEmptyStyle = {
+  padding: "40px 20px",
+  textAlign: "center",
+  color: MUTED,
+  fontSize: 14,
+};
+
+const storageThStyle = {
+  textAlign: "left",
+  padding: "12px 16px",
+  fontFamily: FONT_DISPLAY,
+  fontSize: 11,
+  fontWeight: 800,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  color: MUTED,
+  borderBottom: `1px solid ${BORDER}`,
+  whiteSpace: "nowrap",
+};
+
+const storageTdStyle = {
+  padding: "12px 16px",
+  fontSize: 12,
+  borderBottom: `1px solid ${BORDER}`,
+  verticalAlign: "middle",
 };
