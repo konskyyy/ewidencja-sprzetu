@@ -3981,6 +3981,25 @@ async function togglePointPriority(pt) {
     const cat = materialCategory(workspace);
     const total = materials.reduce((s, m) => s + (Number(m.quantity) || 0), 0);
 
+    /* --- dane do wykresów --- */
+    // Stan wg pozycji: największe u góry, bo to najczęstsze pytanie
+    // („czego mam najwięcej / co się kończy”).
+    const byPosition = materials
+      .slice()
+      .sort((a, b) => (Number(b.quantity) || 0) - (Number(a.quantity) || 0));
+    const positionMax = Math.max(1, ...byPosition.map((m) => Number(m.quantity) || 0));
+
+    // Rozkład wg lokalizacji: sumy sztuk w magazynach.
+    const byLocation = WAREHOUSES.map((w) => ({
+      value: w.value,
+      label: w.label,
+      count: materials
+        .filter((m) => m.warehouse === w.value)
+        .reduce((s, m) => s + (Number(m.quantity) || 0), 0),
+      positions: materials.filter((m) => m.warehouse === w.value).length,
+    })).filter((w) => w.count > 0 || w.positions > 0);
+    const locationMax = Math.max(1, ...byLocation.map((w) => w.count));
+
     return (
       <div style={storagePageStyle}>
         <header style={storageHeaderStyle}>
@@ -4011,6 +4030,93 @@ async function togglePointPriority(pt) {
         <div style={storageBodyStyle}>
           {materialsError ? (
             <div style={materialErrorStyle}>{materialsError}</div>
+          ) : null}
+
+          {/* WYKRESY — widoczne dopiero, gdy jest co pokazać */}
+          {!materialsLoading && materials.length > 0 ? (
+            <div style={chartsRowStyle}>
+              {/* Stan magazynowy wg pozycji */}
+              <section style={chartCardStyle} aria-label="Stan magazynowy wg pozycji">
+                <h2 style={chartTitleStyle}>Stan magazynowy</h2>
+                <p style={chartSubtitleStyle}>
+                  {byPosition.length} {byPosition.length === 1 ? "pozycja" : "pozycje"} · łącznie {total} szt.
+                </p>
+
+                {total === 0 ? (
+                  <div style={chartEmptyStyle}>
+                    Wszystkie stany są zerowe — uzupełnij je poniżej.
+                  </div>
+                ) : (
+                  <div style={barListStyle}>
+                    {byPosition.map((m) => {
+                      const qty = Number(m.quantity) || 0;
+                      const pct = Math.round((qty / positionMax) * 100);
+                      const udzial = total > 0 ? Math.round((qty / total) * 100) : 0;
+                      return (
+                        <div key={m.id} style={barRowStyle}>
+                          <div style={barHeadStyle}>
+                            <span style={barLabelStyle}>{m.name}</span>
+                            <span style={barValueStyle}>
+                              {qty}
+                              <span style={barPctStyle}> {m.unit || "szt."}</span>
+                            </span>
+                          </div>
+                          <div
+                            style={barTrackStyle}
+                            title={`${m.name}: ${qty} ${m.unit || "szt."} (${udzial}% stanu kategorii)`}
+                          >
+                            <div style={{ ...barFillStyle, width: `${pct}%`, background: ACCENT }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* Rozkład wg lokalizacji */}
+              <section style={chartCardStyle} aria-label="Rozkład wg lokalizacji">
+                <h2 style={chartTitleStyle}>Podział na lokalizacje</h2>
+                <p style={chartSubtitleStyle}>
+                  Gdzie leży sprzęt z tej kategorii
+                </p>
+
+                {byLocation.length === 0 ? (
+                  <div style={chartEmptyStyle}>Brak przypisanych magazynów.</div>
+                ) : (
+                  <div style={barListStyle}>
+                    {byLocation.map((w) => {
+                      const pct = Math.round((w.count / locationMax) * 100);
+                      const udzial = total > 0 ? Math.round((w.count / total) * 100) : 0;
+                      return (
+                        <div key={w.value} style={barRowStyle}>
+                          <div style={barHeadStyle}>
+                            <span style={barLabelStyle}>
+                              <span aria-hidden="true">
+                                {w.value === "SERWIS" ? "🛠️" : "📦"}
+                              </span>
+                              {w.label}
+                            </span>
+                            <span style={barValueStyle}>
+                              {w.count}
+                              <span style={barPctStyle}> szt. · {udzial}%</span>
+                            </span>
+                          </div>
+                          <div
+                            style={barTrackStyle}
+                            title={`${w.label}: ${w.count} szt. w ${w.positions} ${
+                              w.positions === 1 ? "pozycji" : "pozycjach"
+                            }`}
+                          >
+                            <div style={{ ...barFillStyle, width: `${pct}%`, background: ACCENT }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </div>
           ) : null}
 
           {materialsLoading ? (
