@@ -112,6 +112,7 @@ const DEVICE_TYPES = [
   { value: "pochylomierz", label: "Pochyłomierz" },
   { value: "czujnik_drgan", label: "Czujnik drgań" },
   { value: "inklinometr", label: "Inklinometr" },
+  { value: "tensometr", label: "Tensometr" },
 ];
 const WAREHOUSES = [
   { value: "GEO_BB", label: "GEO BB" },
@@ -126,6 +127,8 @@ const DEVICE_COLORS = {
   pochylomierz: "#22c55e",   // zielony
   czujnik_drgan: "#f59e0b",  // pomarańczowy
   inklinometr: "#a855f7",    // fiolet
+  tensometr: "#ec4899",      // różowy — dobrany tak, by nie tworzyć nowej
+                             // kolizji przy wadach widzenia barw
 };
 
 function typeLabel(v) {
@@ -1601,20 +1604,12 @@ function EditDeviceModal({
   GLASS_BG,
 }) {
   useEscapeKey(open, onClose);
+  /** Typ urządzenia z DEVICE_TYPES; stare statusy (planowany, przetarg…)
+   *  i nieznane wartości spadają do tachimetru. Lista celowo nie jest
+   *  wpisana na sztywno — nowy typ dziala bez zmian w tej funkcji. */
   function normalizeDeviceType(v) {
     const s = String(v || "").trim().toLowerCase();
-
-    // nowe typy
-    if (s === "tachimetr") return "tachimetr";
-    if (s === "pochylomierz") return "pochylomierz";
-    if (s === "czujnik_drgan") return "czujnik_drgan";
-    if (s === "inklinometr") return "inklinometr";
-
-    // stare statusy -> domyślny nowy typ
-    if (s === "planowany" || s === "przetarg" || s === "realizacja" || s === "nieaktualny") {
-      return "tachimetr";
-    }
-
+    if (DEVICE_TYPES.some((t) => t.value === s)) return s;
     return "tachimetr";
   }
 
@@ -3882,7 +3877,7 @@ async function togglePointPriority(pt) {
       value: t.value,
       label: t.label,
       color: DEVICE_COLORS[t.value] || MUTED,
-      count: visibleList.filter((d) => d.type === t.value).length,
+      count: visibleList.filter((d) => d.status === t.value).length,
     }));
     const typeMax = Math.max(1, ...typeStats.map((t) => t.count));
 
@@ -4141,11 +4136,11 @@ async function togglePointPriority(pt) {
                           <span
                             style={{
                               ...pillStyle,
-                              borderColor: typeColor(d.type),
-                              color: typeColor(d.type),
+                              borderColor: typeColor(d.status),
+                              color: typeColor(d.status),
                             }}
                           >
-                            {typeLabel(d.type)}
+                            {typeLabel(d.status)}
                           </span>
                         </td>
                         <td style={storageTdStyle}>
