@@ -1,0 +1,24 @@
+# Sekrety — NIGDY nie commitować
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Zależności
+node_modules/
+
+# Build
+dist/
+build/
+
+# Logi
+*.log
+npm-debug.log*
+
+# System / edytor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
