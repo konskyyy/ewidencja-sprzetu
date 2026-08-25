@@ -54,6 +54,17 @@ const pool = new Pool({
  */
 async function ensureSchema() {
   try {
+    // pozycje materiałowe liczone ilościowo (type='material')
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS quantity integer DEFAULT 0
+    `);
+
+    await pool.query(`
+      ALTER TABLE assets
+      ADD COLUMN IF NOT EXISTS unit text DEFAULT 'szt.'
+    `);
+
     await pool.query(`
       ALTER TABLE assets
       ADD COLUMN IF NOT EXISTS priority boolean DEFAULT false
@@ -877,6 +888,175 @@ app.post("/api/updates/read", authRequired, async (req, res) => {
   }
 });
 
+
+// ===== MATERIALS API =====
+// Pozycje magazynowe liczone ilościowo (rury, mufy, zatyczki, czujniki).
+// W tabeli assets: type='material', status=kategoria, quantity=stan.
+// Konwencja jak przy sprzęcie: `type` mówi czym jest rekord,
+// `status` doprecyzowuje jego rodzaj/kategorię.
+
+const MATERIAL_CATEGORIES = ["inklinometry", "czujniki_drgan", "hlc"];
+
+app.get("/api/materials", authRequired, async (req, res) => {
+  try {
+    const category = String(req.query.category || "").trim();
+    const params = [];
+    let where = `WHERE type = 'material'`;
+    if (category) {
+      if (!MATERIAL_CATEGORIES.includes(category)) {
+        return res.status(400).json({ error: "Nieznana kategoria" });
+      }
+      params.push(category);
+      where += ` AND status = $1`;
+    }
+
+    const q = await pool.query(
+      `
+      SELECT
+        id, name, status AS category, notes,
+        COALESCE(quantity, 0) AS quantity,
+        COALESCE(unit, 'szt.') AS unit,
+        warehouse, added_at
+      FROM assets
+      ${where}
+      ORDER BY name ASC
+      `,
+      params
+    );
+
+    res.json(q.rows);
+  } catch (e) {
+    console.error("GET MATERIALS ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
+
+app.post("/api/materials", authRequired, async (req, res) => {
+  try {
+    const body = req.body || {};
+    const name = String(body.name || "").trim();
+    const category = String(body.category || "").trim();
+
+    if (!name) return res.status(400).json({ error: "Nazwa jest wymagana" });
+    if (!MATERIAL_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: "Nieznana kategoria" });
+    }
+
+    const quantity = Number.isFinite(Number(body.quantity))
+      ? Math.max(0, Math.trunc(Number(body.quantity)))
+      : 0;
+    const unit = String(body.unit || "szt.").trim();
+    const warehouse = body.warehouse ? String(body.warehouse).trim() : null;
+    const notes = String(body.notes || "");
+
+    const q = await pool.query(
+      `
+      INSERT INTO assets (name, type, status, quantity, unit, warehouse, notes, in_storage)
+      VALUES ($1, 'material', $2, $3, $4, $5, $6, true)
+      RETURNING
+        id, name, status AS category, notes,
+        COALESCE(quantity, 0) AS quantity,
+        COALESCE(unit, 'szt.') AS unit,
+        warehouse, added_at
+      `,
+      [name, category, quantity, unit, warehouse, notes]
+    );
+
+    res.status(201).json(q.rows[0]);
+  } catch (e) {
+    console.error("POST MATERIALS ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
+
+// Zmiana stanu (i pozostałych pól) jednej pozycji.
+app.patch("/api/materials/:id", authRequired, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Nieprawidłowe id" });
+    }
+
+    const body = req.body || {};
+    const sets = [];
+    const params = [];
+
+    if (body.quantity !== undefined) {
+      const quantity = Number(body.quantity);
+      if (!Number.isFinite(quantity) || quantity < 0) {
+        return res.status(400).json({ error: "Stan musi być liczbą >= 0" });
+      }
+      params.push(Math.trunc(quantity));
+      sets.push(`quantity = $${params.length}`);
+    }
+    if (body.name !== undefined) {
+      const name = String(body.name).trim();
+      if (!name) return res.status(400).json({ error: "Nazwa nie może być pusta" });
+      params.push(name);
+      sets.push(`name = $${params.length}`);
+    }
+    if (body.unit !== undefined) {
+      params.push(String(body.unit).trim() || "szt.");
+      sets.push(`unit = $${params.length}`);
+    }
+    if (body.warehouse !== undefined) {
+      params.push(body.warehouse ? String(body.warehouse).trim() : null);
+      sets.push(`warehouse = $${params.length}`);
+    }
+    if (body.notes !== undefined) {
+      params.push(String(body.notes || ""));
+      sets.push(`notes = $${params.length}`);
+    }
+
+    if (!sets.length) {
+      return res.status(400).json({ error: "Brak pól do zmiany" });
+    }
+
+    params.push(id);
+
+    const q = await pool.query(
+      `
+      UPDATE assets
+      SET ${sets.join(", ")}
+      WHERE id = $${params.length} AND type = 'material'
+      RETURNING
+        id, name, status AS category, notes,
+        COALESCE(quantity, 0) AS quantity,
+        COALESCE(unit, 'szt.') AS unit,
+        warehouse, added_at
+      `,
+      params
+    );
+
+    if (!q.rows.length) {
+      return res.status(404).json({ error: "Nie znaleziono pozycji" });
+    }
+    res.json(q.rows[0]);
+  } catch (e) {
+    console.error("PATCH MATERIALS ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
+
+app.delete("/api/materials/:id", authRequired, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: "Nieprawidłowe id" });
+    }
+    const q = await pool.query(
+      `DELETE FROM assets WHERE id = $1 AND type = 'material' RETURNING id`,
+      [id]
+    );
+    if (!q.rows.length) {
+      return res.status(404).json({ error: "Nie znaleziono pozycji" });
+    }
+    res.json({ ok: true, id: q.rows[0].id });
+  } catch (e) {
+    console.error("DELETE MATERIALS ERROR:", e);
+    res.status(500).json({ error: "DB error", details: String(e) });
+  }
+});
 // ===== START =====
 (async () => {
   await ensureSchema();

@@ -121,6 +121,49 @@ const WAREHOUSES = [
   { value: "SERWIS", label: "SERWIS" },
 ];
 
+/** ===== KATEGORIE MATERIAŁOWE =====
+ *  Pozycje liczone ilościowo (nie egzemplarze) — bez kalibracji
+ *  i numerów seryjnych. W bazie: assets.type = 'material',
+ *  assets.status = wartość `value` poniżej, assets.quantity = stan.
+ *
+ *  `seed` to pozycje zakładane automatycznie przy pierwszym wejściu
+ *  do pustej kategorii, żeby nie trzeba było wpisywać ich ręcznie.
+ */
+const MATERIAL_CATEGORIES = [
+  {
+    value: "inklinometry",
+    label: "Inklinometry",
+    icon: "📏",
+    desc: "Rury, mufy i zatyczki do pomiarów inklinometrycznych.",
+    seed: [
+      { name: "Rury inklinometryczne XC", unit: "szt." },
+      { name: "Mufy XC", unit: "szt." },
+      { name: "Zatyczki do rur", unit: "szt." },
+    ],
+  },
+  {
+    value: "czujniki_drgan",
+    label: "Czujniki drgań",
+    icon: "📳",
+    desc: "Czujniki do monitoringu drgań.",
+    seed: [
+      { name: "Czujnik Sigicom", unit: "szt." },
+      { name: "Czujnik Svantek", unit: "szt." },
+    ],
+  },
+  {
+    value: "hlc",
+    label: "Czujniki HLC",
+    icon: "🎚️",
+    desc: "Czujniki poziomu cieczy HLC.",
+    seed: [{ name: "Czujnik HLC", unit: "szt." }],
+  },
+];
+
+function materialCategory(value) {
+  return MATERIAL_CATEGORIES.find((c) => c.value === value) || null;
+}
+
 // jeden „source of truth” kolorów
 const DEVICE_COLORS = {
   tachimetr: "#3b82f6",      // niebieski
@@ -3006,6 +3049,7 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
    */
   const [workspace, setWorkspace] = useState(null); // null | "inventory" | "storage"
   const [storageWarehouse, setStorageWarehouse] = useState(null); // wybrany magazyn w trybie magazynowym
+  const [inventoryView, setInventoryView] = useState("list"); // "list" | "map" — widok w ewidencji
 
   /** ===== AUTH ===== */
   const [mode, setMode] = useState("checking"); // checking | login | app
@@ -3074,6 +3118,73 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     const t = getToken();
     if (t) headers.Authorization = `Bearer ${t}`;
     return fetch(url, { ...options, headers });
+  }
+
+  /** ===== MATERIAŁY (pozycje liczone ilościowo) ===== */
+  const [materials, setMaterials] = useState([]);
+  const [materialsLoading, setMaterialsLoading] = useState(false);
+  const [materialsError, setMaterialsError] = useState("");
+  const [materialBusyId, setMaterialBusyId] = useState(null);
+
+  /** Wczytuje pozycje kategorii; przy pustej kategorii zakłada pozycje
+   *  startowe z definicji MATERIAL_CATEGORIES, żeby użytkownik od razu
+   *  miał co uzupełniać. */
+  async function loadMaterials(categoryValue) {
+    const cat = materialCategory(categoryValue);
+    if (!cat) return;
+
+    setMaterialsLoading(true);
+    setMaterialsError("");
+    try {
+      const res = await authFetch(`${API}/materials?category=${cat.value}`);
+      let data = await readJsonOrThrow(res);
+
+      if (Array.isArray(data) && data.length === 0 && cat.seed?.length) {
+        for (const item of cat.seed) {
+          const r = await authFetch(`${API}/materials`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: item.name,
+              category: cat.value,
+              quantity: 0,
+              unit: item.unit || "szt.",
+            }),
+          });
+          await readJsonOrThrow(r);
+        }
+        const again = await authFetch(`${API}/materials?category=${cat.value}`);
+        data = await readJsonOrThrow(again);
+      }
+
+      setMaterials(Array.isArray(data) ? data : []);
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setMaterialsError(`Nie mogę wczytać stanu: ${String(e?.message || e)}`);
+      setMaterials([]);
+    } finally {
+      setMaterialsLoading(false);
+    }
+  }
+
+  /** Zapisuje nowy stan pozycji. */
+  async function saveMaterialQuantity(id, quantity) {
+    setMaterialBusyId(id);
+    setMaterialsError("");
+    try {
+      const res = await authFetch(`${API}/materials/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ quantity }),
+      });
+      const updated = await readJsonOrThrow(res);
+      setMaterials((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+    } catch (e) {
+      if (e?.status === 401) return logout("expired");
+      setMaterialsError(`Nie mogę zapisać stanu: ${String(e?.message || e)}`);
+    } finally {
+      setMaterialBusyId(null);
+    }
   }
 
   /** ===== DEVICES (points adapter) ===== */
@@ -3814,34 +3925,41 @@ async function togglePointPriority(pt) {
 
           <div style={workspaceGridStyle}>
             <button
-              onClick={() => setWorkspace("inventory")}
+              onClick={() => {
+                setInventoryView("list");
+                setWorkspace("inventory");
+              }}
               style={workspaceCardStyle}
               aria-label="Otwórz ewidencję sprzętu"
             >
-              <span style={workspaceIconStyle} aria-hidden="true">🗺️</span>
+              <span style={workspaceIconStyle} aria-hidden="true">🛠️</span>
               <span style={workspaceCardTitleStyle}>Ewidencja sprzętu</span>
               <span style={workspaceCardDescStyle}>
-                Mapa urządzeń w terenie, lokalizacje, dziennik i kalibracje.
+                Urządzenia pomiarowe — lista ze stanem kalibracji albo mapa lokalizacji.
               </span>
               <span style={workspaceCountStyle}>
-                {mapCount} {mapCount === 1 ? "urządzenie" : "na mapie"}
+                {storageCount} w magazynach · {mapCount} w terenie
               </span>
             </button>
 
-            <button
-              onClick={() => setWorkspace("storage")}
-              style={workspaceCardStyle}
-              aria-label="Otwórz stan magazynowy"
-            >
-              <span style={workspaceIconStyle} aria-hidden="true">📦</span>
-              <span style={workspaceCardTitleStyle}>Stan magazynowy</span>
-              <span style={workspaceCardDescStyle}>
-                Sprzęt w magazynach GEO BB, GEO OM, GEO LD i SERWIS.
-              </span>
-              <span style={workspaceCountStyle}>
-                {storageCount} {storageCount === 1 ? "urządzenie" : "w magazynach"}
-              </span>
-            </button>
+            {MATERIAL_CATEGORIES.map((cat) => (
+              <button
+                key={cat.value}
+                onClick={() => {
+                  setWorkspace(cat.value);
+                  loadMaterials(cat.value);
+                }}
+                style={workspaceCardStyle}
+                aria-label={`Otwórz kategorię ${cat.label}`}
+              >
+                <span style={workspaceIconStyle} aria-hidden="true">{cat.icon}</span>
+                <span style={workspaceCardTitleStyle}>{cat.label}</span>
+                <span style={workspaceCardDescStyle}>{cat.desc}</span>
+                <span style={workspaceCountStyle}>
+                  {cat.seed.length} {cat.seed.length === 1 ? "pozycja" : "pozycje"}
+                </span>
+              </button>
+            ))}
           </div>
 
           <button onClick={() => logout()} style={workspaceLogoutStyle}>
@@ -3856,7 +3974,121 @@ async function togglePointPriority(pt) {
    *  Pełny widok bez mapy: kafelki magazynów + tabela sprzętu.
    *  Korzysta z tych samych danych co panel Magazyny w ewidencji.
    */
-  if (workspace === "storage") {
+  /** ===== WIDOK KATEGORII MATERIAŁOWEJ =====
+   *  Pozycje liczone ilościowo: nazwa + stan. Bez kalibracji i mapy.
+   */
+  if (materialCategory(workspace)) {
+    const cat = materialCategory(workspace);
+    const total = materials.reduce((s, m) => s + (Number(m.quantity) || 0), 0);
+
+    return (
+      <div style={storagePageStyle}>
+        <header style={storageHeaderStyle}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <span style={{ fontSize: 26, lineHeight: 1 }} aria-hidden="true">{cat.icon}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={storageBrandStyle}>{cat.label}</div>
+              <div style={{ fontSize: 12, color: MUTED }}>
+                {materials.length} {materials.length === 1 ? "pozycja" : "pozycje"} · łącznie {total} szt.
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              onClick={() => setWorkspace(null)}
+              style={BTN_SECONDARY}
+              aria-label="Wróć do wyboru obszaru"
+            >
+              ⟵ Obszary
+            </button>
+            <button onClick={() => logout()} style={BTN_SECONDARY}>
+              Wyloguj
+            </button>
+          </div>
+        </header>
+
+        <div style={storageBodyStyle}>
+          {materialsError ? (
+            <div style={materialErrorStyle}>{materialsError}</div>
+          ) : null}
+
+          {materialsLoading ? (
+            <div style={storageEmptyStyle}>Wczytuję stan…</div>
+          ) : materials.length === 0 ? (
+            <div style={storageEmptyStyle}>
+              Brak pozycji w tej kategorii.
+            </div>
+          ) : (
+            <div style={materialListStyle}>
+              {materials.map((m) => {
+                const busy = materialBusyId === m.id;
+                const qty = Number(m.quantity) || 0;
+                return (
+                  <div key={m.id} style={materialRowStyle}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={materialNameStyle}>{m.name}</div>
+                      {m.warehouse ? (
+                        <div style={{ fontSize: 11, color: MUTED }}>📦 {m.warehouse}</div>
+                      ) : null}
+                    </div>
+
+                    <div style={materialQtyBoxStyle}>
+                      <button
+                        onClick={() => saveMaterialQuantity(m.id, Math.max(0, qty - 1))}
+                        disabled={busy || qty <= 0}
+                        style={materialStepBtnStyle}
+                        aria-label={`Zmniejsz stan: ${m.name}`}
+                      >
+                        −
+                      </button>
+
+                      <input
+                        key={`${m.id}-${qty}`}
+                        type="number"
+                        min="0"
+                        defaultValue={qty}
+                        disabled={busy}
+                        onBlur={(e) => {
+                          const v = Number(e.target.value);
+                          if (Number.isFinite(v) && v >= 0 && v !== qty) {
+                            saveMaterialQuantity(m.id, Math.trunc(v));
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.blur();
+                        }}
+                        style={materialQtyInputStyle}
+                        aria-label={`Stan: ${m.name}`}
+                      />
+
+                      <button
+                        onClick={() => saveMaterialQuantity(m.id, qty + 1)}
+                        disabled={busy}
+                        style={materialStepBtnStyle}
+                        aria-label={`Zwiększ stan: ${m.name}`}
+                      >
+                        +
+                      </button>
+
+                      <span style={materialUnitStyle}>{m.unit || "szt."}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>
+            Zmiana stanu zapisuje się od razu. Wpisz liczbę i naciśnij Enter
+            albo użyj przycisków − i +.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (workspace === "inventory" && inventoryView === "list") {
     const q = String(projectQuery || "").trim().toLowerCase();
     const matches = (p) => {
       if (!q) return true;
@@ -3908,23 +4140,41 @@ async function togglePointPriority(pt) {
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <div style={brandDot} />
             <div style={{ minWidth: 0 }}>
-              <div style={storageBrandStyle}>Stan magazynowy</div>
+              <div style={storageBrandStyle}>Ewidencja sprzętu</div>
               <div style={{ fontSize: 12, color: MUTED }}>
-                {storageDevices.length} urządzeń w magazynach
+                {storageDevices.length} w magazynach · {Math.max(0, points.length - storageDevices.length)} w terenie
               </div>
             </div>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {/* przełącznik widoku: lista / mapa */}
+            <div style={viewSwitchStyle} role="group" aria-label="Przełącz widok">
+              <button
+                onClick={() => setInventoryView("list")}
+                style={{ ...viewSwitchBtnStyle, ...viewSwitchActiveStyle }}
+                aria-pressed="true"
+              >
+                Lista
+              </button>
+              <button
+                onClick={() => setInventoryView("map")}
+                style={viewSwitchBtnStyle}
+                aria-pressed="false"
+              >
+                Mapa
+              </button>
+            </div>
+
             <button
               onClick={() => {
                 setStorageWarehouse(null);
                 setWorkspace(null);
               }}
               style={BTN_SECONDARY}
-              aria-label="Wróć do wyboru trybu"
+              aria-label="Wróć do wyboru obszaru"
             >
-              ⟵ Zmień tryb
+              ⟵ Obszary
             </button>
             <button onClick={() => logout()} style={BTN_SECONDARY}>
               Wyloguj
@@ -4330,13 +4580,30 @@ async function togglePointPriority(pt) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <div style={{ ...viewSwitchStyle, padding: 2 }} role="group" aria-label="Przełącz widok">
+            <button
+              onClick={() => setInventoryView("list")}
+              style={{ ...viewSwitchBtnStyle, padding: "5px 10px", fontSize: 11 }}
+              aria-pressed="false"
+            >
+              Lista
+            </button>
+            <button
+              onClick={() => setInventoryView("map")}
+              style={{ ...viewSwitchBtnStyle, ...viewSwitchActiveStyle, padding: "5px 10px", fontSize: 11 }}
+              aria-pressed="true"
+            >
+              Mapa
+            </button>
+          </div>
+
           <button
             onClick={() => setWorkspace(null)}
             style={{ ...BTN_SMALL, boxShadow: "0 10px 26px rgba(20,24,40,0.06)" }}
-            title="Wróć do wyboru trybu pracy"
-            aria-label="Wróć do wyboru trybu pracy"
+            title="Wróć do wyboru obszaru pracy"
+            aria-label="Wróć do wyboru obszaru pracy"
           >
-            ⟵ Tryb
+            ⟵ Obszary
           </button>
 
           <button
@@ -5933,4 +6200,107 @@ const barFillStyle = {
   borderRadius: 999,
   minWidth: 3,
   transition: "width 420ms cubic-bezier(0.22, 1, 0.36, 1)",
+};
+
+/** Przełącznik widoku lista / mapa — segmentowany, w stylu pigułki. */
+const viewSwitchStyle = {
+  display: "inline-flex",
+  padding: 3,
+  borderRadius: 12,
+  border: `1px solid ${BORDER}`,
+  background: SOFT_BG,
+  gap: 2,
+};
+
+const viewSwitchBtnStyle = {
+  all: "unset",
+  padding: "7px 14px",
+  borderRadius: 9,
+  fontFamily: FONT_DISPLAY,
+  fontSize: 12,
+  fontWeight: 800,
+  color: MUTED,
+  cursor: "pointer",
+};
+
+const viewSwitchActiveStyle = {
+  background: "#fff",
+  color: ACCENT,
+  boxShadow: "0 4px 12px rgba(20,24,40,0.08)",
+};
+
+/** ===== WIDOK KATEGORII MATERIAŁOWEJ — style ===== */
+const materialListStyle = { display: "grid", gap: 10 };
+
+const materialRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: 16,
+  padding: "16px 18px",
+  background: "#fff",
+  border: `1px solid ${BORDER}`,
+  borderRadius: 20,
+  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
+};
+
+const materialNameStyle = {
+  fontFamily: FONT_DISPLAY,
+  fontSize: 15,
+  fontWeight: 800,
+  letterSpacing: "-0.01em",
+  color: TEXT_LIGHT,
+};
+
+const materialQtyBoxStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+  flexShrink: 0,
+};
+
+const materialStepBtnStyle = {
+  all: "unset",
+  width: 34,
+  height: 34,
+  display: "grid",
+  placeItems: "center",
+  borderRadius: 11,
+  border: `1px solid ${BORDER}`,
+  background: SOFT_BG,
+  color: TEXT_LIGHT,
+  fontSize: 17,
+  fontWeight: 800,
+  cursor: "pointer",
+};
+
+const materialQtyInputStyle = {
+  width: 84,
+  height: 40,
+  textAlign: "center",
+  borderRadius: 12,
+  border: `1px solid ${BORDER}`,
+  background: "#fff",
+  color: TEXT_LIGHT,
+  fontFamily: FONT_DISPLAY,
+  fontSize: 17,
+  fontWeight: 800,
+  outline: "none",
+};
+
+const materialUnitStyle = {
+  fontSize: 12,
+  fontWeight: 700,
+  color: MUTED,
+  minWidth: 34,
+};
+
+const materialErrorStyle = {
+  padding: 12,
+  borderRadius: 12,
+  background: "rgba(239,68,68,0.10)",
+  border: "1px solid rgba(239,68,68,0.35)",
+  color: "#b91c1c",
+  fontSize: 13,
+  fontWeight: 600,
 };
