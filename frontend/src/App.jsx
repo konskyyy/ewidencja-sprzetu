@@ -3124,7 +3124,6 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
   const [materials, setMaterials] = useState([]);
   const [materialsLoading, setMaterialsLoading] = useState(false);
   const [materialsError, setMaterialsError] = useState("");
-  const [materialBusyId, setMaterialBusyId] = useState(null);
 
   /** Wczytuje pozycje kategorii; przy pustej kategorii zakłada pozycje
    *  startowe z definicji MATERIAL_CATEGORIES, żeby użytkownik od razu
@@ -3167,25 +3166,6 @@ function MobileDeviceView({ deviceId, BORDER, TEXT_LIGHT, MUTED, GLASS_BG }) {
     }
   }
 
-  /** Zapisuje nowy stan pozycji. */
-  async function saveMaterialQuantity(id, quantity) {
-    setMaterialBusyId(id);
-    setMaterialsError("");
-    try {
-      const res = await authFetch(`${API}/materials/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity }),
-      });
-      const updated = await readJsonOrThrow(res);
-      setMaterials((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
-    } catch (e) {
-      if (e?.status === 401) return logout("expired");
-      setMaterialsError(`Nie mogę zapisać stanu: ${String(e?.message || e)}`);
-    } finally {
-      setMaterialBusyId(null);
-    }
-  }
 
   /** ===== DEVICES (points adapter) ===== */
   const [points, setPoints] = useState([]);
@@ -4122,73 +4102,8 @@ async function togglePointPriority(pt) {
           {materialsLoading ? (
             <div style={storageEmptyStyle}>Wczytuję stan…</div>
           ) : materials.length === 0 ? (
-            <div style={storageEmptyStyle}>
-              Brak pozycji w tej kategorii.
-            </div>
-          ) : (
-            <div style={materialListStyle}>
-              {materials.map((m) => {
-                const busy = materialBusyId === m.id;
-                const qty = Number(m.quantity) || 0;
-                return (
-                  <div key={m.id} style={materialRowStyle}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={materialNameStyle}>{m.name}</div>
-                      {m.warehouse ? (
-                        <div style={{ fontSize: 11, color: MUTED }}>📦 {m.warehouse}</div>
-                      ) : null}
-                    </div>
-
-                    <div style={materialQtyBoxStyle}>
-                      <button
-                        onClick={() => saveMaterialQuantity(m.id, Math.max(0, qty - 1))}
-                        disabled={busy || qty <= 0}
-                        style={materialStepBtnStyle}
-                        aria-label={`Zmniejsz stan: ${m.name}`}
-                      >
-                        −
-                      </button>
-
-                      <input
-                        key={`${m.id}-${qty}`}
-                        type="number"
-                        min="0"
-                        defaultValue={qty}
-                        disabled={busy}
-                        onBlur={(e) => {
-                          const v = Number(e.target.value);
-                          if (Number.isFinite(v) && v >= 0 && v !== qty) {
-                            saveMaterialQuantity(m.id, Math.trunc(v));
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") e.currentTarget.blur();
-                        }}
-                        style={materialQtyInputStyle}
-                        aria-label={`Stan: ${m.name}`}
-                      />
-
-                      <button
-                        onClick={() => saveMaterialQuantity(m.id, qty + 1)}
-                        disabled={busy}
-                        style={materialStepBtnStyle}
-                        aria-label={`Zwiększ stan: ${m.name}`}
-                      >
-                        +
-                      </button>
-
-                      <span style={materialUnitStyle}>{m.unit || "szt."}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <p style={{ fontSize: 12, color: MUTED, margin: 0 }}>
-            Zmiana stanu zapisuje się od razu. Wpisz liczbę i naciśnij Enter
-            albo użyj przycisków − i +.
-          </p>
+            <div style={storageEmptyStyle}>Brak pozycji w tej kategorii.</div>
+          ) : null}
         </div>
       </div>
     );
@@ -6336,70 +6251,6 @@ const viewSwitchActiveStyle = {
 };
 
 /** ===== WIDOK KATEGORII MATERIAŁOWEJ — style ===== */
-const materialListStyle = { display: "grid", gap: 10 };
-
-const materialRowStyle = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 16,
-  padding: "16px 18px",
-  background: "#fff",
-  border: `1px solid ${BORDER}`,
-  borderRadius: 20,
-  boxShadow: "0 10px 26px rgba(20,24,40,0.04)",
-};
-
-const materialNameStyle = {
-  fontFamily: FONT_DISPLAY,
-  fontSize: 15,
-  fontWeight: 800,
-  letterSpacing: "-0.01em",
-  color: TEXT_LIGHT,
-};
-
-const materialQtyBoxStyle = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 8,
-  flexShrink: 0,
-};
-
-const materialStepBtnStyle = {
-  all: "unset",
-  width: 34,
-  height: 34,
-  display: "grid",
-  placeItems: "center",
-  borderRadius: 11,
-  border: `1px solid ${BORDER}`,
-  background: SOFT_BG,
-  color: TEXT_LIGHT,
-  fontSize: 17,
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-const materialQtyInputStyle = {
-  width: 84,
-  height: 40,
-  textAlign: "center",
-  borderRadius: 12,
-  border: `1px solid ${BORDER}`,
-  background: "#fff",
-  color: TEXT_LIGHT,
-  fontFamily: FONT_DISPLAY,
-  fontSize: 17,
-  fontWeight: 800,
-  outline: "none",
-};
-
-const materialUnitStyle = {
-  fontSize: 12,
-  fontWeight: 700,
-  color: MUTED,
-  minWidth: 34,
-};
 
 const materialErrorStyle = {
   padding: 12,
